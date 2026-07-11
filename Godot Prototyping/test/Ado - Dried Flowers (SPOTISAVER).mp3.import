@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dhonkscnlww7"
+path="res://.godot/imported/Ado - Dried Flowers (SPOTISAVER).mp3-d30cf7189e5ae3551e2534157f20f235.mp3str"
+
+[deps]
+
+source_file="res://Ado - Dried Flowers (SPOTISAVER).mp3"
+dest_files=["res://.godot/imported/Ado - Dried Flowers (SPOTISAVER).mp3-d30cf7189e5ae3551e2534157f20f235.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

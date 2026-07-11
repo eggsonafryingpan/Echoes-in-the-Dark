@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dsx2rsbfg7156"]
+
+[ext_resource type="Script" uid="uid://c3ol68ukg3isi" path="res://Player.gd" id="1_iwpo4"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jqwnj"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
+
+[node name="Character" type="CharacterBody3D" unique_id=1083369361]
+script = ExtResource("1_iwpo4")
+speed = null
+jump_strength = null
+gravity = null
+
+[node name="Node3D" type="Node3D" parent="." unique_id=1633183648]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=660956971]
+shape = SubResource("CapsuleShape3D_jqwnj")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="." unique_id=1529387836]
+mesh = SubResource("CapsuleMesh_jqwnj")
+
+[node name="CameraSpringArm" type="SpringArm3D" parent="." unique_id=1893545476]
+
+[node name="Camera3D" type="Camera3D" parent="CameraSpringArm" unique_id=579495460]
