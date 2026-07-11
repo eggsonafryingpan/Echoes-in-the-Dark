@@ -1,14 +1,16 @@
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
+from pythonosc.udp_client import SimpleUDPClient
 import time
 import threading
 import statistics
+import math
 
 #How big is window for data (seconds)
 WINDOW_TIME = 1
 
 #sensitivity for CUSUM
-SENS = 2
+SENS = 1
 
 #Threshold for CUSUM aka how long do you have to be elevated to trigger
 THRESHOLD_HIGH = 2
@@ -26,7 +28,7 @@ sensors = {
         "cusum": 0,
         "weight": 1,
         "baseline_mean": 0,
-        "baseline_stdev": 2
+        "baseline_stdev": 1
     },
     "EDA": {
         "raw_data": [],
@@ -34,7 +36,7 @@ sensors = {
         "cusum": 0,
         "weight": -1,
         "baseline_mean": 0,
-        "baseline_stdev": 2
+        "baseline_stdev": 1
     },
     "TEMP": {
         "raw_data": [],
@@ -42,7 +44,7 @@ sensors = {
         "cusum": 0,
         "weight": 1,
         "baseline_mean": 0,
-        "baseline_stdev": 2
+        "baseline_stdev": 1
     },
 }
 
@@ -61,6 +63,13 @@ def handler(address, *args):
     sensor["raw_data"].append(args[0])
 
     # print(sensor_name, "Data: {args[0]}")
+
+client = SimpleUDPClient("127.0.0.1",8687)
+
+def sendElevated():
+    global client
+    print("Sending...")
+    client.send_message("/Godot/elevated",elevated)
 
 
 def update():
@@ -91,14 +100,17 @@ def update():
     if len(cusums) == 0:
         return
     
-    avg_cusum = statistics.mean(cusums)
+    rms_cusum = math.sqrt(sum(x*x for x in cusums) / len(cusums))
     
-    print("CUSUM: {avg_cusum}")
+    print("CUSUM: ",rms_cusum)
     
-    if avg_cusum >= THRESHOLD_HIGH:
+
+    if rms_cusum >= THRESHOLD_HIGH:
         elevated = True
-    elif avg_cusum <= THRESHOLD_LOW:
+        sendElevated()
+    elif rms_cusum <= THRESHOLD_LOW:
         elevated = False
+        sendElevated()
 
 
 
@@ -126,3 +138,5 @@ threading.Thread(target=timer,daemon=True).start()
 
 print("Recieving...")
 server.serve_forever()
+
+

@@ -18,13 +18,7 @@ sensors = {
 
 
 def set_emotibit(address: str, *args: List[Any]) -> None:
-    # We expect two float arguments
-    # if not len(args) == 2 or type(args[0]) is not float or type(args[1]) is not float:
-    #     return
 
-    # # Check that address starts with filter
-    # if not address[:-1] == "/emotibit":  # Cut off the last character
-    #     return
 
     value1 = args[0]
     # filterno = address[-1]

@@ -83,6 +83,7 @@ mesh = SubResource("CapsuleMesh_jqwnj")
 [node name="OSCReceiver" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
 script = ExtResource("4_jka67")
 target_server = NodePath("../../OSCServer")
+osc_address = "/Godot/elevated"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 
 [node name="StaticBody3D2" type="StaticBody3D" parent="." unique_id=159290763]
@@ -144,5 +145,5 @@ mesh = SubResource("BoxMesh_sbew2")
 
 [node name="OSCServer" type="Node" parent="." unique_id=150244378]
 script = ExtResource("5_i5arm")
-port = 12345
+port = 8687
 metadata/_custom_type_script = "uid://w8v0v76wc4r2"

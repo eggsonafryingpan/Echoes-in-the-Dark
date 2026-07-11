@@ -5,7 +5,7 @@ extends Node
 
 
 ## The port over which to recieve messages
-@export var port = 4646
+@export var port = 12345
 
 ## Sets the timecode sent in the message_recieved signal to be in unix time (greater precision, less readable)
 @export var timecode_as_unix = false
@@ -45,6 +45,7 @@ func _process(_delta):
 		# Keep a reference so we can keep contacting the remote peer.
 		peers.append(peer)
 	elif len(peers) == 0:
+		#so annoying...
 		push_warning("OSCServer has no incoming connections.")
 	parse()
 
