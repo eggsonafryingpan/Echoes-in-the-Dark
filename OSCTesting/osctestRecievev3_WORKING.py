@@ -4,12 +4,15 @@ import time
 import threading
 import statistics
 
+#How big is window for data (seconds)
 WINDOW_TIME = 1
-SENS = 2
+
 #sensitivity for CUSUM
+SENS = 2
+
+#Threshold for CUSUM aka how long do you have to be elevated to trigger
 THRESHOLD_HIGH = 2
 THRESHOLD_LOW = 1
-#Threshold for CUSUM aka how long do you have to be elevated to trigger
 
 
 
@@ -47,13 +50,11 @@ sensors = {
 
 
 
-
-
 def handler(address, *args):
     global sensors
     # EMOTIBIT CHANGE MAYBE???
-    # if "EmotiBit" not in address or args[0] is None:
-    #     return
+    if "EmotiBit" not in address or args[0] is None:
+        return
     
     sensor_name = address.split("/")[-1]
     sensor = sensors[sensor_name]
@@ -92,7 +93,7 @@ def update():
     
     avg_cusum = statistics.mean(cusums)
     
-    print(avg_cusum)
+    print("CUSUM: {avg_cusum}")
     
     if avg_cusum >= THRESHOLD_HIGH:
         elevated = True
@@ -107,7 +108,7 @@ dispatcher = Dispatcher()
 dispatcher.set_default_handler(handler)  
 
 
-# # Set up server
+#IP AND PORT
 server = BlockingOSCUDPServer(("127.0.0.1", 12345), dispatcher)
 
 
