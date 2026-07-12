@@ -1,10 +1,11 @@
 [gd_scene format=3 uid="uid://cvyw43rbl3tnc"]
 
-[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="1_a0tk4"]
+[ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="1_jka67"]
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="2_noarx"]
 [ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="3_a0tk4"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="4_jka67"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_i5arm"]
+[ext_resource type="Script" uid="uid://bibn68t3f7jq6" path="res://path_follow_3d.gd" id="5_wc5p8"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jqwnj"]
 size = Vector3(60, 2, 60)
@@ -27,9 +28,40 @@ size = Vector3(60, 2, 60)
 [sub_resource type="BoxShape3D" id="BoxShape3D_jv6wj"]
 size = Vector3(6, 6, 0.5)
 
+[sub_resource type="SteamAudioMaterial" id="SteamAudioMaterial_4j7iv"]
+scattering = 0.116
+transmission_low = 0.711
+transmission_mid = 0.612
+transmission_high = 0.372
+
 [sub_resource type="BoxMesh" id="BoxMesh_sbew2"]
 
+[sub_resource type="SteamAudioMaterial" id="SteamAudioMaterial_jka67"]
+scattering = 0.134
+transmission_low = 0.769
+transmission_mid = 0.529
+transmission_high = 0.289
+
+[sub_resource type="SteamAudioMaterial" id="SteamAudioMaterial_jv6wj"]
+scattering = 0.132
+transmission_low = 0.835
+transmission_mid = 0.678
+transmission_high = 0.463
+
+[sub_resource type="Curve3D" id="Curve3D_jka67"]
+closed = true
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0.7627177, -9.536743e-07, -0.49717355, 0, 0, 0, 0, 0, 0, -0.88234043, 0, 2.3478093, 0, 0, 0, 0, 0, 0, -3.0233183, 0, 3.0546222, 0, 0, 0, 0, 0, 0, -5.242364, -9.536743e-07, 1.9370494, 0, 0, 0, 0, 0, 0, -6.087829, 0, -0.5209255, 0, 0, 0, 0, 0, 0, -5.018234, 0, -3.3268063, 0, 0, 0, 0, 0, 0, -2.6697617, -9.536743e-07, -4.6022196, 0, 0, 0, 0, 0, 0, -0.555213, 9.536743e-07, -2.8420577),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+}
+point_count = 8
+
+[sub_resource type="BoxMesh" id="BoxMesh_4j7iv"]
+
 [node name="Node3D" type="Node3D" unique_id=1184201749]
+
+[node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
+scene_type = 0
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1563817073]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
@@ -49,7 +81,6 @@ shadow_enabled = true
 
 [node name="RaytracedAudioPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1790675548]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.021147, 1.4798663, 3.280709e-14)
-stream = ExtResource("1_a0tk4")
 attenuation_model = 1
 volume_db = -15.844
 autoplay = true
@@ -69,12 +100,14 @@ shape = SubResource("CapsuleShape3D_4j7iv")
 [node name="CamOrigin" type="Node3D" parent="player" unique_id=196273322]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
+[node name="Camera3D" type="Camera3D" parent="player/CamOrigin" unique_id=110145144]
+
+[node name="SteamAudioListener" type="SteamAudioListener" parent="player/CamOrigin/Camera3D" unique_id=1539937943]
+
 [node name="SpringArm3D" type="SpringArm3D" parent="player/CamOrigin" unique_id=896322455]
 shape = SubResource("SeparationRayShape3D_noarx")
 spring_length = 0.0
-margin = 0.5
-
-[node name="Camera3D" type="Camera3D" parent="player/CamOrigin/SpringArm3D" unique_id=110145144]
+margin = 0.0
 
 [node name="BodyMesh" type="MeshInstance3D" parent="player" unique_id=668820480]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -87,12 +120,13 @@ osc_address = "/Godot/elevated"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 
 [node name="StaticBody3D2" type="StaticBody3D" parent="." unique_id=159290763]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -0.48716187)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D2" unique_id=539260459]
 shape = SubResource("BoxShape3D_4j7iv")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D2" unique_id=1110339131]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.038858414)
 mesh = SubResource("BoxMesh_jv6wj")
 
 [node name="Node" type="Node" parent="." unique_id=932491557]
@@ -103,6 +137,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 2, -4)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D3" unique_id=1555251393]
 shape = SubResource("BoxShape3D_jv6wj")
 debug_color = Color(0.47950977, 0.5569737, 0.5274897, 0.41960785)
+
+[node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="StaticBody3D3/CollisionShape3D" unique_id=530725165]
+material = SubResource("SteamAudioMaterial_4j7iv")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D3" unique_id=1145302179]
 transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 0.5, 0, 0.5, 0)
@@ -115,6 +152,10 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 
 shape = SubResource("BoxShape3D_jv6wj")
 debug_color = Color(0.47950977, 0.5569737, 0.5274897, 0.41960785)
 
+[node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="StaticBody3D4/CollisionShape3D" unique_id=1696798694]
+material = SubResource("SteamAudioMaterial_jka67")
+transform = Transform3D(1, 0, -3.5527137e-15, 0, 1, 0, 3.5527137e-15, 0, 1, 0, 0, 0)
+
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D4" unique_id=1959512595]
 transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 0.5, 0, 0.5, 0)
 mesh = SubResource("BoxMesh_sbew2")
@@ -125,6 +166,10 @@ transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 13, 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D5" unique_id=87116197]
 shape = SubResource("BoxShape3D_jv6wj")
 debug_color = Color(0.47950977, 0.5569737, 0.5274897, 0.41960785)
+
+[node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="StaticBody3D5/CollisionShape3D" unique_id=919931756]
+material = SubResource("SteamAudioMaterial_jv6wj")
+transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 0.5, 0, 0.5, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D5" unique_id=394871951]
 transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 0.5, 0, 0.5, 0)
@@ -138,7 +183,7 @@ shape = SubResource("BoxShape3D_jv6wj")
 debug_color = Color(0.47950977, 0.5569737, 0.5274897, 0.41960785)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D6" unique_id=1772859324]
-transform = Transform3D(6, 0, 0, 0, 6, 0, 0, 0, 0.5, 0, 0.5, 0)
+transform = Transform3D(6, -1.6940659e-21, 8.351872e-23, -1.6940659e-21, 6, 0, 1.0022246e-21, 0, 0.5, 0, 0.5, 0)
 mesh = SubResource("BoxMesh_sbew2")
 
 [node name="GridMap" type="GridMap" parent="." unique_id=830529879]
@@ -147,3 +192,31 @@ mesh = SubResource("BoxMesh_sbew2")
 script = ExtResource("5_i5arm")
 port = 8687
 metadata/_custom_type_script = "uid://w8v0v76wc4r2"
+
+[node name="Path3D" type="Path3D" parent="." unique_id=1801388306]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 0)
+curve = SubResource("Curve3D_jka67")
+debug_custom_color = Color(1, 0, 0, 1)
+
+[node name="PathFollow3D" type="PathFollow3D" parent="Path3D" unique_id=1812057539]
+transform = Transform3D(-0.86569446, 1.452619e-07, 0.5005715, 7.105424e-15, 1, -2.901917e-07, -0.50057155, -2.5121767e-07, -0.8656944, 0.7627177, -9.536743e-07, -0.49717355)
+script = ExtResource("5_wc5p8")
+
+[node name="Node3D" type="Node3D" parent="Path3D/PathFollow3D" unique_id=492499598]
+
+[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="Path3D/PathFollow3D/Node3D" unique_id=1952165456]
+distance_attenuation = true
+air_absorption = true
+reflection = true
+transform = Transform3D(-0.8656955, 1.4494927e-13, -0.50057214, 1.4526198e-07, 1, -2.5121756e-07, 0.50057214, -2.9019202e-07, -0.8656955, -0.21958876, 0.6612721, -0.17404509)
+stream = ExtResource("1_jka67")
+attenuation_model = 3
+volume_db = 32.508
+unit_size = 5.0
+autoplay = true
+panning_strength = 0.0
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Path3D/PathFollow3D/Node3D" unique_id=37558507]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Path3D/PathFollow3D/Node3D/StaticBody3D" unique_id=771274583]
+mesh = SubResource("BoxMesh_4j7iv")
