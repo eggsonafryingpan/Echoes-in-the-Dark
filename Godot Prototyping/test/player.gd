@@ -5,6 +5,7 @@ const JUMP_VELOCITY = 4.5
 
 @onready var pivot = $CamOrigin
 @export var sens = 0.5
+@onready var hit_audio: SteamAudioPlayer = $HitAudio
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -42,3 +43,4 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, SPEED)
 
 	move_and_slide()
+	
