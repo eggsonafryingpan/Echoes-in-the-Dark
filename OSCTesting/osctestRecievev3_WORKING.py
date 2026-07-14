@@ -55,16 +55,18 @@ sensors = {
 def handler(address, *args):
     global sensors
     # EMOTIBIT CHANGE MAYBE???
-    if "EmotiBit" not in address or args[0] is None:
+    if "EmotiBit" not in address:
         return
-    
+
     sensor_name = address.split("/")[-1]
+    if sensor_name not in sensors:
+        return
     sensor = sensors[sensor_name]
     sensor["raw_data"].append(args[0])
 
     # print(sensor_name, "Data: {args[0]}")
 
-client = SimpleUDPClient("127.0.0.1",8687)
+client = SimpleUDPClient("127.0.0.1", 8687)
 
 def sendElevated():
     global client
@@ -75,6 +77,7 @@ def sendElevated():
 def update():
     global sensors, elevated
 
+    #Individual cusums
     cusums = []
 
     for sensor in sensors.values():
@@ -100,9 +103,10 @@ def update():
     if len(cusums) == 0:
         return
     
+    #rms for averaging cusum
     rms_cusum = math.sqrt(sum(x*x for x in cusums) / len(cusums))
     
-    print("CUSUM: ",rms_cusum)
+    print("CUSUM: ",rms_cusum) #Larger number = more elevated
     
 
     if rms_cusum >= THRESHOLD_HIGH:
