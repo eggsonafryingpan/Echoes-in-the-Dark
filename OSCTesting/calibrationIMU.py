@@ -4,6 +4,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 import sys
 import threading
 import numpy as np
+import json
 
 last_process = time.monotonic()
 
@@ -31,7 +32,11 @@ sensors = {
     },
 }
 
-calibration = [[0,0,0],[0,0,-9.81],[0,0,0]]
+calibration = {
+    "GYRO": [0,0,0],
+    "ACC": [0,-9.81,0],
+    "MAG": [0,0,0],
+}
 
 def calc_calibration():
     #GYRO calibration is on in deg
@@ -40,13 +45,14 @@ def calc_calibration():
             raise ValueError("GYRO data cannot be empty, check OSC")
         data = np.array(axis_data)
         mean = np.mean(data)
-        calibration[0][index] = mean
+        calibration["GYRO"][index] = mean
+        
     for index, axis_data in enumerate(sensors["ACC"].values()):
         if len(axis_data) == 0:
             raise ValueError("ACC data cannot be empty, check OSC")
         data = np.array(axis_data)
         mean = np.mean(data)
-        calibration[1][index] += mean
+        calibration["ACC"][index] += mean
 
 def calc_calibration_MAG():
     for index, axis_data in enumerate(sensors["MAG"].values()):
@@ -56,13 +62,12 @@ def calc_calibration_MAG():
         data_min = data.min(axis=0)
         data_max = data.max(axis=0)
         bias = (data_min + data_max) / 2
-        calibration[2][index] = bias
+        calibration["MAG"][index] = bias
 
 
 def write_calibration():
-    result = "/".join(",".join(map(str, sensor)) for sensor in calibration)
-    with open("calibration.txt", "w") as f:
-        f.write(result)
+    with open("calibrationIMU.json", "w") as f:
+        json.dump(calibration, f, indent=4)
 
 
 
@@ -88,6 +93,7 @@ def timer():
             break
         time.sleep(0.01)
     write_calibration()
+    print("Written to file")
 
 threading.Thread(target=timer,daemon=True).start()
 

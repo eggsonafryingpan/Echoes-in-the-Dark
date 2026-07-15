@@ -34,7 +34,7 @@ sensors = {
         "raw_data": [],
         "prev_cusum": 0,
         "cusum": 0,
-        "weight": -1,
+        "weight": 1,
         "baseline_mean": 0,
         "baseline_stdev": 1
     },

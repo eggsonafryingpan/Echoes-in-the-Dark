@@ -6,6 +6,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
 import math
+import json
 
 madgwick = Madgwick(frequency=25) #frequency = packets/second
 
@@ -18,34 +19,22 @@ sensors = {
     "MAG": [None] * 3,
 }
 
-
-
-def get_calibration():
-    calibrationFile = open("calibration.txt")
-    calib_vals = calibrationFile.read().split("/")
-    calib_strings = [sensor.split(",") for sensor in calib_vals]
-    calib = [[float(value) for value in row] for row in calib_strings]
-    print(calib)
-    return calib
-
-calib = get_calibration()
-
+with open("calibrationIMU.json", "r") as f:
+    calibration = json.load(f)
 
 
 
 
 def updateSensor(sensor_name, axis, val):
-
-    sensor_index = list(sensors.keys()).index(sensor_name)
     sensor = sensors[sensor_name]
     #In case xyz come in different orders
     match axis:
         case "X":
-            sensor[0] = val - calib[sensor_index][0]
+            sensor[0] = val - calibration[sensor_name][0]
         case "Y":
-            sensor[1] = val - calib[sensor_index][1]
+            sensor[1] = val - calibration[sensor_name][1]
         case "Z":
-            sensor[2] = val - calib[sensor_index][2]
+            sensor[2] = val - calibration[sensor_name][2]
 
 
 def processData():

@@ -13,7 +13,7 @@ while True :
     delta = random.randint(-2,2)
     if (hr + delta > -10 and hr + delta < 10):
         hr += delta
-        eda -= delta
+        eda += delta
         temp += delta
     client.send_message("/EmotiBit/0/HR",hr)
     client.send_message("/EmotiBit/0/EDA",eda)
