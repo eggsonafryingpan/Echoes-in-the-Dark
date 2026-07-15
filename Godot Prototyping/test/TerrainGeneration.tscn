@@ -6,6 +6,7 @@
 [ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="4_dssnh"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="4_o0psh"]
 [ext_resource type="Script" uid="uid://bibn68t3f7jq6" path="res://path_follow_3d.gd" id="5_snu34"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_ya1le"]
 [ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="6_dnbkt"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
@@ -105,9 +106,10 @@ margin = 0.0
 
 [node name="BodyMesh" type="MeshInstance3D" parent="player" unique_id=668820480]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+visible = false
 mesh = SubResource("CapsuleMesh_jqwnj")
 
-[node name="OSCReceiver" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
+[node name="OSCReceiverElevated" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
 script = ExtResource("3_ya1le")
 target_server = NodePath("../../OSCServer")
 osc_address = "/Godot/elevated"
@@ -120,6 +122,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 stream = ExtResource("4_dssnh")
 volume_db = -8.32
 panning_strength = 0.0
+
+[node name="OSCReceiverIMU" type="Node" parent="player" unique_id=170654515 node_paths=PackedStringArray("target_server")]
+script = ExtResource("5_ya1le")
+target_server = NodePath("../../OSCServer")
+osc_address = "/Godot/IMU"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 
 [node name="StaticBody3D2" type="StaticBody3D" parent="." unique_id=159290763]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -0.48716187)

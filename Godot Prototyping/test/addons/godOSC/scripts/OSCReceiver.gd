@@ -14,7 +14,7 @@ extends Node
 		update_configuration_warnings()
 
 ## The OSC address to receive
-@export var osc_address := "/EmotiBit/EDA"
+@export var osc_address := "/Godot/"
 
 ## Get the parent of this node
 @onready var parent = get_parent()

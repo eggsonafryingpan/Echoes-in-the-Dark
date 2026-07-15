@@ -17,6 +17,8 @@ func _input(event):
 		rotate_y(deg_to_rad(-event.relative.x * sens))
 		pivot.rotate_x(deg_to_rad(-event.relative.y * sens))
 		pivot.rotation.x = clamp(pivot.rotation.x, deg_to_rad(-90),deg_to_rad(45))
+		
+
 
 func _physics_process(delta: float) -> void:
 	

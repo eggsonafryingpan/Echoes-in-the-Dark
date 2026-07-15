@@ -20,11 +20,10 @@ curr_q = madgwick.updateMARG(
     mag=mag_data
 )
 
-delta_q = curr_q * np.linalg.inv(prev_q)
-
-
-# print("Current Orientation Quaternion (w, x, y, z):")
-# print(q)
+q1 = Quaternion(q=prev_q)
+q2 = Quaternion(q=curr_q)
+#Quaternion difference
+delta_q = q2.product(q1.conjugate)
 
 euler = q2euler(delta_q) # IN RADIANS
 print(np.degrees(euler))
