@@ -23,19 +23,25 @@ mag_world = [1.0, 0.0, 0.2]
 
 while True:
     # Gyroscope
+    # gx = 0.0
+    # gy = 0.0
+    # gz = yaw_rate
     gx = 0.0
     gy = 0.0
-    gz = yaw_rate
+    gz = 0.5
 
     # Accelerometer (gravity)
     ax = 0.0
     ay = 0.0
-    az = 9.81
+    az = 9.81 + 0.5
 
     # Rotate world magnetic field into sensor frame
-    mx = mag_world[0] * math.cos(yaw) + mag_world[1] * math.sin(yaw)
-    my = -mag_world[0] * math.sin(yaw) + mag_world[1] * math.cos(yaw)
-    mz = mag_world[2]
+    # mx = mag_world[0] * math.cos(yaw) + mag_world[1] * math.sin(yaw)
+    # my = -mag_world[0] * math.sin(yaw) + mag_world[1] * math.cos(yaw)
+    # mz = mag_world[2]
+    mx = 0.0
+    my = 0.0
+    mz = 0.5
 
 
     client.send_message("/EmotiBit/0/GYRO:X",gx)

@@ -7,7 +7,7 @@ import statistics
 import math
 
 #How big is window for data (seconds)
-WINDOW_TIME = 1
+WINDOW_TIME = 3
 
 #sensitivity for CUSUM
 SENS = 1
@@ -53,10 +53,6 @@ sensors = {
 
 
 def handler(address, *args):
-    global sensors
-    # EMOTIBIT CHANGE MAYBE???
-    if "EmotiBit" not in address:
-        return
 
     sensor_name = address.split("/")[-1]
     if sensor_name not in sensors:
@@ -64,7 +60,7 @@ def handler(address, *args):
     sensor = sensors[sensor_name]
     sensor["raw_data"].append(args[0])
 
-    # print(sensor_name, "Data: {args[0]}")
+    # print(sensor_name, "Data:",args[0])
 
 client = SimpleUDPClient("127.0.0.1", 8687)
 
@@ -124,9 +120,6 @@ dispatcher = Dispatcher()
 dispatcher.set_default_handler(handler)  
 
 
-#IP AND PORT
-server = BlockingOSCUDPServer(("127.0.0.1", 12345), dispatcher)
-
 
 #Timer for window
 def timer():
@@ -140,6 +133,9 @@ def timer():
 
 threading.Thread(target=timer,daemon=True).start()
 
+
+#IP AND PORT
+server = BlockingOSCUDPServer(("127.0.0.1", 12347), dispatcher)
 print("Recieving...")
 server.serve_forever()
 

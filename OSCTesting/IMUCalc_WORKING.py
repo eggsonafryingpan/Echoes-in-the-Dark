@@ -59,7 +59,7 @@ def processData():
 
 
 def handler(address, *args):
-    if "EmotiBit" not in address or len(args) != 1:
+    if ":" not in address or len(args) != 1:
         return
     
     #Extracting data from address
@@ -92,7 +92,7 @@ dispatcher = Dispatcher()
 dispatcher.set_default_handler(handler)
 
 
-server = BlockingOSCUDPServer(("127.0.0.1", 12345), dispatcher)
+server = BlockingOSCUDPServer(("127.0.0.1", 12346), dispatcher)
 print("Recieving...")
 server.serve_forever()
 

@@ -43,7 +43,7 @@ def calc_calibration():
         calibration[sensor_name]["stdev"] = stdev
 
 def write_calibration():
-    with open("calibrationElevated.json", "w") as f:
+    with open("calibrationElevation.json", "w") as f:
         json.dump(calibration, f, indent=4)
 
 
