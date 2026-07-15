@@ -5,41 +5,47 @@ from ahrs.common.quaternion import Quaternion
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
-import time
 import math
 
-madgwick = Madgwick(frequency=25) #packets/second
+madgwick = Madgwick(frequency=25) #frequency = packets/second
 
-#curr * prev^-1   .inverse()
 prev_q = np.array([1.0, 0.0, 0.0, 0.0])
 curr_q = np.array([1.0, 0.0, 0.0, 0.0])
 
-#UGH IM SO DONE IM NOT DOING BUFFER IDC
 sensors = {
-    "GYRO": [None] * 3, #RADIANNNSSSS
+    "GYRO": [None] * 3, #In radians
     "ACC": [None] * 3,
     "MAG": [None] * 3,
 }
 
 
 
-calibrationFile = open("calibration.txt")
-calib = calibrationFile.read().split(",")
-calib = [float(x) for x in calib]
-print(calib)
+def get_calibration():
+    calibrationFile = open("calibration.txt")
+    calib_vals = calibrationFile.read().split("/")
+    calib_strings = [sensor.split(",") for sensor in calib_vals]
+    calib = [[float(value) for value in row] for row in calib_strings]
+    print(calib)
+    return calib
+
+calib = get_calibration()
 
 
-def updateSensor(curr, axis, val):
-    #PREPROCESS PLZ
 
+
+
+def updateSensor(sensor_name, axis, val):
+
+    sensor_index = list(sensors.keys()).index(sensor_name)
+    sensor = sensors[sensor_name]
     #In case xyz come in different orders
     match axis:
         case "X":
-            curr[0] = val
+            sensor[0] = val - calib[sensor_index][0]
         case "Y":
-            curr[1] = val
+            sensor[1] = val - calib[sensor_index][1]
         case "Z":
-            curr[2] = val
+            sensor[2] = val - calib[sensor_index][2]
 
 
 def processData():
@@ -73,9 +79,9 @@ def handler(address, *args):
     sensor_name = sensor_info[0]
     axis = sensor_info[1]
 
-    sensor = sensors[sensor_name]
-    updateSensor(sensor, axis, val)
+    updateSensor(sensor_name, axis, val)
 
+    #When all data is collected
     if all(all(x is not None for x in sensor) for sensor in sensors.values()):
         imu = processData()
         sendGodot(imu)
