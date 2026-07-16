@@ -5,6 +5,7 @@ import sys
 import threading
 import numpy as np
 import json
+from pathlib import Path
 
 last_process = time.monotonic()
 
@@ -42,8 +43,13 @@ def calc_calibration():
         calibration[sensor_name]["mean"] = mean
         calibration[sensor_name]["stdev"] = stdev
 
+
+
+
+
 def write_calibration():
-    with open("calibrationElevation.json", "w") as f:
+    calibration_path = Path(__file__).parent / "calibrationElevation.json"
+    with calibration_path.open("w", encoding="utf-8") as f:
         json.dump(calibration, f, indent=4)
 
 

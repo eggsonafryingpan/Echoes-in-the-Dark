@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://bydgq1bvyaibu"]
+
+[ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_hqtel"]
+[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="2_sweqy"]
+[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="3_2hs0m"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="4_1jxqw"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
+
+[sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_noarx"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n8wo2"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
+material = SubResource("StandardMaterial3D_n8wo2")
+
+[node name="player" type="CharacterBody3D" unique_id=110084278]
+script = ExtResource("1_hqtel")
+
+[node name="BodyCol" type="CollisionShape3D" parent="." unique_id=1093844162]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_4j7iv")
+
+[node name="CamOrigin" type="Node3D" parent="." unique_id=888050945]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="CamOrigin" unique_id=437404174]
+
+[node name="SteamAudioListener" type="SteamAudioListener" parent="CamOrigin/Camera3D" unique_id=1705600654]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CamOrigin" unique_id=424483273]
+shape = SubResource("SeparationRayShape3D_noarx")
+spring_length = 0.0
+margin = 0.0
+
+[node name="BodyMesh" type="MeshInstance3D" parent="." unique_id=775430120]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+visible = false
+mesh = SubResource("CapsuleMesh_jqwnj")
+
+[node name="OSCReceiverElevated" type="Node" parent="." unique_id=1183579906 node_paths=PackedStringArray("target_server")]
+script = ExtResource("2_sweqy")
+target_server = NodePath("")
+osc_address = "/Godot/elevated"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="VoxelViewer" type="VoxelViewer" parent="." unique_id=1358258073]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="HitAudio" type="SteamAudioPlayer" parent="." unique_id=2042900562]
+stream = ExtResource("3_2hs0m")
+volume_db = -8.32
+panning_strength = 0.0
+
+[node name="OSCReceiverIMU" type="Node" parent="." unique_id=894571898 node_paths=PackedStringArray("target_server")]
+script = ExtResource("4_1jxqw")
+target_server = NodePath("")
+osc_address = "/Godot/IMU"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"

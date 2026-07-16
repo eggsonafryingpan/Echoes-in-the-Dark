@@ -11,7 +11,7 @@ clientElevated = SimpleUDPClient("127.0.0.1", 12347)
 def handler(address, *args):
     if "EmotiBit" not in address or len(args) == 0:
         return
-    # print("Fowarding...") 
+    print("Fowarding...") 
     clientIMU.send_message(address,list(args))
     clientElevated.send_message(address,list(args))
 

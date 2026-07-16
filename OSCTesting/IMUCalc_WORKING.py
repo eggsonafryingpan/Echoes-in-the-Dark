@@ -5,6 +5,7 @@ from ahrs.common.quaternion import Quaternion
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
+from pathlib import Path
 import math
 import json
 
@@ -19,11 +20,9 @@ sensors = {
     "MAG": [None] * 3,
 }
 
-try:
-    with open("calibrationIMU.json", "r") as f:
-        calibration = json.load(f)
-except FileNotFoundError:
-    print("Calibration loading error")
+calibration_path = Path(__file__).parent / "calibrationIMU.json"
+with calibration_path.open("r", encoding="utf-8") as f:
+    calibration = json.load(f)
 
 
 

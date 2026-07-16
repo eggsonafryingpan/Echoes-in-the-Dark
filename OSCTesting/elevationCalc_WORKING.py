@@ -6,6 +6,7 @@ import threading
 import statistics
 import math
 import json
+from pathlib import Path
 
 #How big is window for data (seconds)
 WINDOW_TIME = 1
@@ -17,7 +18,8 @@ SENS = 1
 THRESHOLD_HIGH = 2
 THRESHOLD_LOW = 1
 
-with open("calibrationElevation.json", "r") as f:
+calibration_path = Path(__file__).parent / "calibrationElevation.json"
+with calibration_path.open("r", encoding="utf-8") as f:
     calibration = json.load(f)
 
 last_process = time.monotonic()

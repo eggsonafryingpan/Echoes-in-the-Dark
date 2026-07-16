@@ -14,7 +14,10 @@
 
 [sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_noarx"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n8wo2"]
+
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
+material = SubResource("StandardMaterial3D_n8wo2")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_4j7iv"]
 
@@ -88,6 +91,7 @@ script = ExtResource("1_55k8i")
 metadata/_custom_type_script = "uid://dkb8ltjc6067n"
 
 [node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.20690012, 0)
 script = ExtResource("2_dssnh")
 
 [node name="BodyCol" type="CollisionShape3D" parent="player" unique_id=1005949383]
@@ -108,7 +112,6 @@ margin = 0.0
 
 [node name="BodyMesh" type="MeshInstance3D" parent="player" unique_id=668820480]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-visible = false
 mesh = SubResource("CapsuleMesh_jqwnj")
 
 [node name="OSCReceiverElevated" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
