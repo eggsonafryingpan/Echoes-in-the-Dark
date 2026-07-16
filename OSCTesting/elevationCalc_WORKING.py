@@ -5,9 +5,10 @@ import time
 import threading
 import statistics
 import math
+import json
 
 #How big is window for data (seconds)
-WINDOW_TIME = 3
+WINDOW_TIME = 1
 
 #sensitivity for CUSUM
 SENS = 1
@@ -16,7 +17,8 @@ SENS = 1
 THRESHOLD_HIGH = 2
 THRESHOLD_LOW = 1
 
-
+with open("calibrationElevation.json", "r") as f:
+    calibration = json.load(f)
 
 last_process = time.monotonic()
 elevated = False
@@ -111,6 +113,7 @@ def update():
     elif rms_cusum <= THRESHOLD_LOW:
         elevated = False
         sendElevated()
+    print(elevated)
 
 
 
@@ -127,7 +130,6 @@ def timer():
     while True:
         if (time.monotonic() - last_process >= WINDOW_TIME):
             update()
-            print(elevated)
             last_process = time.monotonic()
         time.sleep(0.01)
 

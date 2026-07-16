@@ -19,8 +19,11 @@ sensors = {
     "MAG": [None] * 3,
 }
 
-with open("calibrationIMU.json", "r") as f:
-    calibration = json.load(f)
+try:
+    with open("calibrationIMU.json", "r") as f:
+        calibration = json.load(f)
+except FileNotFoundError:
+    print("Calibration loading error")
 
 
 
@@ -80,7 +83,6 @@ def handler(address, *args):
 client = SimpleUDPClient("127.0.0.1", 8687)
 
 def sendGodot(data):
-    print("Sending...")
     client.send_message("/Godot/IMU",data)
 
 def clearData():

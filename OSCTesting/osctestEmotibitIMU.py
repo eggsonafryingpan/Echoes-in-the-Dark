@@ -59,6 +59,6 @@ while True:
     t += period
 
     time.sleep(period)
-    print("Sending...")
+    print("Sending IMU...")
 
 
