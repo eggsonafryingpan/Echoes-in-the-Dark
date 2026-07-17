@@ -31,24 +31,24 @@ sensors = {
         "prev_cusum": 0,
         "cusum": 0,
         "weight": 1,
-        "baseline_mean": 0,
-        "baseline_stdev": 1
+        "baseline_mean": calibration["HR"]["mean"],
+        "baseline_stdev": calibration["HR"]["stdev"]
     },
     "EDA": {
         "raw_data": [],
         "prev_cusum": 0,
         "cusum": 0,
         "weight": 1,
-        "baseline_mean": 0,
-        "baseline_stdev": 1
+        "baseline_mean": calibration["EDA"]["mean"],
+        "baseline_stdev": calibration["EDA"]["stdev"]
     },
     "TEMP": {
         "raw_data": [],
         "prev_cusum": 0,
         "cusum": 0,
         "weight": 1,
-        "baseline_mean": 0,
-        "baseline_stdev": 1
+        "baseline_mean": calibration["TEMP"]["mean"],
+        "baseline_stdev": calibration["TEMP"]["stdev"]
     },
 }
 
