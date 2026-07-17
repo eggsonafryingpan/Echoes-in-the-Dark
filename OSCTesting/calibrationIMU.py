@@ -96,6 +96,7 @@ def timer():
         time.sleep(0.01)
     write_calibration()
     print("Written to file")
+    sys.exit()
 
 threading.Thread(target=timer,daemon=True).start()
 

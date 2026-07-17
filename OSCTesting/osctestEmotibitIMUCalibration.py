@@ -21,8 +21,8 @@ while True:
 
     # Accelerometer (gravity)
     ax = 0.1
-    ay = 0.1
-    az = 9.81
+    ay = 9.81
+    az = 0.1
 
     # Rotate world magnetic field into sensor frame
     mx = 1

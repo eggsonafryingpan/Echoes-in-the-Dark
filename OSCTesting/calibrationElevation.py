@@ -61,9 +61,9 @@ def timer():
             calc_calibration()
             write_calibration()
             print("Calibration finished :D")
-            return
+            break
         time.sleep(0.01)
-    
+    sys.exit()
 
 threading.Thread(target=timer,daemon=True).start()
 
