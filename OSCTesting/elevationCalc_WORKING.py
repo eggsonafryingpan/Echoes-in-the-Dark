@@ -12,7 +12,7 @@ from pathlib import Path
 WINDOW_TIME = 1
 
 #sensitivity for CUSUM
-SENS = 1
+SENS = 0.5
 
 #Threshold for CUSUM aka how long do you have to be elevated to trigger
 THRESHOLD_HIGH = 2
@@ -91,7 +91,8 @@ def update():
         z_score_weighted = z_score * sensor["weight"]
 
         last_cusum = sensor["cusum"]
-        sensor["cusum"] = min(max(0,sensor["prev_cusum"]+(z_score_weighted-SENS)),THRESHOLD_HIGH*1.2)
+        #Capping cusum
+        sensor["cusum"] = min(max(0,sensor["prev_cusum"]+(z_score_weighted-SENS)),THRESHOLD_HIGH*1.2) #*1.2 to allow Cusum to not hit on threshold, change later
         #possibly implement lower cusum
         sensor["prev_cusum"] = last_cusum
 
