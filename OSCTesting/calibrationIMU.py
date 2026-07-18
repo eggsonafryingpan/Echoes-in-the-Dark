@@ -104,13 +104,14 @@ threading.Thread(target=timer,daemon=True).start()
 
 
 def handler(address, *args):
-    if "EmotiBit" not in address or len(args) != 1:
+    if "EmotiBit" not in address:
         return
-    
     #Extracting data from address
     val = args[0]
     sensor_info = address.split("/")[-1].split(":")
     sensor_name = sensor_info[0]
+    if sensor_name not in sensors.keys():
+        return
     axis = sensor_info[1]
 
     if sensor_name == "MAG" and calibration_stage != 1:

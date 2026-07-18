@@ -9,7 +9,7 @@ from pathlib import Path
 import math
 import json
 
-madgwick = Madgwick(frequency=25) #frequency = packets/second
+madgwick = Madgwick(frequency=8) #frequency = packets/second
 
 prev_q = np.array([1.0, 0.0, 0.0, 0.0])
 curr_q = np.array([1.0, 0.0, 0.0, 0.0])
@@ -61,7 +61,7 @@ def processData():
 
 
 def handler(address, *args):
-    if ":" not in address or len(args) != 1:
+    if ":" not in address:
         return
     
     #Extracting data from address
@@ -69,6 +69,8 @@ def handler(address, *args):
     sensor_info = address.split("/")[-1].split(":")
     sensor_name = sensor_info[0]
     axis = sensor_info[1]
+    if sensor_name not in sensors.keys():
+        return
 
     updateSensor(sensor_name, axis, val)
 

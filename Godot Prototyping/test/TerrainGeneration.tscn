@@ -248,11 +248,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
 environment = SubResource("Environment_jqwnj")
 
-[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
+[node name="Node3D" type="Node3D" parent="." unique_id=1519181446]
+transform = Transform3D(-0.86569506, -1.4980205e-14, -0.5005719, 1.4526191e-07, 1, -2.512177e-07, 0.5005719, -2.901919e-07, -0.86569506, -0.21958876, 0.6612721, 37.825954)
+
+[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="Node3D" unique_id=1667717570]
 distance_attenuation = true
 air_absorption = true
 reflection = true
-transform = Transform3D(-0.86569506, -1.4980205e-14, -0.5005719, 1.4526191e-07, 1, -2.512177e-07, 0.5005719, -2.901919e-07, -0.86569506, -0.21958876, 0.6612721, 37.825954)
+transform = Transform3D(1, 1.4210855e-14, 0, -2.842171e-14, 1, 2.842171e-14, 0, 0, 1, 0, 0, 0)
 stream = ExtResource("9_o0psh")
 attenuation_model = 3
 volume_db = 32.508
@@ -260,3 +263,11 @@ unit_size = 5.0
 autoplay = true
 max_distance = 106.39
 panning_strength = 0.0
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Node3D" unique_id=505950611]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Node3D/StaticBody3D" unique_id=792600704]
+mesh = SubResource("BoxMesh_4j7iv")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Node3D/StaticBody3D" unique_id=547688042]
+shape = SubResource("BoxShape3D_xeyml")
