@@ -13,7 +13,7 @@ last_process = time.monotonic()
 calibration_stage = 0
 
 #in seconds
-CALIBRATION_PERIOD = 10
+CALIBRATION_PERIOD = 20
 
 sensors = {
     "GYRO": {
@@ -107,7 +107,6 @@ def handler(address, *args):
     if "EmotiBit" not in address:
         return
     #Extracting data from address
-    val = args[0]
     sensor_info = address.split("/")[-1].split(":")
     sensor_name = sensor_info[0]
     if sensor_name not in sensors.keys():
@@ -118,9 +117,7 @@ def handler(address, *args):
         return
     if (sensor_name == "GYRO" or sensor_name == "ACC") and calibration_stage !=0:
         return
-    sensors[sensor_name][axis].append(val)
-
-
+    sensors[sensor_name][axis].extend(args)
 
 
 dispatcher = Dispatcher()

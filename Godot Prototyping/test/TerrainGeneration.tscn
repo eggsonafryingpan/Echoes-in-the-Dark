@@ -87,7 +87,6 @@ volume_db = -15.844
 autoplay = true
 max_distance = 1610.7
 panning_strength = 1.9
-bus = &"RaytracedAmbient"
 script = ExtResource("1_55k8i")
 metadata/_custom_type_script = "uid://dkb8ltjc6067n"
 

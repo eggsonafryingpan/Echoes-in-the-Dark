@@ -12,7 +12,7 @@ def handler(address, *args):
     if "EmotiBit" not in address:
         return
     
-    print("Fowarding...", address) 
+    print("Fowarding...", address, args) 
     clientIMU.send_message(address,list(args))
     clientElevated.send_message(address,list(args))
 
