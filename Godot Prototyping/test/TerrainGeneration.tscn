@@ -130,6 +130,7 @@ panning_strength = 0.0
 
 [node name="OSCReceiverIMU" type="Node" parent="player" unique_id=170654515 node_paths=PackedStringArray("target_server")]
 script = ExtResource("5_ya1le")
+SENS = 1
 target_server = NodePath("../../OSCServer")
 osc_address = "/Godot/IMU"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
