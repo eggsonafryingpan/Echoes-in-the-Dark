@@ -10,14 +10,14 @@ from pathlib import Path
 import numpy as np
 
 #How big is window for data (seconds)
-WINDOW_TIME = 1
+WINDOW_TIME = 2
 
 #sensitivity for CUSUM
-SENS = 0.5
+SENS = 1
 
 #Threshold for CUSUM aka how long do you have to be elevated to trigger
-THRESHOLD_HIGH = 3
-THRESHOLD_LOW = 2
+THRESHOLD_HIGH = 1.5
+THRESHOLD_LOW = 1
 
 calibration_path = Path(__file__).parent / "calibrationElevation.json"
 with calibration_path.open("r", encoding="utf-8") as f:
