@@ -7,15 +7,16 @@ import statistics
 import math
 import json
 from pathlib import Path
+import numpy as np
 
 #How big is window for data (seconds)
-WINDOW_TIME = 1
+WINDOW_TIME = 2
 
 #sensitivity for CUSUM
-SENS = 0.5
+SENS = 1
 
 #Threshold for CUSUM aka how long do you have to be elevated to trigger
-THRESHOLD_HIGH = 2
+THRESHOLD_HIGH = 1.5
 THRESHOLD_LOW = 1
 
 calibration_path = Path(__file__).parent / "calibrationElevation.json"
@@ -31,25 +32,25 @@ sensors = {
         "prev_cusum": 0,
         "cusum": 0,
         "weight": 1,
-        "baseline_mean": 0,
-        "baseline_stdev": 1
+        "baseline_mean": calibration["HR"]["mean"],
+        "baseline_stdev": calibration["HR"]["stdev"]
     },
     "EDA": {
         "raw_data": [],
         "prev_cusum": 0,
         "cusum": 0,
-        "weight": 1,
-        "baseline_mean": 0,
-        "baseline_stdev": 1
+        "weight": 0.3,
+        "baseline_mean": calibration["EDA"]["mean"],
+        "baseline_stdev": calibration["EDA"]["stdev"]
     },
-    "TEMP": {
-        "raw_data": [],
-        "prev_cusum": 0,
-        "cusum": 0,
-        "weight": 1,
-        "baseline_mean": 0,
-        "baseline_stdev": 1
-    },
+    # "TEMP": {
+    #     "raw_data": [],
+    #     "prev_cusum": 0,
+    #     "cusum": 0,
+    #     "weight": 1,
+    #     "baseline_mean": calibration["TEMP"]["mean"],
+    #     "baseline_stdev": calibration["TEMP"]["stdev"]
+    # },
 }
 
 
@@ -105,6 +106,8 @@ def update():
         return
     
     #rms for averaging cusum
+    print(cusums)
+    # rms_cusum = np.mean(cusums)
     rms_cusum = math.sqrt(sum(x*x for x in cusums) / len(cusums))
     
     print("CUSUM: ",rms_cusum) #Larger number = more elevated

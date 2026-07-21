@@ -9,15 +9,15 @@ from pathlib import Path
 import math
 import json
 
-madgwick = Madgwick(frequency=25) #frequency = packets/second
+madgwick = Madgwick(frequency=25) #frequency = packets/second 49/5
 
 prev_q = np.array([1.0, 0.0, 0.0, 0.0])
 curr_q = np.array([1.0, 0.0, 0.0, 0.0])
 
 sensors = {
-    "GYRO": [None] * 3, #In radians
-    "ACC": [None] * 3,
-    "MAG": [None] * 3,
+    "GYRO": [None,None,None], #In radians
+    "ACC": [None,None,None],
+    "MAG": [None,None,None],
 }
 
 calibration_path = Path(__file__).parent / "calibrationIMU.json"
@@ -27,57 +27,67 @@ with calibration_path.open("r", encoding="utf-8") as f:
 
 
 
-def updateSensor(sensor_name, axis, val):
+def updateSensor(sensor_name, axis, args):
     sensor = sensors[sensor_name]
     #In case xyz come in different orders
     match axis:
         case "X":
-            sensor[0] = val - calibration[sensor_name][0]
+            sensor[0] = [val - calibration[sensor_name][0] for val in args]
         case "Y":
-            sensor[1] = val - calibration[sensor_name][1]
+            sensor[1] = [val - calibration[sensor_name][1] for val in args]
         case "Z":
-            sensor[2] = val - calibration[sensor_name][2]
+            sensor[2] = [val - calibration[sensor_name][2] for val in args]
 
 
 def processData():
     global prev_q, curr_q
     #DEG TO RAD
-    sensors["GYRO"] = [deg * math.pi / 180 for deg in sensors["GYRO"]]
+    sensors["GYRO"] = [[deg * math.pi / 180 for deg in row] for row in sensors["GYRO"]]
 
-    prev_q = curr_q.copy()
-    curr_q = madgwick.updateMARG(prev_q, gyr=sensors["GYRO"], acc=sensors["ACC"], mag=sensors["MAG"])
+    for i in range(len(sensors["GYRO"][0])):
+        # print("ACC lengths:", [len(x) for x in sensors["ACC"]])
+        # print("GYRO lengths:", [len(x) for x in sensors["GYRO"]])
+        # print("MAG lengths:", [len(x) for x in sensors["MAG"]])
+        prev_q = curr_q.copy()
+        curr_q = madgwick.updateMARG(
+            prev_q,
+            gyr = [axis[i] for axis in sensors["GYRO"]],
+            acc= [axis[i] for axis in sensors["ACC"]],
+            mag= [axis[i] for axis in sensors["MAG"]]
+        )
+        q1 = Quaternion(q=prev_q)
+        q2 = Quaternion(q=curr_q)
 
-    q1 = Quaternion(q=prev_q)
-    q2 = Quaternion(q=curr_q)
+        #Quaternion difference
+        delta_q = q2.product(q1.conjugate)
 
-    #Quaternion difference
-    delta_q = q2.product(q1.conjugate)
+        euler = q2euler(delta_q) # IN RADIANS
+        print("--------------")
+        print(euler)
+        sendGodot(euler)
 
-    euler = q2euler(delta_q) # IN RADIANS
-    print("--------------")
-    print(euler)
+
     return euler
 
 
 
 def handler(address, *args):
-    if ":" not in address or len(args) != 1:
+    if ":" not in address:
         return
     
     #Extracting data from address
-    val = args[0]
     sensor_info = address.split("/")[-1].split(":")
     sensor_name = sensor_info[0]
     axis = sensor_info[1]
+    if sensor_name not in sensors.keys():
+        return
 
-    updateSensor(sensor_name, axis, val)
-
+    updateSensor(sensor_name, axis, args)
     #When all data is collected
-    if all(all(x is not None for x in sensor) for sensor in sensors.values()):
+    if all(axis is not None for sensor in sensors.values() for axis in sensor):
         imu = processData()
-        sendGodot(imu)
+        #sendGodot(imu)
         clearData()
-
 
 client = SimpleUDPClient("127.0.0.1", 8687)
 

@@ -10,12 +10,12 @@ from pathlib import Path
 last_process = time.monotonic()
 
 #in seconds
-CALIBRATION_PERIOD = 5
+CALIBRATION_PERIOD = 20
 
 sensors = {
     "HR": [],
     "EDA": [],
-    "TEMP": [],
+    # "TEMP": [],
 }
 
 calibration = {
@@ -27,10 +27,10 @@ calibration = {
         "mean": 0,
         "stdev": 0,
     },
-    "TEMP": {
-        "mean": 0,
-        "stdev": 0,
-    },
+    # "TEMP": {
+    #     "mean": 0,
+    #     "stdev": 0,
+    # },
 }
 
 def calc_calibration():
@@ -71,12 +71,14 @@ threading.Thread(target=timer,daemon=True).start()
 
 
 def handler(address, *args):
-    if "EmotiBit" not in address or len(args) != 1:
+    if "EmotiBit" not in address:
         return
     
     #Extracting data from address
     val = args[0]
     sensor_name = address.split("/")[-1]
+    if sensor_name not in sensors.keys():
+        return
 
     sensors[sensor_name].append(val)
 
