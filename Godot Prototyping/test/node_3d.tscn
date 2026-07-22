@@ -12,8 +12,6 @@ size = Vector3(60, 2, 60)
 [sub_resource type="BoxMesh" id="BoxMesh_jqwnj"]
 size = Vector3(60, 2, 60)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_noarx"]
-
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
 
 [sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_noarx"]
@@ -38,8 +36,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 shape = SubResource("BoxShape3D_jqwnj")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D" unique_id=1077773902]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.005607605, 0.023081541, -0.0050849915)
 mesh = SubResource("BoxMesh_jqwnj")
-surface_material_override/0 = SubResource("StandardMaterial3D_noarx")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=345707879]
 transform = Transform3D(-0.119449385, 0.42023492, 0.89951897, 0.7046096, -0.6024119, 0.37500012, 0.6994691, 0.67860335, -0.22414394, 0, 26, 0)
