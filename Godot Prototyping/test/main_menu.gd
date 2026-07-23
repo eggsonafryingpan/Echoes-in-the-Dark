@@ -10,7 +10,7 @@ func _on_baseline_pressed():
 
 func _on_start_pressed():
 	print("Starting game...")
-	get_tree().change_scene_to_file("res://node_3d.tscn")
+	get_tree().change_scene_to_file("res://TerrainGeneration.tscn")
 
 func _on_quit_pressed():
 	get_tree().quit()
