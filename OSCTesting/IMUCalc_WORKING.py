@@ -85,8 +85,7 @@ def handler(address, *args):
     updateSensor(sensor_name, axis, args)
     #When all data is collected
     if all(axis is not None for sensor in sensors.values() for axis in sensor):
-        imu = processData()
-        #sendGodot(imu)
+        processData()
         clearData()
 
 client = SimpleUDPClient("127.0.0.1", 8687)
