@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bfj2uqhgfohu"]
+
+[ext_resource type="Script" uid="uid://ot5mbswvj7gv" path="res://cave_generation.gd" id="1_qeojb"]
+
+[node name="Node2D" type="Node2D" unique_id=846362635]
+script = ExtResource("1_qeojb")
