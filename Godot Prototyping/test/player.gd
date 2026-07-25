@@ -55,9 +55,11 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 		velocity.z = move_toward(velocity.z, 0, SPEED)
 
+
+	
 	move_and_slide()
 	
-	
+	var hori_speed = Vector3(velocity.x, 0.0, velocity.z).length()
 	
 	for i in range(get_slide_collision_count()):
 		var collision = get_slide_collision(i)
@@ -67,11 +69,10 @@ func _physics_process(delta: float) -> void:
 		if norm.dot(Vector3.UP) > 0.7:
 			continue
 		
-		
 		var colDirection = (pos - global_position)
-		var hori_speed = Vector3(velocity.x, 0.0, velocity.z)
+
 		
-		if hori_speed > 0.8:
+		if hori_speed > 0.3 and !hit_audio.playing:
 			hit_audio.global_position = global_position + colDirection * 1
 			hit_audio.play()
 			isColliding = true
