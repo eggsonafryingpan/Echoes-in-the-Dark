@@ -27,8 +27,6 @@ var height : int = 200
 @export
 var turning_freq = 2
 
-@export
-var step_size = 0.8
 
 var random_walk_positions : Array[Vector3] = []
 
@@ -37,15 +35,9 @@ signal terrain_loaded()
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	setup()
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.2).timeout
 	random_walk()
 	
-
-#func _unhandled_input(event: InputEvent) -> void:
-	#if Input.is_action_just_pressed("cave_gen"):
-		
-		
-
 func setup():
 	current_walker.transform = generation_start_marker.transform
 
@@ -55,7 +47,7 @@ func random_walk():
 	for i in range(random_walk_length):
 		
 		# Move the random walker to the new position:
-		current_walker.global_position += curr_direction * step_size
+		current_walker.global_position += curr_direction
 		if i % turning_freq == 0 :
 			curr_direction = get_random_direction() 
 		
@@ -102,7 +94,6 @@ func get_random_direction(use_float : bool = false):
 	if use_float:
 		direction_vector = Vector3(randf_range(-1,1),0,randf_range(-1,1))
 	else:
-		# 9 directions with int
 		direction_vector = Vector3([-1,0,1].pick_random(),0,[-1,0,1].pick_random())
 	
 	var vector_with_magnitude : Vector3 = direction_vector * removal_size
@@ -124,8 +115,8 @@ func _export():
 	mesh_instance.mesh = mesh
 	mesh_instance.transform = transformation
 	CaveGenerator.add_child(mesh_instance)
-	#
-	#var scene = PackedScene.new()
-	#scene.pack(mesh_instance)
-	#
-	#ResourceSaver.save(scene, "res://cave_level.tscn")
+	
+	var scene = PackedScene.new()
+	scene.pack(mesh_instance)
+	
+	ResourceSaver.save(scene, "res://cave_level.tscn")

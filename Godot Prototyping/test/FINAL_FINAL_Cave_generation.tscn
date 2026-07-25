@@ -11,6 +11,13 @@
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
 [ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
 
+[sub_resource type="Environment" id="Environment_jqwnj"]
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 3
+glow_enabled = true
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
 
 [sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_noarx"]
@@ -20,15 +27,7 @@
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
 material = SubResource("StandardMaterial3D_n8wo2")
 
-[sub_resource type="Environment" id="Environment_jqwnj"]
-ambient_light_source = 2
-ambient_light_color = Color(1, 1, 1, 1)
-ambient_light_energy = 0.55
-tonemap_mode = 3
-glow_enabled = true
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1x7i2"]
-cull_mode = 2
 albedo_texture = ExtResource("6_f6lw3")
 uv1_triplanar = true
 uv1_triplanar_sharpness = 5.4641604
@@ -42,8 +41,16 @@ absorption_high = 0.851
 
 [node name="World" type="Node3D" unique_id=1184201749]
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
+environment = SubResource("Environment_jqwnj")
+
 [node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
 scene_type = 0
+
+[node name="OSCServer" type="Node" parent="." unique_id=150244378]
+script = ExtResource("5_mvemf")
+port = 8687
+metadata/_custom_type_script = "uid://w8v0v76wc4r2"
 
 [node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041502953, -1.7267156, 0)
@@ -87,14 +94,6 @@ target_server = NodePath("../../OSCServer")
 osc_address = "/Godot/IMU"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 
-[node name="OSCServer" type="Node" parent="." unique_id=150244378]
-script = ExtResource("5_mvemf")
-port = 8687
-metadata/_custom_type_script = "uid://w8v0v76wc4r2"
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
-environment = SubResource("Environment_jqwnj")
-
 [node name="Cave" parent="." unique_id=1147513181 instance=ExtResource("8_t1ucx")]
 material_override = SubResource("StandardMaterial3D_1x7i2")
 script = ExtResource("9_gmqpq")
@@ -108,7 +107,8 @@ shape = SubResource("BoxShape3D_t1ucx")
 material = SubResource("SteamAudioMaterial_sbew2")
 
 [node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
-min_attenuation_distance = 16.0
+distance_attenuation = true
+min_attenuation_distance = 16.6
 air_absorption = true
 occlusion_radius = 7.0
 occlusion_samples = 50
@@ -117,10 +117,10 @@ reflection = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 stream = ExtResource("8_skw7w")
 attenuation_model = 3
-volume_db = 38.64
-max_db = 3.816
+volume_db = -2.708
+max_db = 0.614
 autoplay = true
-max_distance = 64.6
+max_distance = 41.59
 panning_strength = 0.0
 bus = &"RaytracedReverb"
 script = ExtResource("9_txtix")

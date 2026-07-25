@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://df7i2n15kpntg"]
 
-[ext_resource type="Texture2D" uid="uid://bdtibwsy81qvy" path="res://Mitsuki.jpg" id="1_iaeme"]
-[ext_resource type="Script" uid="uid://cq12yy13jcj8h" path="res://cave_csg.gd" id="1_pxv80"]
+[ext_resource type="Texture2D" uid="uid://bdtibwsy81qvy" path="res://Mitsuki.jpg" id="1_1xale"]
+[ext_resource type="Script" uid="uid://cq12yy13jcj8h" path="res://cave_csg.gd" id="2_mkqkn"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5khg4"]
-albedo_texture = ExtResource("1_iaeme")
+albedo_texture = ExtResource("1_1xale")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lnkjg"]
 albedo_color = Color(1, 0, 1, 1)
@@ -22,12 +22,11 @@ use_collision = true
 use_collision = true
 size = Vector3(300, 50, 300)
 material = SubResource("StandardMaterial3D_5khg4")
-script = ExtResource("1_pxv80")
+script = ExtResource("2_mkqkn")
 generation_start_marker = NodePath("StartMarker")
 random_walk_length = 800
 removal_size = 4.0
 turning_freq = 3
-step_size = 1.0
 
 [node name="CurrentWalker" type="MeshInstance3D" parent="CSGCombiner3D/CSGBox3D" unique_id=1487752939]
 mesh = SubResource("SphereMesh_pxv80")
