@@ -4,11 +4,12 @@ const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 
 var isLocked: bool = false
-
+var isColliding: bool = false
 @onready var pivot = $CamOrigin
 @export var sens = 0.5
 @onready var hit_audio: SteamAudioPlayer = $HitAudio
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
+
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -55,4 +56,28 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, SPEED)
 
 	move_and_slide()
+	
+	
+	
+	for i in range(get_slide_collision_count()):
+		var collision = get_slide_collision(i)
+		var norm = collision.get_normal()
+		var pos = collision.get_position()
+		
+		if norm.dot(Vector3.UP) > 0.7:
+			continue
+		
+		
+		var colDirection = (pos - global_position)
+		var hori_speed = Vector3(velocity.x, 0.0, velocity.z)
+		
+		if hori_speed > 0.8:
+			hit_audio.global_position = global_position + colDirection * 1
+			hit_audio.play()
+			isColliding = true
+			print(colDirection)
+		else:
+			isColliding = false
+		
+	
 	

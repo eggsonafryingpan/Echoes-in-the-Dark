@@ -74,16 +74,17 @@ func random_walk():
 
 # Removal size returns the removal size with a small randomization
 # Currently that is removal size =- removal_size * 0.25
-func get_removal_size(variance : float = 0.25):
-	return removal_size + randf_range(-removal_size * variance, removal_size * variance)
+func get_removal_size(variance : float = 0):
+	return Vector3(removal_size, removal_size, removal_size)
+	#return removal_size + randf_range(-removal_size * variance, removal_size * variance)
 
 	
 func do_sphere_removal():
-	var sphere = CSGSphere3D.new()
-	sphere.radius = get_removal_size()
-	sphere.operation = CSGShape3D.OPERATION_SUBTRACTION
-	CSGCombiner.add_child(sphere)
-	sphere.global_position = $CurrentWalker.global_position
+	var cube = CSGBox3D.new()
+	cube.size = get_removal_size()
+	cube.operation = CSGShape3D.OPERATION_SUBTRACTION
+	CSGCombiner.add_child(cube)
+	cube.global_position = $CurrentWalker.global_position
 	
 
 func get_random_direction(use_float : bool = false):
@@ -119,4 +120,4 @@ func _export():
 	var scene = PackedScene.new()
 	scene.pack(mesh_instance)
 	
-	ResourceSaver.save(scene, "res://cave_level.tscn")
+	ResourceSaver.save(scene, "res://cave_level_square.tscn")

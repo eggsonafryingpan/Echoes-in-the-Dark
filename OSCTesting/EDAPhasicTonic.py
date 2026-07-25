@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 #How big is window for data (seconds)
-WINDOW_TIME = 20
+WINDOW_TIME = 30
 FREQUENCY = 15
 
 last_process = time.monotonic()
@@ -36,7 +36,7 @@ def handler(address, *args):
     sensor = sensors[sensor_name]
     sensor["raw_data"].extend(args)
 
-    # print(sensor_name, "Data:",args[0])
+    print(sensor_name, "Data:",args[0])
 
 client = SimpleUDPClient("127.0.0.1", 8687)
 
