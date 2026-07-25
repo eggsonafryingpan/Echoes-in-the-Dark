@@ -14,5 +14,5 @@ func _custom_control(address : String, vals : Array, time):
 			print(vals[0],vals[1],vals[2])
 			#var rotation = Vector3(vals[0],vals[1],vals[2])
 			player.rotate_y(-vals[0] * SENS)
-			player.pivot.rotate_x(-vals[2] * SENS)
+			#player.pivot.rotate_x(-vals[2] * SENS)
 			#player.rotate_x(vals[1])

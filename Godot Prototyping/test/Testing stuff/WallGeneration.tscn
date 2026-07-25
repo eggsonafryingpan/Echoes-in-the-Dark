@@ -1,14 +1,14 @@
-[gd_scene format=3 uid="uid://o3t4x6l2qo1g"]
+[gd_scene format=3 uid="uid://cixrhbgxkahx2"]
 
-[ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="1_55k8i"]
-[ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="2_dssnh"]
-[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="3_ya1le"]
-[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="4_dssnh"]
-[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="4_o0psh"]
-[ext_resource type="Script" uid="uid://bibn68t3f7jq6" path="res://path_follow_3d.gd" id="5_snu34"]
-[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_ya1le"]
-[ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="6_dnbkt"]
-[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="9_o0psh"]
+[ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="1_3wmdh"]
+[ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="2_y7fhr"]
+[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="3_fl8b2"]
+[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="4_6g62v"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_x2nb1"]
+[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="6_w73vr"]
+[ext_resource type="Script" uid="uid://bibn68t3f7jq6" path="res://Testing stuff/path_follow_3d.gd" id="7_p2cu7"]
+[ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="8_3abyf"]
+[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="9_cix00"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
 
@@ -56,14 +56,11 @@ point_count = 8
 
 [sub_resource type="BoxMesh" id="BoxMesh_4j7iv"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_xeyml"]
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4j7iv"]
 roughness_texture_channel = 4
 uv1_triplanar = true
 
 [sub_resource type="VoxelGeneratorFlat" id="VoxelGeneratorFlat_55k8i"]
-height = 10.0
 
 [sub_resource type="VoxelMesherTransvoxel" id="VoxelMesherTransvoxel_ya1le"]
 
@@ -76,7 +73,9 @@ ambient_light_color = Color(0.641934, 0.641934, 0.641934, 1)
 scene_type = 0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=345707879]
-transform = Transform3D(-0.58269787, 0.7231205, 0.37089086, 0.41377082, -0.12881854, 0.90122116, 0.69946903, 0.6786034, -0.22414389, 0, 80, 0)
+transform = Transform3D(-0.1194494, 0.42023492, 0.899519, 0.70460963, -0.602412, 0.37500012, 0.69946915, 0.6786033, -0.22414385, 0, 24, 0)
+light_indirect_energy = 2.306
+light_volumetric_fog_energy = 2.469
 shadow_enabled = true
 
 [node name="RaytracedAudioPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1790675548]
@@ -87,12 +86,13 @@ volume_db = -15.844
 autoplay = true
 max_distance = 1610.7
 panning_strength = 1.9
-script = ExtResource("1_55k8i")
+bus = &"RaytracedAmbient"
+script = ExtResource("1_3wmdh")
 metadata/_custom_type_script = "uid://dkb8ltjc6067n"
 
 [node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2069001, 0)
-script = ExtResource("2_dssnh")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.20690012, 0)
+script = ExtResource("2_y7fhr")
 
 [node name="BodyCol" type="CollisionShape3D" parent="player" unique_id=1005949383]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
@@ -115,7 +115,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("CapsuleMesh_jqwnj")
 
 [node name="OSCReceiverElevated" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
-script = ExtResource("3_ya1le")
+script = ExtResource("3_fl8b2")
 target_server = NodePath("../../OSCServer")
 osc_address = "/Godot/elevated"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
@@ -124,13 +124,12 @@ metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
 [node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=1747693550]
-stream = ExtResource("4_dssnh")
+stream = ExtResource("4_6g62v")
 volume_db = -8.32
 panning_strength = 0.0
 
 [node name="OSCReceiverIMU" type="Node" parent="player" unique_id=170654515 node_paths=PackedStringArray("target_server")]
-script = ExtResource("5_ya1le")
-SENS = 3
+script = ExtResource("5_x2nb1")
 target_server = NodePath("../../OSCServer")
 osc_address = "/Godot/IMU"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
@@ -203,7 +202,7 @@ transform = Transform3D(6, -1.6940659e-21, 8.351872e-23, -1.6940659e-21, 6, 0, 1
 mesh = SubResource("BoxMesh_sbew2")
 
 [node name="OSCServer" type="Node" parent="." unique_id=150244378]
-script = ExtResource("4_o0psh")
+script = ExtResource("6_w73vr")
 port = 8687
 metadata/_custom_type_script = "uid://w8v0v76wc4r2"
 
@@ -214,7 +213,7 @@ debug_custom_color = Color(1, 0, 0, 1)
 
 [node name="PathFollow3D" type="PathFollow3D" parent="Path3D" unique_id=1812057539]
 transform = Transform3D(-0.86569446, 1.452619e-07, 0.5005715, 7.105424e-15, 1, -2.901917e-07, -0.50057155, -2.5121767e-07, -0.8656944, 0.7627177, -9.536743e-07, -0.49717355)
-script = ExtResource("5_snu34")
+script = ExtResource("7_p2cu7")
 
 [node name="Node3D" type="Node3D" parent="Path3D/PathFollow3D" unique_id=492499598]
 
@@ -223,7 +222,7 @@ distance_attenuation = true
 air_absorption = true
 reflection = true
 transform = Transform3D(-0.8656955, 1.4494927e-13, -0.50057214, 1.4526198e-07, 1, -2.5121756e-07, 0.50057214, -2.9019202e-07, -0.8656955, -0.21958876, 0.6612721, -0.17404509)
-stream = ExtResource("6_dnbkt")
+stream = ExtResource("8_3abyf")
 attenuation_model = 3
 volume_db = 32.508
 unit_size = 5.0
@@ -236,38 +235,23 @@ panning_strength = 0.0
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Path3D/PathFollow3D/Node3D/StaticBody3D" unique_id=771274583]
 mesh = SubResource("BoxMesh_4j7iv")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Path3D/PathFollow3D/Node3D/StaticBody3D" unique_id=407871716]
-shape = SubResource("BoxShape3D_xeyml")
-
 [node name="VoxelTerrain" type="VoxelTerrain" parent="." unique_id=1407995178]
 material_override = SubResource("StandardMaterial3D_4j7iv")
 generator = SubResource("VoxelGeneratorFlat_55k8i")
 mesher = SubResource("VoxelMesherTransvoxel_ya1le")
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
 environment = SubResource("Environment_jqwnj")
 
-[node name="Node3D" type="Node3D" parent="." unique_id=1519181446]
-transform = Transform3D(-0.86569506, -1.4980205e-14, -0.5005719, 1.4526191e-07, 1, -2.512177e-07, 0.5005719, -2.901919e-07, -0.86569506, -0.21958876, 0.6612721, 37.825954)
-
-[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="Node3D" unique_id=1667717570]
+[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
 distance_attenuation = true
 air_absorption = true
 reflection = true
-transform = Transform3D(1, 1.4210855e-14, 0, -2.842171e-14, 1, 2.842171e-14, 0, 0, 1, 0, 0, 0)
-stream = ExtResource("9_o0psh")
+transform = Transform3D(-0.86569506, -1.4980205e-14, -0.5005719, 1.4526191e-07, 1, -2.512177e-07, 0.5005719, -2.901919e-07, -0.86569506, -0.21958876, 0.6612721, 37.825954)
+stream = ExtResource("9_cix00")
 attenuation_model = 3
 volume_db = 32.508
 unit_size = 5.0
 autoplay = true
 max_distance = 106.39
 panning_strength = 0.0
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Node3D" unique_id=505950611]
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Node3D/StaticBody3D" unique_id=792600704]
-mesh = SubResource("BoxMesh_4j7iv")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Node3D/StaticBody3D" unique_id=547688042]
-shape = SubResource("BoxShape3D_xeyml")

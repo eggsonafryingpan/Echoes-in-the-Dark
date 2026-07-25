@@ -1,0 +1,143 @@
+[gd_scene format=3 uid="uid://ds12ubxggbjrg"]
+
+[ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_0ahar"]
+[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="2_5khg4"]
+[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="3_t1ucx"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="4_gmqpq"]
+[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_mvemf"]
+[ext_resource type="Texture2D" uid="uid://bdtibwsy81qvy" path="res://Mitsuki.jpg" id="6_f6lw3"]
+[ext_resource type="PackedScene" path="res://GOOD_cave_level.tscn" id="7_ns7cn"]
+[ext_resource type="PackedScene" uid="uid://df7i2n15kpntg" path="res://cave_generation_2!!!!.tscn" id="8_5khg4"]
+[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="8_skw7w"]
+[ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
+[ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="10_aqaeb"]
+[ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="11_hyp7d"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
+
+[sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_noarx"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n8wo2"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
+material = SubResource("StandardMaterial3D_n8wo2")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m73v1"]
+albedo_texture = ExtResource("6_f6lw3")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 89.19051
+
+[sub_resource type="VoxelGeneratorFlat" id="VoxelGeneratorFlat_hjwcy"]
+height = 100.0
+
+[sub_resource type="VoxelMesherTransvoxel" id="VoxelMesherTransvoxel_sgsbx"]
+
+[sub_resource type="Environment" id="Environment_jqwnj"]
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 3
+glow_enabled = true
+
+[node name="World" type="Node3D" unique_id=1184201749]
+
+[node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
+scene_type = 0
+
+[node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.7202234, -1.7267156, 0)
+script = ExtResource("1_0ahar")
+
+[node name="BodyCol" type="CollisionShape3D" parent="player" unique_id=1005949383]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_4j7iv")
+
+[node name="CamOrigin" type="Node3D" parent="player" unique_id=196273322]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="player/CamOrigin" unique_id=110145144]
+
+[node name="SteamAudioListener" type="SteamAudioListener" parent="player/CamOrigin/Camera3D" unique_id=1539937943]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="player/CamOrigin" unique_id=896322455]
+shape = SubResource("SeparationRayShape3D_noarx")
+spring_length = 0.0
+margin = 0.0
+
+[node name="BodyMesh" type="MeshInstance3D" parent="player" unique_id=668820480]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_jqwnj")
+
+[node name="OSCReceiverElevated" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
+script = ExtResource("2_5khg4")
+target_server = NodePath("../../OSCServer")
+osc_address = "/Godot/elevated"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="VoxelViewer" type="VoxelViewer" parent="player" unique_id=830027229]
+enabled_in_editor = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=1747693550]
+stream = ExtResource("3_t1ucx")
+volume_db = -8.32
+panning_strength = 0.0
+
+[node name="OSCReceiverIMU" type="Node" parent="player" unique_id=170654515 node_paths=PackedStringArray("target_server")]
+script = ExtResource("4_gmqpq")
+SENS = 3
+target_server = NodePath("../../OSCServer")
+osc_address = "/Godot/IMU"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="OSCServer" type="Node" parent="." unique_id=150244378]
+script = ExtResource("5_mvemf")
+port = 8687
+metadata/_custom_type_script = "uid://w8v0v76wc4r2"
+
+[node name="VoxelTerrain" type="VoxelTerrain" parent="." unique_id=1407995178 groups=["navmesh_source"]]
+bounds = AABB(-2000, -304, -2000, 4000, 608, 4000)
+max_view_distance = 60
+material_override = SubResource("StandardMaterial3D_m73v1")
+generator = SubResource("VoxelGeneratorFlat_hjwcy")
+mesher = SubResource("VoxelMesherTransvoxel_sgsbx")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
+environment = SubResource("Environment_jqwnj")
+
+[node name="cave" parent="." unique_id=1785605579 instance=ExtResource("7_ns7cn")]
+transform = Transform3D(1, -1.4210855e-14, 0, 1.4210855e-14, 1, -2.842171e-14, 0, 0, 1, 4.7683716e-07, -5.9604645e-08, -3.8146973e-06)
+visible = false
+
+[node name="CaveGeneration" parent="." unique_id=1734329733 instance=ExtResource("8_5khg4")]
+
+[node name="Node3D" type="Node3D" parent="." unique_id=1519181446]
+transform = Transform3D(-0.86569506, -1.4980205e-14, -0.5005719, 1.4526191e-07, 1, -2.512177e-07, 0.5005719, -2.901919e-07, -0.86569506, -0.21958876, 0.6612721, 37.825954)
+
+[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
+min_attenuation_distance = 16.0
+air_absorption = true
+occlusion_radius = 7.0
+occlusion_samples = 50
+transmission_rays = 50
+reflection = true
+stream = ExtResource("8_skw7w")
+attenuation_model = 3
+volume_db = 38.64
+max_db = 3.816
+autoplay = true
+max_distance = 64.6
+panning_strength = 0.0
+bus = &"RaytracedReverb"
+script = ExtResource("9_txtix")
+
+[node name="RaytracedAudioPlayer3D" type="AudioStreamPlayer3D" parent="SteamAudioPlayer" unique_id=932160060]
+visible = false
+stream = ExtResource("10_aqaeb")
+attenuation_model = 2
+volume_db = -10.34
+max_distance = 97.52
+panning_strength = 1.68
+bus = &"RaytracedAmbient"
+script = ExtResource("11_hyp7d")
+metadata/_custom_type_script = "uid://dkb8ltjc6067n"

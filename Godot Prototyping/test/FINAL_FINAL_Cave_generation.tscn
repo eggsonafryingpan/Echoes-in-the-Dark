@@ -1,0 +1,126 @@
+[gd_scene format=3 uid="uid://ds12ubxggbjrg"]
+
+[ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_0ahar"]
+[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="2_5khg4"]
+[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="3_t1ucx"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="4_gmqpq"]
+[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_mvemf"]
+[ext_resource type="Texture2D" uid="uid://bdtibwsy81qvy" path="res://Mitsuki.jpg" id="6_f6lw3"]
+[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="8_skw7w"]
+[ext_resource type="PackedScene" uid="uid://dljhukkypgspo" path="res://cave_levels/cave_level2.tscn" id="8_t1ucx"]
+[ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
+[ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
+
+[sub_resource type="SeparationRayShape3D" id="SeparationRayShape3D_noarx"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n8wo2"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
+material = SubResource("StandardMaterial3D_n8wo2")
+
+[sub_resource type="Environment" id="Environment_jqwnj"]
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 3
+glow_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1x7i2"]
+cull_mode = 2
+albedo_texture = ExtResource("6_f6lw3")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 5.4641604
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t1ucx"]
+
+[sub_resource type="SteamAudioMaterial" id="SteamAudioMaterial_sbew2"]
+absorption_low = 0.884
+absorption_mid = 0.972
+absorption_high = 0.851
+
+[node name="World" type="Node3D" unique_id=1184201749]
+
+[node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
+scene_type = 0
+
+[node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041502953, -1.7267156, 0)
+script = ExtResource("1_0ahar")
+
+[node name="BodyCol" type="CollisionShape3D" parent="player" unique_id=1005949383]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_4j7iv")
+
+[node name="CamOrigin" type="Node3D" parent="player" unique_id=196273322]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="player/CamOrigin" unique_id=110145144]
+
+[node name="SteamAudioListener" type="SteamAudioListener" parent="player/CamOrigin/Camera3D" unique_id=1539937943]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="player/CamOrigin" unique_id=896322455]
+shape = SubResource("SeparationRayShape3D_noarx")
+spring_length = 0.0
+margin = 0.0
+
+[node name="BodyMesh" type="MeshInstance3D" parent="player" unique_id=668820480]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_jqwnj")
+
+[node name="OSCReceiverElevated" type="Node" parent="player" unique_id=345306604 node_paths=PackedStringArray("target_server")]
+script = ExtResource("2_5khg4")
+target_server = NodePath("../../OSCServer")
+osc_address = "/Godot/elevated"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=1747693550]
+stream = ExtResource("3_t1ucx")
+volume_db = -8.32
+panning_strength = 0.0
+
+[node name="OSCReceiverIMU" type="Node" parent="player" unique_id=170654515 node_paths=PackedStringArray("target_server")]
+script = ExtResource("4_gmqpq")
+SENS = 6
+target_server = NodePath("../../OSCServer")
+osc_address = "/Godot/IMU"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="OSCServer" type="Node" parent="." unique_id=150244378]
+script = ExtResource("5_mvemf")
+port = 8687
+metadata/_custom_type_script = "uid://w8v0v76wc4r2"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
+environment = SubResource("Environment_jqwnj")
+
+[node name="Cave" parent="." unique_id=1147513181 instance=ExtResource("8_t1ucx")]
+material_override = SubResource("StandardMaterial3D_1x7i2")
+script = ExtResource("9_gmqpq")
+
+[node name="CaveBody" type="StaticBody3D" parent="Cave" unique_id=122341081]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cave/CaveBody" unique_id=1264445220]
+shape = SubResource("BoxShape3D_t1ucx")
+
+[node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="Cave/CaveBody/CollisionShape3D" unique_id=1551646127]
+material = SubResource("SteamAudioMaterial_sbew2")
+
+[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
+min_attenuation_distance = 16.0
+air_absorption = true
+occlusion_radius = 7.0
+occlusion_samples = 50
+transmission_rays = 50
+reflection = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
+stream = ExtResource("8_skw7w")
+attenuation_model = 3
+volume_db = 38.64
+max_db = 3.816
+autoplay = true
+max_distance = 64.6
+panning_strength = 0.0
+bus = &"RaytracedReverb"
+script = ExtResource("9_txtix")

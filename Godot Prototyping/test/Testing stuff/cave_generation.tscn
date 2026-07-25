@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://bfj2uqhgfohu"]
+
+[ext_resource type="Script" uid="uid://ot5mbswvj7gv" path="res://Testing stuff/cave_generation.gd" id="1_1jykt"]
+[ext_resource type="Script" uid="uid://dvkgu20sonlus" path="res://Testing stuff/mesh_instance_3d.gd" id="2_pewvn"]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_jqwnj"]
+
+[node name="Node2D" type="Node2D" unique_id=846362635]
+script = ExtResource("1_1jykt")
+
+[node name="Node" type="Node" parent="." unique_id=2104550193]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Node" unique_id=514808450]
+mesh = SubResource("ArrayMesh_jqwnj")
+script = ExtResource("2_pewvn")
+reload = true

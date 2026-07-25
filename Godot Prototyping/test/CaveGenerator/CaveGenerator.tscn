@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://7n16wqjie2wa"]
+
+[ext_resource type="Script" uid="uid://cch7wnfj4v54a" path="res://CaveGenerator/CaveGenerator.gd" id="1_lnkjg"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j8lw0"]
+albedo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_oal0a"]
+material = SubResource("StandardMaterial3D_j8lw0")
+
+[node name="CaveGenerator" type="Node3D" unique_id=1469886221]
+script = ExtResource("1_lnkjg")
+
+[node name="CurrentWalker" type="MeshInstance3D" parent="." unique_id=2054282454]
+mesh = SubResource("SphereMesh_oal0a")
+
+[node name="DebugRaycast" type="RayCast3D" parent="CurrentWalker" unique_id=1970547681]
+target_position = Vector3(0, 0, -30)

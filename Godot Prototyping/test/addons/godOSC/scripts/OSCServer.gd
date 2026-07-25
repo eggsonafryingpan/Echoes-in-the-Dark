@@ -46,7 +46,8 @@ func _process(_delta):
 		peers.append(peer)
 	elif len(peers) == 0:
 		#so annoying...
-		push_warning("OSCServer has no incoming connections.")
+		pass
+		#push_warning("OSCServer has no incoming connections.")
 	parse()
 
 

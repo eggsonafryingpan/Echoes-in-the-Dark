@@ -3,14 +3,22 @@ extends CharacterBody3D
 const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 
+var isLocked: bool = false
+
 @onready var pivot = $CamOrigin
 @export var sens = 0.5
 @onready var hit_audio: SteamAudioPlayer = $HitAudio
+#@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 
+
+#func _on_terrain_loaded():
+	#isLocked = false
+
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	#cave_generator.terrain_loaded.connect(_on_terrain_loaded)
 
 func _input(event):
 	if event is InputEventMouseMotion:
@@ -21,6 +29,8 @@ func _input(event):
 
 
 func _physics_process(delta: float) -> void:
+	if isLocked:
+		return
 	
 	# Add the gravity.
 	if not is_on_floor():
