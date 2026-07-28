@@ -7,7 +7,9 @@ var isLocked: bool = false
 var isColliding: bool = false
 @onready var pivot = $CamOrigin
 @export var sens = 0.5
-@onready var hit_audio: SteamAudioPlayer = $HitAudio
+@onready var hit_audio: AudioStreamPlayer3D = $HitAudio
+@export var collision_ray_num = 25
+@export var collision_dist = 5
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 
 
@@ -27,8 +29,7 @@ func _input(event):
 		pivot.rotate_x(deg_to_rad(-event.relative.y * sens))
 		pivot.rotation.x = clamp(pivot.rotation.x, deg_to_rad(-90),deg_to_rad(45))
 		
-
-
+var prev_norm = null
 func _physics_process(delta: float) -> void:
 	if isLocked:
 		return
@@ -56,29 +57,77 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, SPEED)
 
 
+
 	
 	move_and_slide()
 	
-	var hori_speed = Vector3(velocity.x, 0.0, velocity.z).length()
-	
-	for i in range(get_slide_collision_count()):
-		var collision = get_slide_collision(i)
-		var norm = collision.get_normal()
-		var pos = collision.get_position()
-		
-		if norm.dot(Vector3.UP) > 0.7:
+	var raycasts = []
+	var head = global_position +Vector3(0,1,0)
+	for i in range(collision_ray_num):
+		var step = deg_to_rad(360*(i/float(collision_ray_num)))
+		var ray_dir = Vector3(
+			sin(step),
+			0,
+			cos(step)
+		)
+		var from = head
+		var to = from + ray_dir * collision_dist
+		var query = PhysicsRayQueryParameters3D.create(from,to)
+		query.exclude = [self]
+		var result = get_world_3d().direct_space_state.intersect_ray(query)
+		if !result:
 			continue
+		var hit = result.position
+		var hit_vector = hit - from
+		raycasts.append(hit_vector)
+	if raycasts.is_empty():
+		print("_______")
+		#hit_audio.volume_db = -80
+	else: 
+		print("dfslks")
+		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
+		hit_audio.global_position = head + closest_dir * 0.85
+		#hit_audio.volume_db = -10
+		print(hit_audio.global_position)
+		get_node("/root/World/Test").global_position = hit_audio.global_position
+		#print(-80 * pow(closest_dir.length()/float(collision_dist),2))
+		#hit_audio.volume_db = -40 * closest_dir.length()/float(collision_dist)
+	
+	
 		
-		var colDirection = (pos - global_position)
+		
+		
+		
+			
+		
+		
+	
+	#
+	#for i in range(get_slide_collision_count()):
+		#var collision = get_slide_collision(i)
+		#var norm = collision.get_normal()
+		#var pos = collision.get_position()
+		#
+		#if norm.dot(Vector3.UP) > 0.7:
+			#continue
+		#if prev_norm != null and prev_norm.dot(norm) < 0.5:
+			#hit_audio.global_position = global_position
+			#hit_audio.play()
+			#print("SOUNDOUSNDOSUNDS")
+		#
+		##if new collision already handled 
+		##if !touching.reduce(func(a,b): return a and b.dot(norm) < 0.2,true):
+			##if true:
+				##
+		#print(prev_norm, "jsfldksj")
+		#prev_norm = norm
+		#print(norm)
+		##touching.append(norm)
+		##var colDirection = (pos - global_position)
+		##print(get_slide_collision_count())
+		#
 
 		
-		if hori_speed > 0.3 and !hit_audio.playing:
-			hit_audio.global_position = global_position + colDirection * 1
-			hit_audio.play()
-			isColliding = true
-			print(colDirection)
-		else:
-			isColliding = false
 		
 	
 	

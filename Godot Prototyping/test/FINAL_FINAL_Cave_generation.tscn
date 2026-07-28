@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_0ahar"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="2_5khg4"]
-[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="3_t1ucx"]
+[ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="3_j4lhy"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="4_gmqpq"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_mvemf"]
 [ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
@@ -39,6 +39,8 @@ absorption_low = 0.884
 absorption_mid = 0.972
 absorption_high = 0.851
 
+[sub_resource type="BoxMesh" id="BoxMesh_jqwnj"]
+
 [node name="World" type="Node3D" unique_id=1184201749]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
@@ -55,6 +57,17 @@ metadata/_custom_type_script = "uid://w8v0v76wc4r2"
 [node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041502953, -1.7267156, 0)
 script = ExtResource("1_0ahar")
+
+[node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=839830275]
+min_attenuation_distance = 4.2
+occlusion = false
+stream = ExtResource("3_j4lhy")
+attenuation_model = 2
+volume_db = -44.892
+max_db = -16.446
+autoplay = true
+max_distance = 4.0
+panning_strength = 0.0
 
 [node name="BodyCol" type="CollisionShape3D" parent="player" unique_id=1005949383]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
@@ -82,15 +95,6 @@ target_server = NodePath("../../OSCServer")
 osc_address = "/Godot/elevated"
 metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 
-[node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=1747693550]
-distance_attenuation = true
-air_absorption = true
-reflection = true
-stream = ExtResource("3_t1ucx")
-attenuation_model = 3
-volume_db = 34.068
-panning_strength = 0.0
-
 [node name="OSCReceiverIMU" type="Node" parent="player" unique_id=170654515 node_paths=PackedStringArray("target_server")]
 script = ExtResource("4_gmqpq")
 target_server = NodePath("../../OSCServer")
@@ -112,8 +116,11 @@ shape = SubResource("BoxShape3D_t1ucx")
 [node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="Node3D/CaveBody/CollisionShape3D" unique_id=1551646127]
 material = SubResource("SteamAudioMaterial_sbew2")
 
+[node name="Test" type="MeshInstance3D" parent="." unique_id=937520210]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
+mesh = SubResource("BoxMesh_jqwnj")
+
 [node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
-distance_attenuation = true
 min_attenuation_distance = 16.6
 air_absorption = true
 occlusion_radius = 7.0
@@ -122,8 +129,8 @@ transmission_rays = 50
 reflection = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 stream = ExtResource("8_skw7w")
-attenuation_model = 3
-volume_db = -2.708
+attenuation_model = 2
+volume_db = -45.298
 max_db = 0.614
 autoplay = true
 max_distance = 41.59
