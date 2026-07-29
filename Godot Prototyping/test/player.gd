@@ -76,22 +76,24 @@ func _physics_process(delta: float) -> void:
 			0,
 			cos(step)
 		)
+		
 		var from = head
 		var to = from + ray_dir * collision_dist
+		
 		var query = PhysicsRayQueryParameters3D.create(from,to)
 		query.exclude = [self]
 		var result = get_world_3d().direct_space_state.intersect_ray(query)
 		if !result:
 			continue
+		if result.collider.name != "CaveBody":
+			continue
 		var hit = result.position
 		var hit_vector = hit - from
 		raycasts.append(hit_vector)
 	if !raycasts.is_empty():
-		#print("dfslks")
 		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
 		hit_audio.global_position = head + closest_dir * 0.85
 		#hit_audio.volume_db = -10
-		print(hit_audio.global_position)
 		get_node("/root/World/Test").global_position = hit_audio.global_position
 		#print(-80 * pow(closest_dir.length()/float(collision_dist),2))
 		#hit_audio.volume_db = -40 * closest_dir.length()/float(collision_dist)

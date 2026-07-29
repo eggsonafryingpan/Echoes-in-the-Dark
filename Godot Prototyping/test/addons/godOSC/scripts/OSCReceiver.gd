@@ -49,7 +49,6 @@ func _ready() -> void:
 	
 	if Engine.is_editor_hint():
 		return
-		
 	target_server.message_received.connect(received_message)
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -166,8 +165,7 @@ func received_message(address, vals, time):
 	if parent_control_setting == 0 and on_message_received and address == osc_address:
 		_custom_control(full_message[0], full_message[1], full_message[2])
 		
-	
-	pass
+
 
 
 func _get_configuration_warnings() -> PackedStringArray:

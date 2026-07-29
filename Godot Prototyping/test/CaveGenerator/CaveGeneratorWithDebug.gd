@@ -31,12 +31,6 @@ var display_speed : float = 0.1
 @export
 var ceiling_thickness_m : int = 5
 
-@onready
-var crystal_preload : PackedScene = preload("res://CaveAdditions/Crystal/Crystal.tscn")
-
-@onready
-var rock_preload : PackedScene = preload("res://CaveAdditions/Rocks/Rock1.tscn")
-
 @export
 var do_wall_decoration_step : bool = true
 
