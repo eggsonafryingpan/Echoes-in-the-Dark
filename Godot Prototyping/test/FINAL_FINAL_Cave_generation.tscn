@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_0ahar"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="2_5khg4"]
 [ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="3_j4lhy"]
+[ext_resource type="AudioStream" uid="uid://jc4agi1hdiuw" path="res://footsteps.mp3" id="4_0ahar"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="4_gmqpq"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_mvemf"]
 [ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
@@ -60,11 +61,12 @@ script = ExtResource("1_0ahar")
 
 [node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=839830275]
 min_attenuation_distance = 4.2
-occlusion = false
+air_absorption = true
 stream = ExtResource("3_j4lhy")
 attenuation_model = 2
-volume_db = -44.892
-max_db = -16.446
+volume_db = -31.08
+unit_size = 4.0
+max_db = -11.079
 autoplay = true
 max_distance = 4.0
 panning_strength = 0.0
@@ -72,6 +74,11 @@ panning_strength = 0.0
 [node name="BodyCol" type="CollisionShape3D" parent="player" unique_id=1005949383]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
 shape = SubResource("CapsuleShape3D_4j7iv")
+
+[node name="FootSteps" type="AudioStreamPlayer3D" parent="player" unique_id=902600590]
+stream = ExtResource("4_0ahar")
+volume_db = -18.419
+autoplay = true
 
 [node name="CamOrigin" type="Node3D" parent="player" unique_id=196273322]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
@@ -129,11 +136,10 @@ transmission_rays = 50
 reflection = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 stream = ExtResource("8_skw7w")
-attenuation_model = 2
-volume_db = -34.938
-max_db = 0.614
-autoplay = true
-max_distance = 41.59
+attenuation_model = 3
+volume_db = -2.708
+max_db = 3.42
+max_distance = 71.06
 panning_strength = 0.0
 bus = &"RaytracedReverb"
 script = ExtResource("9_txtix")

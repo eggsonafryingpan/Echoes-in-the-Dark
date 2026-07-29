@@ -13,7 +13,7 @@ var CSGCombiner = get_parent()
 var current_walker : Node3D = $CurrentWalker
 
 @export
-var random_walk_length : int = 300
+var random_walk_length : int = 500
 
 @export
 var removal_size : float = 2
@@ -25,7 +25,7 @@ var ceiling_thickness_m : int = 5
 var height : int = 200
 
 @export
-var turning_freq = 2
+var turning_freq = 3
 
 
 var random_walk_positions : Array[Vector3] = []

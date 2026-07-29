@@ -8,8 +8,9 @@ var isColliding: bool = false
 @onready var pivot = $CamOrigin
 @export var sens = 0.5
 @onready var hit_audio: AudioStreamPlayer3D = $HitAudio
+@onready var footsteps: AudioStreamPlayer3D = $FootSteps
 @export var collision_ray_num = 25
-@export var collision_dist = 5
+@export var collision_dist = 4
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 
 
@@ -57,12 +58,17 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, SPEED)
 
 
-
+	
 	
 	move_and_slide()
 	
+	if velocity.length() == 0 or not is_on_floor():
+		footsteps.set_stream_paused(true)
+	else:
+		footsteps.set_stream_paused(false)
+	
 	var raycasts = []
-	var head = global_position +Vector3(0,1,0)
+	var head = global_position + Vector3(0,1.5,0)
 	for i in range(collision_ray_num):
 		var step = deg_to_rad(360*(i/float(collision_ray_num)))
 		var ray_dir = Vector3(
@@ -93,13 +99,6 @@ func _physics_process(delta: float) -> void:
 		#print(-80 * pow(closest_dir.length()/float(collision_dist),2))
 		#hit_audio.volume_db = -40 * closest_dir.length()/float(collision_dist)
 	
-	
-		
-		
-		
-		
-			
-		
 		
 	
 	#
