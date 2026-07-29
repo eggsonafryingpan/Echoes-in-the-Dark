@@ -86,11 +86,8 @@ func _physics_process(delta: float) -> void:
 		var hit = result.position
 		var hit_vector = hit - from
 		raycasts.append(hit_vector)
-	if raycasts.is_empty():
-		print("_______")
-		#hit_audio.volume_db = -80
-	else: 
-		print("dfslks")
+	if !raycasts.is_empty():
+		#print("dfslks")
 		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
 		hit_audio.global_position = head + closest_dir * 0.85
 		#hit_audio.volume_db = -10
