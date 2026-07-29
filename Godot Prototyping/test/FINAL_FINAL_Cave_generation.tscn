@@ -1,11 +1,9 @@
 [gd_scene format=3 uid="uid://ds12ubxggbjrg"]
 
 [ext_resource type="PackedScene" uid="uid://5pkq3yeene5a" path="res://player.tscn" id="2_d6mwi"]
-[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_mvemf"]
 [ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
 [ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
 [ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="8_p46sw"]
-[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="8_skw7w"]
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
 [ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
 
@@ -41,19 +39,8 @@ environment = SubResource("Environment_jqwnj")
 [node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
 scene_type = 0
 
-[node name="OSCServer" type="Node" parent="." unique_id=150244378]
-script = ExtResource("5_mvemf")
-port = 8687
-metadata/_custom_type_script = "uid://w8v0v76wc4r2"
-
 [node name="player" parent="." unique_id=1773885676 instance=ExtResource("2_d6mwi")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0116167, -1.7267156, -4.466064)
-
-[node name="OSCReceiverElevated" parent="player" index="5" unique_id=1429112926 node_paths=PackedStringArray("target_server")]
-target_server = NodePath("../../OSCServer")
-
-[node name="OSCReceiverIMU" parent="player" index="6" unique_id=1535337702 node_paths=PackedStringArray("target_server")]
-target_server = NodePath("../../OSCServer")
 
 [node name="CaveMap" type="Node3D" parent="." unique_id=2095585918]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3517437, -1.2097435, 3.130443)
@@ -82,18 +69,18 @@ occlusion_radius = 7.0
 occlusion_samples = 50
 transmission_rays = 50
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 16.312382)
-stream = ExtResource("8_skw7w")
 attenuation_model = 3
 volume_db = 14.349
 max_db = 3.42
-autoplay = true
 max_distance = 150.59
 panning_strength = 0.0
 script = ExtResource("9_txtix")
 
 [node name="SoundBox" type="Area3D" parent="." unique_id=776409351 groups=["SoundBox"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.009604, -1.2379148, -4.914988)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.627335, -1.2379148, -4.914988)
 script = ExtResource("8_p46sw")
+max_db = -15
+min_db = -40
 
 [node name="Test" type="MeshInstance3D" parent="SoundBox" unique_id=1389736826]
 mesh = SubResource("BoxMesh_4j7iv")
@@ -106,9 +93,12 @@ wait_time = 0.2
 autostart = true
 
 [node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="SoundBox" unique_id=1158175298]
-volume_db = -80.0
+distance_attenuation = true
+min_attenuation_distance = 6.7
+air_absorption = true
+attenuation_model = 3
+max_db = 0.0
+autoplay = true
 panning_strength = 0.0
 
 [connection signal="timeout" from="SoundBox/Timer" to="SoundBox" method="_on_timer_timeout"]
-
-[editable path="player"]

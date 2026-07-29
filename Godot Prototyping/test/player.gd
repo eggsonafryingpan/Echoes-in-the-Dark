@@ -6,11 +6,11 @@ const JUMP_VELOCITY = 4.5
 var isLocked: bool = false
 var isColliding: bool = false
 @onready var pivot = $CamOrigin
-@export var sens = 0.5
+@export var sens: int = 1
 @onready var hit_audio: AudioStreamPlayer3D = $HitAudio
 @onready var footsteps: AudioStreamPlayer3D = $FootSteps
-@export var collision_ray_num = 25
-@export var collision_dist = 4
+@export var collision_ray_num: int = 20
+@export var collision_dist: int = 4
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 
 
@@ -92,8 +92,14 @@ func _physics_process(delta: float) -> void:
 		raycasts.append(hit_vector)
 	if !raycasts.is_empty():
 		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
-		hit_audio.global_position = head + closest_dir * 0.85
-		#hit_audio.volume_db = -10
+		hit_audio.global_position = head + closest_dir * 0.9
+		#if closest_dir.dot(-global_transform.basis.z) < 1:
+			#print("side")
+			#hit_audio.volume_db = -20
+		#else:
+			#print("forward")
+			#hit_audio.volume_db = 0
+	
 		get_node("/root/World/Test").global_position = hit_audio.global_position
 		#print(-80 * pow(closest_dir.length()/float(collision_dist),2))
 		#hit_audio.volume_db = -40 * closest_dir.length()/float(collision_dist)
