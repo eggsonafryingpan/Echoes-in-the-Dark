@@ -5,6 +5,8 @@
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5khg4"]
 albedo_texture = ExtResource("1_1xale")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 10.928311
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lnkjg"]
 albedo_color = Color(1, 0, 1, 1)
@@ -24,9 +26,7 @@ size = Vector3(300, 50, 300)
 material = SubResource("StandardMaterial3D_5khg4")
 script = ExtResource("2_mkqkn")
 generation_start_marker = NodePath("StartMarker")
-random_walk_length = 800
 removal_size = 4.0
-turning_freq = 3
 
 [node name="CurrentWalker" type="MeshInstance3D" parent="CSGCombiner3D/CSGBox3D" unique_id=1487752939]
 mesh = SubResource("SphereMesh_pxv80")
