@@ -13,19 +13,19 @@ var CSGCombiner = get_parent()
 var current_walker : Node3D = $CurrentWalker
 
 @export
-var random_walk_length : int = 800
+var random_walk_length : int = 5000
 
 @export
-var removal_size : float = 2
+var removal_size : float = 5
 
 @export
 var ceiling_thickness_m : int = 5
 
 @export
-var height : int = 200
+var height : int = 400
 
 @export
-var turning_freq = 4
+var turning_freq = 7
 
 
 var random_walk_positions : Array[Vector3] = []
@@ -46,8 +46,11 @@ func random_walk():
 	var curr_direction = get_random_direction()
 	for i in range(random_walk_length):
 		
+		do_sphere_removal(curr_direction)
+		
+		
 		# Move the random walker to the new position:
-		current_walker.global_position += curr_direction
+		current_walker.global_position += curr_direction * 0.5
 		if i % turning_freq == 0 :
 			curr_direction = get_random_direction() 
 		
@@ -58,7 +61,7 @@ func random_walk():
 		random_walk_positions.append(current_walker.global_position)
 		
 		# Carve out a chunk at our current position
-		do_sphere_removal()
+		
 		
 		# Get a random position on the wall, and add geometry there if valid
 		#var wall_point = get_random_wall_point()
@@ -79,15 +82,19 @@ func get_removal_size(variance : float = 0):
 	#return removal_size + randf_range(-removal_size * variance, removal_size * variance)
 
 	
-func do_sphere_removal():
-	var cube = CSGBox3D.new()
-	cube.size = get_removal_size()
+func do_sphere_removal(dir):
+	var cube = CSGCylinder3D.new()
+	#if dir.length() != 0:
+		#cube.basis = Basis.looking_at(dir, Vector3.UP)
+	cube.radius = removal_size/2
+	cube.height = removal_size
 	cube.operation = CSGShape3D.OPERATION_SUBTRACTION
+
 	CSGCombiner.add_child(cube)
 	cube.global_position = $CurrentWalker.global_position
 	
 
-func get_random_direction(use_float : bool = false):
+func get_random_direction(use_float : bool = true):
 	
 	var direction_vector : Vector3
 	

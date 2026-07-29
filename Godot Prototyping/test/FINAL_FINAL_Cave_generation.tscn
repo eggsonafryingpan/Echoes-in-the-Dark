@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="4_gmqpq"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="5_mvemf"]
 [ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
-[ext_resource type="PackedScene" path="res://cave_levels/cave_level_square2.tscn" id="7_my8lj"]
+[ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
 [ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="8_skw7w"]
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
 [ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
@@ -28,10 +28,9 @@ glow_enabled = true
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
 material = SubResource("StandardMaterial3D_n8wo2")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0ahar"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1xale"]
 albedo_texture = ExtResource("7_j4lhy")
 uv1_triplanar = true
-uv1_triplanar_sharpness = 20.392948
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_t1ucx"]
 
@@ -56,17 +55,17 @@ port = 8687
 metadata/_custom_type_script = "uid://w8v0v76wc4r2"
 
 [node name="player" type="CharacterBody3D" parent="." unique_id=1175526463]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041502953, -1.7267156, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.419407, -1.7267156, -9.289164)
 script = ExtResource("1_0ahar")
 
 [node name="HitAudio" type="SteamAudioPlayer" parent="player" unique_id=839830275]
 min_attenuation_distance = 4.2
 air_absorption = true
 stream = ExtResource("3_j4lhy")
-attenuation_model = 2
-volume_db = -36.835
+attenuation_model = 1
+volume_db = -54.855
 unit_size = 4.0
-max_db = -16.043
+max_db = -18.2
 autoplay = true
 max_distance = 4.0
 panning_strength = 0.0
@@ -112,8 +111,8 @@ metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3517437, -1.2097435, 3.130443)
 script = ExtResource("9_gmqpq")
 
-[node name="Map" parent="Node3D" unique_id=949078981 instance=ExtResource("7_my8lj")]
-material_override = SubResource("StandardMaterial3D_0ahar")
+[node name="Map" parent="Node3D" unique_id=1787873999 instance=ExtResource("8_0ahar")]
+material_override = SubResource("StandardMaterial3D_1xale")
 
 [node name="CaveBody" type="StaticBody3D" parent="Node3D" unique_id=122341081]
 
@@ -128,18 +127,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 mesh = SubResource("BoxMesh_jqwnj")
 
 [node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
+distance_attenuation = true
 min_attenuation_distance = 16.6
 air_absorption = true
 occlusion_radius = 7.0
 occlusion_samples = 50
 transmission_rays = 50
-reflection = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 16.312382)
 stream = ExtResource("8_skw7w")
 attenuation_model = 3
-volume_db = -2.708
+volume_db = 14.349
 max_db = 3.42
-max_distance = 71.06
+autoplay = true
+max_distance = 150.59
 panning_strength = 0.0
-bus = &"RaytracedReverb"
 script = ExtResource("9_txtix")
