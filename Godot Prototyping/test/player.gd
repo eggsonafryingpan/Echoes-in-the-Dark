@@ -10,7 +10,7 @@ var isColliding: bool = false
 @onready var wall_audio: AudioStreamPlayer3D = $WallAudio
 @onready var hit_audio: AudioStreamPlayer3D = $HitAudio
 @onready var footsteps: AudioStreamPlayer3D = $FootSteps
-@export var collision_ray_num: int = 20
+@export var collision_ray_num: int = 10
 @export var collision_dist: int = 4
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 var isTouching: bool = false
@@ -96,8 +96,7 @@ func _physics_process(delta: float) -> void:
 		wall_audio.global_position = head + closest_dir * 0.9
 		if closest_dir.length() < 0.6:
 			if isTouching == false:
-				#Only plays when hit from front
-				if closest_dir.dot(-global_transform.basis.z) > 1:
+				if closest_dir.dot(-global_transform.basis.z) > 0.4:
 					isTouching = true
 					hit_audio.global_position = head + closest_dir * 0.9
 					hit_audio.play()

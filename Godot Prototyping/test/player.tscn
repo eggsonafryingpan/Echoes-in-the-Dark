@@ -63,6 +63,7 @@ autoplay = true
 min_attenuation_distance = 4.2
 air_absorption = true
 stream = ExtResource("4_1jxqw")
+attenuation_model = 1
 volume_db = 8.33
 unit_size = 4.0
 autoplay = true
