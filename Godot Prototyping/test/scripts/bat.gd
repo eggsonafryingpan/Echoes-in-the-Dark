@@ -22,18 +22,10 @@ const MAX_ITEMS := 3
 const SCAN_COOLDOWN := 1.5
 
 const CLOCK_WORDS := {
-	12: "straight ahead",
-	1: "one o'clock",
-	2: "two o'clock",
-	3: "directly right",
-	4: "four o'clock",
-	5: "five o'clock",
-	6: "behind you",
-	7: "seven o'clock",
-	8: "eight o'clock",
-	9: "directly left",
-	10: "ten o'clock",
-	11: "eleven o'clock",
+	0: "straight ahead",
+	1: "right",
+	2: "behind you",
+	3: "left"
 }
 
 ## Tuned to sound flat and synthetic rather than warm. Lower pitch, slightly
@@ -190,8 +182,8 @@ func clock_to(target: Vector3) -> int:
 	return _clock(head.global_position, head.global_transform.basis, target)
 
 
-func clock_word(hour: int) -> String:
-	return CLOCK_WORDS.get(hour, "straight ahead")
+func clock_word(deg: int) -> String:
+	return CLOCK_WORDS.get(deg, "straight ahead")
 
 
 func _clock(origin: Vector3, basis: Basis, target: Vector3) -> int:
@@ -211,7 +203,10 @@ func _clock(origin: Vector3, basis: Basis, target: Vector3) -> int:
 
 	# +angle is to the player's right
 	var angle := atan2(to_target.dot(right), to_target.dot(forward))
-	var hour := int(round(angle / (TAU / 12.0)))
-	if hour <= 0:
-		hour += 12
-	return hour
+	print("deg",angle)
+	var deg = (angle + PI/2) / (PI / 4)
+	print(deg)
+	#var hour := int(round(angle / (TAU / 12.0)))
+	#if hour <= 0:
+		#hour += 12
+	return deg
