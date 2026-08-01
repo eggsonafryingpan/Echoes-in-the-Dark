@@ -7,12 +7,13 @@ var isLocked: bool = false
 var isColliding: bool = false
 @onready var pivot = $CamOrigin
 @export var sens: int = 1
+@onready var wall_audio: AudioStreamPlayer3D = $WallAudio
 @onready var hit_audio: AudioStreamPlayer3D = $HitAudio
 @onready var footsteps: AudioStreamPlayer3D = $FootSteps
-@export var collision_ray_num: int = 20
+@export var collision_ray_num: int = 10
 @export var collision_dist: int = 4
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
-
+var isTouching: bool = false
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -92,17 +93,25 @@ func _physics_process(delta: float) -> void:
 		raycasts.append(hit_vector)
 	if !raycasts.is_empty():
 		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
-		hit_audio.global_position = head + closest_dir * 0.9
+		wall_audio.global_position = head + closest_dir * 0.9
+		if closest_dir.length() < 0.6:
+			if isTouching == false:
+				if closest_dir.dot(-global_transform.basis.z) > 0.4:
+					isTouching = true
+					hit_audio.global_position = head + closest_dir * 0.9
+					hit_audio.play()
+		elif closest_dir.length() > 0.7:
+			isTouching = false
 		#if closest_dir.dot(-global_transform.basis.z) < 1:
 			#print("side")
-			#hit_audio.volume_db = -20
+			#wall_audio.volume_db = -20
 		#else:
 			#print("forward")
-			#hit_audio.volume_db = 0
+			#wall_audio.volume_db = 0
 	
-		get_node("/root/World/Test").global_position = hit_audio.global_position
+		get_node("/root/World/Test").global_position = wall_audio.global_position
 		#print(-80 * pow(closest_dir.length()/float(collision_dist),2))
-		#hit_audio.volume_db = -40 * closest_dir.length()/float(collision_dist)
+		#wall_audio.volume_db = -40 * closest_dir.length()/float(collision_dist)
 	
 		
 	
@@ -115,8 +124,8 @@ func _physics_process(delta: float) -> void:
 		#if norm.dot(Vector3.UP) > 0.7:
 			#continue
 		#if prev_norm != null and prev_norm.dot(norm) < 0.5:
-			#hit_audio.global_position = global_position
-			#hit_audio.play()
+			#wall_audio.global_position = global_position
+			#wall_audio.play()
 			#print("SOUNDOUSNDOSUNDS")
 		#
 		##if new collision already handled 
