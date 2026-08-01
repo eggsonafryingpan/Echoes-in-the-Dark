@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://bhdbvrya0un2i"]
+
+[ext_resource type="Script" uid="uid://c32yps2o03th3" path="res://scripts/describable.gd" id="1_65dot"]
+[ext_resource type="Script" uid="uid://da7f3x1x4th57" path="res://scripts/player_bat_test.gd" id="2_0j287"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5go5n"]
+size = Vector3(40, 1, 40)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5go5n"]
+size = Vector3(40, 1, 40)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_5go5n"]
+
+[node name="SophiasCave" type="Node3D" unique_id=1814197397]
+
+[node name="Exit" type="Node3D" parent="." unique_id=2106520858]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -10)
+
+[node name="Describable" type="Node3D" parent="Exit" unique_id=1541708306]
+script = ExtResource("1_65dot")
+label = "the exit"
+priority = 100
+metadata/_custom_type_script = "uid://c32yps2o03th3"
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1885614159]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=58778651]
+shape = SubResource("BoxShape3D_5go5n")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor/CollisionShape3D" unique_id=1493660908]
+mesh = SubResource("BoxMesh_5go5n")
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=401826782 node_paths=PackedStringArray("exit_marker")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+script = ExtResource("2_0j287")
+exit_marker = NodePath("../Exit")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=603615701]
+shape = SubResource("CapsuleShape3D_5go5n")
+
+[node name="Head" type="Node3D" parent="Player" unique_id=1778342527]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Player/Head" unique_id=265068790]
+
+[node name="AudioListener3D" type="AudioListener3D" parent="Player/Head" unique_id=1982348149]
+current = true
+
+[node name="Tunnel" type="Node3D" parent="." unique_id=972991641]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, -3)
+
+[node name="Describable" type="Node3D" parent="Tunnel" unique_id=2061505132]
+script = ExtResource("1_65dot")
+label = "tunnel mouth"
+metadata/_custom_type_script = "uid://c32yps2o03th3"
+
+[node name="Describable2" type="Node3D" parent="Tunnel" unique_id=775953548]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, 4)
+script = ExtResource("1_65dot")
+label = "bat perch"
+metadata/_custom_type_script = "uid://c32yps2o03th3"
+
+[node name="Describable3" type="Node3D" parent="Tunnel" unique_id=635295203]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1, 2)
+script = ExtResource("1_65dot")
+label = "running water"
+metadata/_custom_type_script = "uid://c32yps2o03th3"

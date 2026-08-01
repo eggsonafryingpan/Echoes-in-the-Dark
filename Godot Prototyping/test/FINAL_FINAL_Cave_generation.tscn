@@ -20,11 +20,6 @@ uv1_triplanar = true
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_t1ucx"]
 
-[sub_resource type="SteamAudioMaterial" id="SteamAudioMaterial_sbew2"]
-absorption_low = 0.884
-absorption_mid = 0.972
-absorption_high = 0.851
-
 [sub_resource type="BoxMesh" id="BoxMesh_jqwnj"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_4j7iv"]
@@ -55,7 +50,6 @@ material_override = SubResource("StandardMaterial3D_1xale")
 shape = SubResource("BoxShape3D_t1ucx")
 
 [node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="CaveMap/CaveBody/CollisionShape3D" unique_id=1551646127]
-material = SubResource("SteamAudioMaterial_sbew2")
 
 [node name="Test" type="MeshInstance3D" parent="." unique_id=937520210]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
