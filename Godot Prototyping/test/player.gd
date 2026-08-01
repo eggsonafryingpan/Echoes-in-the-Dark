@@ -96,10 +96,11 @@ func _physics_process(delta: float) -> void:
 		wall_audio.global_position = head + closest_dir * 0.9
 		if closest_dir.length() < 0.6:
 			if isTouching == false:
-				isTouching = true
-				print("ds")
-				hit_audio.global_position = head + closest_dir * 0.9
-				hit_audio.play()
+				#Only plays when hit from front
+				if closest_dir.dot(-global_transform.basis.z) > 1:
+					isTouching = true
+					hit_audio.global_position = head + closest_dir * 0.9
+					hit_audio.play()
 		elif closest_dir.length() > 0.7:
 			isTouching = false
 		#if closest_dir.dot(-global_transform.basis.z) < 1:
