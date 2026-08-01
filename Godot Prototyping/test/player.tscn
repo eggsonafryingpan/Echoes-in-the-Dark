@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_2hs0m"]
 [ext_resource type="AudioStream" uid="uid://jc4agi1hdiuw" path="res://footsteps.mp3" id="3_dw050"]
+[ext_resource type="AudioStream" uid="uid://ct5eodcwgr2iy" path="res://solarmusic-dripping-water-in-cave-114694.mp3" id="4_1jxqw"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="4_b26j0"]
+[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="5_dw050"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_n7ghd"]
 [ext_resource type="Script" uid="uid://8yaubsn0472g" path="res://focus_mechanic.gd" id="6_nvl01"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="7_1jxqw"]
@@ -57,15 +59,24 @@ stream = ExtResource("3_dw050")
 volume_db = -18.419
 autoplay = true
 
-[node name="HitAudio" type="SteamAudioPlayer" parent="." unique_id=1968082902]
+[node name="WallAudio" type="SteamAudioPlayer" parent="." unique_id=1968082902]
 min_attenuation_distance = 4.2
 air_absorption = true
-attenuation_model = 1
-volume_db = -24.505
+stream = ExtResource("4_1jxqw")
+volume_db = 8.33
 unit_size = 4.0
-max_db = -10.27
 autoplay = true
-max_distance = 3.0
+max_distance = 4.0
+panning_strength = 0.0
+
+[node name="HitAudio" type="SteamAudioPlayer" parent="." unique_id=1655475557]
+min_attenuation_distance = 4.2
+air_absorption = true
+stream = ExtResource("5_dw050")
+volume_db = 1.166
+unit_size = 4.0
+autoplay = true
+max_distance = 4.0
 panning_strength = 0.0
 
 [node name="OSCReceiverElevated" type="Node" parent="." unique_id=1429112926 node_paths=PackedStringArray("target_server")]
