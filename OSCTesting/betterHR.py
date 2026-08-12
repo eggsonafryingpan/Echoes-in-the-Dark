@@ -8,18 +8,18 @@ from pathlib import Path
 import numpy as np
 
 #How big is window for data (seconds)
-WINDOW_TIME = 2
+WINDOW_TIME =  5
 
 # calibration_path = Path(__file__).parent / "calibrationElevation.json"
 # with calibration_path.open("r", encoding="utf-8") as f:
 #     calibration = json.load(f)
 
 last_process = time.monotonic()
-sample_rate = 4
+sample_rate = 25
 heartrate = 80
 
 sensors = {
-    "PPG:RED": {
+    "PPG:GRN": {
         "raw_data": [],
         # "prev_cusum": 0,
         # "cusum": 0,
@@ -55,7 +55,7 @@ def handler(address, *args):
     if sensor_name not in sensors:
         return
     sensor = sensors[sensor_name]
-    sensor["raw_data"].append(args[0])
+    sensor["raw_data"].extend(args)
 
     # print(sensor_name, "Data:",args[0])
 
@@ -69,17 +69,21 @@ def sendElevated():
 
 def update():
     global heartrate,sensors
-    ppg = sensors["PPG:RED"]["raw_data"]
-    print(ppg)
+    ppg = sensors["PPG:GRN"]["raw_data"]
+    filteGRN_ppg = hp.filter_signal(
+        ppg, 
+        cutoff=[0.7, 3.5], 
+        sample_rate=sample_rate, 
+        order=3, 
+        filtertype='bandpass'
+    )
     working_data, measures = hp.process(
-        np.array(ppg, dtype=float),
+        np.array(filteGRN_ppg, dtype=float),
         sample_rate=sample_rate,
-        bpmmin=40,
-        bpmmax=180
     )
     heartrate = measures["bpm"]
 
-    sensors["PPG:RED"]["raw_data"] = []
+    sensors["PPG:GRN"]["raw_data"] = []
     print(heartrate)
 
 
