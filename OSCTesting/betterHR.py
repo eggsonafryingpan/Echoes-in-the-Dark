@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 #How big is window for data (seconds)
-WINDOW_TIME =  5
+WINDOW_TIME =  4
 
 # calibration_path = Path(__file__).parent / "calibrationElevation.json"
 # with calibration_path.open("r", encoding="utf-8") as f:
@@ -19,7 +19,7 @@ sample_rate = 25
 heartrate = 80
 
 sensors = {
-    "PPG:GRN": {
+    "PPG:RED": {
         "raw_data": [],
         # "prev_cusum": 0,
         # "cusum": 0,
@@ -69,22 +69,23 @@ def sendElevated():
 
 def update():
     global heartrate,sensors
-    ppg = sensors["PPG:GRN"]["raw_data"]
-    filteGRN_ppg = hp.filter_signal(
-        ppg, 
+    ppg = sensors["PPG:RED"]["raw_data"]
+    filtered_ppg = hp.filter_signal(
+        ppg,
         cutoff=[0.7, 3.5], 
         sample_rate=sample_rate, 
         order=3, 
         filtertype='bandpass'
     )
     working_data, measures = hp.process(
-        np.array(filteGRN_ppg, dtype=float),
+        np.array(filtered_ppg, dtype=float),
         sample_rate=sample_rate,
     )
     heartrate = measures["bpm"]
 
-    sensors["PPG:GRN"]["raw_data"] = []
+    sensors["PPG:RED"]["raw_data"] = []
     print(heartrate)
+    sendElevated()
 
 
 

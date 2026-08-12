@@ -3,12 +3,12 @@
 [ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="1_3wmdh"]
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="2_y7fhr"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="3_fl8b2"]
-[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://hit_sound.mp3" id="4_6g62v"]
+[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://sounds/hit_sound.mp3" id="4_6g62v"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_x2nb1"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="6_w73vr"]
 [ext_resource type="Script" uid="uid://bibn68t3f7jq6" path="res://Testing stuff/path_follow_3d.gd" id="7_p2cu7"]
-[ext_resource type="AudioStream" uid="uid://d231ac5caw5ln" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="8_3abyf"]
-[ext_resource type="AudioStream" uid="uid://dhonkscnlww7" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="9_cix00"]
+[ext_resource type="AudioStream" path="res://Ado - Vivarium (SPOTISAVER).mp3" id="8_3abyf"]
+[ext_resource type="AudioStream" path="res://Ado - Dried Flowers (SPOTISAVER).mp3" id="9_cix00"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
 
