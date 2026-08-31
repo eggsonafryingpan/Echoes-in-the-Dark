@@ -41,7 +41,7 @@ def updateSensor(sensor_name, axis, args):
 
 def processData():
     global prev_q, curr_q
-    #DEG TO RAD
+    #DEG TO RAD 
     sensors["GYRO"] = [[deg * math.pi / 180 for deg in row] for row in sensors["GYRO"]]
 
     for i in range(len(sensors["GYRO"][0])):
