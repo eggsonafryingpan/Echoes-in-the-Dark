@@ -1,11 +1,12 @@
 [gd_scene format=3 uid="uid://ds12ubxggbjrg"]
 
-[ext_resource type="PackedScene" uid="uid://5pkq3yeene5a" path="res://player.tscn" id="2_d6mwi"]
-[ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
-[ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
-[ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="8_p46sw"]
-[ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
-[ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
+[ext_resource type="PackedScene" uid="uid://btx6qd7c5pcfd" path="res://top_down_view.tscn" id="1_i35yt"]
+[ext_resource type="PackedScene" uid="uid://5pkq3yeene5a" path="res://player.tscn" id="2_du3p6"]
+[ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="3_2xyd5"]
+[ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="4_t6jnj"]
+[ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="5_nqguj"]
+[ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="6_4je4a"]
+[ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="7_xpmsw"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -15,7 +16,7 @@ tonemap_mode = 3
 glow_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1xale"]
-albedo_texture = ExtResource("7_j4lhy")
+albedo_texture = ExtResource("5_nqguj")
 uv1_triplanar = true
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_t1ucx"]
@@ -28,20 +29,22 @@ uv1_triplanar = true
 
 [node name="World" type="Node3D" unique_id=1184201749]
 
+[node name="TopDownView" parent="." unique_id=362832385 instance=ExtResource("1_i35yt")]
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
 environment = SubResource("Environment_jqwnj")
 
 [node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
 scene_type = 0
 
-[node name="player" parent="." unique_id=1773885676 instance=ExtResource("2_d6mwi")]
+[node name="player" parent="." unique_id=1773885676 instance=ExtResource("2_du3p6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0116167, -1.7267156, -4.466064)
 
 [node name="CaveMap" type="Node3D" parent="." unique_id=2095585918]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3517437, -1.2097435, 3.130443)
-script = ExtResource("9_gmqpq")
+script = ExtResource("3_2xyd5")
 
-[node name="Map" parent="CaveMap" unique_id=1787873999 instance=ExtResource("8_0ahar")]
+[node name="Map" parent="CaveMap" unique_id=1787873999 instance=ExtResource("4_t6jnj")]
 material_override = SubResource("StandardMaterial3D_1xale")
 
 [node name="CaveBody" type="StaticBody3D" parent="CaveMap" unique_id=122341081]
@@ -68,11 +71,11 @@ volume_db = 14.349
 max_db = 3.42
 max_distance = 150.59
 panning_strength = 0.0
-script = ExtResource("9_txtix")
+script = ExtResource("6_4je4a")
 
 [node name="SoundBox" type="Area3D" parent="." unique_id=776409351 groups=["SoundBox"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.627335, -1.2379148, -4.914988)
-script = ExtResource("8_p46sw")
+script = ExtResource("7_xpmsw")
 max_db = -15
 min_db = -40
 
