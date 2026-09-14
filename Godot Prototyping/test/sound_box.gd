@@ -1,6 +1,6 @@
 extends Area3D
 
-@onready var audio = $SteamAudioPlayer
+@onready var audio = $AudioPlayer
 var focused = false
 
 @export var max_db = -10

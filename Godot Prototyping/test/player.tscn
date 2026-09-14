@@ -58,16 +58,14 @@ autostart = true
 transform = Transform3D(3, 0, 0, 0, -1.3113416e-07, -3, 0, 3, -1.3113416e-07, 0, 1.1301115, -3.0584083)
 shape = SubResource("ConvexPolygonShape3D_5khg4")
 
-[node name="SteamAudioListener" type="SteamAudioListener" parent="CamOrigin/Camera3D" unique_id=2003496138]
+[node name="RaytracedAudioListener" type="RaytracedAudioListener" parent="CamOrigin/Camera3D" unique_id=2003496138]
 
 [node name="FootSteps" type="AudioStreamPlayer3D" parent="." unique_id=1232000853]
 stream = SubResource("AudioStreamMP3_2hs0m")
 volume_db = -18.419
 autoplay = true
 
-[node name="WallAudio" type="SteamAudioPlayer" parent="." unique_id=1968082902]
-min_attenuation_distance = 4.2
-air_absorption = true
+[node name="WallAudio" type="RaytracedAudioPlayer3D" parent="." unique_id=1968082902]
 stream = SubResource("AudioStreamMP3_1jxqw")
 attenuation_model = 1
 volume_db = 38.777
@@ -78,9 +76,7 @@ max_distance = 4.0
 panning_strength = 0.0
 bus = &"RaytracedReverb"
 
-[node name="HitAudio" type="SteamAudioPlayer" parent="." unique_id=1655475557]
-min_attenuation_distance = 4.2
-air_absorption = true
+[node name="HitAudio" type="RaytracedAudioPlayer3D" parent="." unique_id=1655475557]
 stream = ExtResource("5_dw050")
 volume_db = 1.166
 unit_size = 4.0

@@ -31,9 +31,6 @@ uv1_triplanar = true
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
 environment = SubResource("Environment_jqwnj")
 
-[node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=375354646]
-scene_type = 0
-
 [node name="player" parent="." unique_id=1773885676 instance=ExtResource("2_d6mwi")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0116167, -1.7267156, -4.466064)
 
@@ -49,23 +46,14 @@ material_override = SubResource("StandardMaterial3D_1xale")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CaveMap/CaveBody" unique_id=1264445220]
 shape = SubResource("BoxShape3D_t1ucx")
 
-[node name="SteamAudioGeometry" type="SteamAudioGeometry" parent="CaveMap/CaveBody/CollisionShape3D" unique_id=1551646127]
-
 [node name="Test" type="MeshInstance3D" parent="." unique_id=937520210]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 mesh = SubResource("BoxMesh_jqwnj")
 
-[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="." unique_id=1667717570]
-distance_attenuation = true
-min_attenuation_distance = 16.6
-air_absorption = true
-occlusion_radius = 7.0
-occlusion_samples = 50
-transmission_rays = 50
+[node name="RaytracedAudioPlayer3D" type="RaytracedAudioPlayer3D" parent="." unique_id=1667717570]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 16.312382)
 attenuation_model = 3
 volume_db = 14.349
-max_db = 3.42
 max_distance = 150.59
 panning_strength = 0.0
 script = ExtResource("9_txtix")
@@ -86,12 +74,8 @@ shape = SubResource("BoxShape3D_jv6wj")
 wait_time = 0.2
 autostart = true
 
-[node name="SteamAudioPlayer" type="SteamAudioPlayer" parent="SoundBox" unique_id=1158175298]
-distance_attenuation = true
-min_attenuation_distance = 6.7
-air_absorption = true
+[node name="AudioPlayer" type="RaytracedAudioPlayer3D" parent="SoundBox" unique_id=1158175298]
 attenuation_model = 3
-max_db = 0.0
 autoplay = true
 panning_strength = 0.0
 

@@ -1,4 +1,4 @@
-extends SteamAudioPlayer
+extends RaytracedAudioPlayer3D
 
 #@onready var cave_generator = $"../CaveGenerator"
 

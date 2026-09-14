@@ -8,10 +8,8 @@ var map = $Map
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	collision_shape.shape = map.mesh.create_trimesh_shape()
-	var steam_audio = SteamAudioGeometry.new()
-	collision_shape.add_child(steam_audio)
-	
-	
+	# Raytraced Audio needs no geometry-registration node (unlike Steam Audio) --
+	# RaytracedAudioListener raycasts directly against this physics shape.
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
