@@ -10,7 +10,7 @@ func _on_baseline_pressed():
 
 func _on_start_pressed():
 	print("Starting game...")
-	get_tree().change_scene_to_file("res://FINAL_FINAL_Cave_generation.tscn")
+	get_tree().change_scene_to_file("res://echoes_in_the_dark.tscn")
 
 func _on_quit_pressed():
 	get_tree().quit()
