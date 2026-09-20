@@ -16,6 +16,13 @@ var isColliding: bool = false
 @onready var listener: AudioListener3D = $CamOrigin/Camera3D/RaytracedAudioListener
 @export var collision_ray_num: int = 10
 @export var collision_dist: int = 4
+
+## Unset until level design places a real objective in this scene (Phase 10,
+## §10.1). Stuck detection is off with no exit_marker assigned, same
+## fail-safe sophias_cave.tscn's player_bat_test.gd used -- scanning and
+## movement work either way, ported here so the ladder is ready the moment
+## a marker exists.
+@export var exit_marker: Node3D
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 var isTouching: bool = false
 
@@ -37,6 +44,27 @@ func _ready():
 	# only wiring this scene needs (ported from sophias_cave.tscn's
 	# player_bat_test.gd).
 	Bat.head = pivot
+
+	if exit_marker != null:
+		Stuck.configure(self, exit_marker)
+		Stuck.became_stuck.connect(_on_stuck)
+	else:
+		push_warning("No exit_marker assigned. Stuck detection is off, scanning still works.")
+
+
+## Each rung gives strictly more than the last (ported from
+## scripts/player_bat_test.gd). Whether the player should be TOLD they've
+## been flagged is a question for testers, not for you.
+func _on_stuck(level: int) -> void:
+	match level:
+		1:
+			Bat.say("Wait. Listen for a moment.", "hint_1")
+		2:
+			var hour: int = Bat.clock_to(exit_marker.global_position)
+			Bat.say("The music is %s." % Bat.clock_word(hour), "hint_2")
+		3:
+			Bat.scan("hint_3")
+
 
 var prev_norm = null
 func _physics_process(delta: float) -> void:
@@ -116,6 +144,7 @@ func _physics_process(delta: float) -> void:
 					isTouching = true
 					hit_audio.global_position = head_pos + closest_dir * 0.9
 					hit_audio.play()
+					Stuck.report_collision()
 		elif closest_dir.length() > 0.7:
 			isTouching = false
 		#if closest_dir.dot(-global_transform.basis.z) < 1:
