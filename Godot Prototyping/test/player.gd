@@ -23,6 +23,12 @@ var isColliding: bool = false
 ## movement work either way, ported here so the ladder is ready the moment
 ## a marker exists.
 @export var exit_marker: Node3D
+
+## This scene's calibration: the physical player's real-world heading at
+## boot is arbitrary, so this aligns GameState's yaw=0 with "forward into
+## the level" for this spawn point (GameState.effective_orientation()).
+## Tune per scene/spawn -- there is no single correct value.
+@export var spawn_yaw_offset: float = 0.0
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
 var isTouching: bool = false
 
@@ -38,6 +44,7 @@ func _ready():
 	# listener's rotation from GameState.orientation directly, never from
 	# pivot's own transform (CLAUDE_CODE_BRIEF.md §13 Phase 2).
 	AudioDirector.register_listener(listener, pivot)
+	GameState.yaw_offset = spawn_yaw_offset
 	# Bearings are computed from the head, not the body (scripts/bat.gd) --
 	# pivot is exactly that now that its rotation is GameState.orientation.
 	# Bat's own _unhandled_input already listens for "bat_scan"; this is the
@@ -76,8 +83,8 @@ func _physics_process(delta: float) -> void:
 	# follow-up). pivot.rotation is set purely for the camera view and the
 	# raycasts nested under it; movement below reads GameState directly
 	# rather than pivot's transform, so there's exactly one source of truth.
-	pivot.rotation = GameState.orientation
-	var facing := Basis.from_euler(Vector3(0.0, GameState.orientation.y, 0.0))
+	pivot.rotation = GameState.effective_orientation()
+	var facing := Basis.from_euler(Vector3(0.0, GameState.effective_orientation().y, 0.0))
 
 	# Add the gravity.
 	if not is_on_floor():

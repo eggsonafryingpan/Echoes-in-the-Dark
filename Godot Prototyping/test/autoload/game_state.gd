@@ -25,6 +25,16 @@ signal still_changed(is_still: bool)
 @export var elevated_margin_bpm: float = 15.0
 
 var orientation: Vector3 = Vector3.ZERO
+
+## Per-scene calibration offset (yaw only): the physical player's real-world
+## heading at boot is arbitrary and has nothing to do with how a given level
+## was authored, so a scene's spawn point sets this once (see player.gd's
+## spawn_yaw_offset) to align yaw=0 with "forward into the level." Everything
+## that needs facing (AudioDirector's listener/bat source, player movement)
+## should read effective_orientation(), never `orientation` directly, so
+## there's exactly one place this gets applied.
+var yaw_offset: float = 0.0
+
 var is_still: bool = false
 var hr_valid: bool = false
 var hr_bpm: float = -1.0
@@ -43,6 +53,12 @@ func _ready() -> void:
 
 func _on_orientation_updated(euler: Vector3) -> void:
 	orientation = euler
+
+
+## orientation with the scene's yaw calibration applied -- read this, not
+## `orientation`, for anything that renders or moves relative to facing.
+func effective_orientation() -> Vector3:
+	return orientation + Vector3(0.0, yaw_offset, 0.0)
 
 
 func _on_heart_rate_updated(bpm: float, valid: bool) -> void:
