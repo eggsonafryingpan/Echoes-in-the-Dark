@@ -1,0 +1,36 @@
+{
+  "_comment": "Logical name -> {folder, file (no extension)}. Code (SfxLibrary.get_stream) only ever refers to the logical name on the left. Drop a matching .wav or .ogg named <file>.wav/.ogg into assets/sfx/<folder>/ -- no manifest or code edits needed. Missing files fall back to a placeholder tone automatically.",
+
+  "goal_music_motif": {"folder": "priority", "file": "goal_music_motif"},
+  "swarm_cue": {"folder": "priority", "file": "swarm_cue"},
+
+  "footstep_rock": {"folder": "essential", "file": "footstep_rock"},
+  "footstep_gravel": {"folder": "essential", "file": "footstep_gravel"},
+  "footstep_mud": {"folder": "essential", "file": "footstep_mud"},
+  "footstep_water_shallow": {"folder": "essential", "file": "footstep_water_shallow"},
+  "wall_collision_thud": {"folder": "essential", "file": "wall_collision_thud"},
+  "heartbeat_calm": {"folder": "essential", "file": "heartbeat_calm"},
+  "heartbeat_elevated": {"folder": "essential", "file": "heartbeat_elevated"},
+  "breathing_calm": {"folder": "essential", "file": "breathing_calm"},
+  "breathing_panicked": {"folder": "essential", "file": "breathing_panicked"},
+  "echolocation_sweep": {"folder": "essential", "file": "echolocation_sweep"},
+  "echolocation_return": {"folder": "essential", "file": "echolocation_return"},
+
+  "bat_chitter": {"folder": "animals", "file": "bat_chitter"},
+  "bat_wingbeat": {"folder": "animals", "file": "bat_wingbeat"},
+  "small_prey_rustle": {"folder": "animals", "file": "small_prey_rustle"},
+  "larger_creature_breathing": {"folder": "animals", "file": "larger_creature_breathing"},
+  "larger_creature_footsteps": {"folder": "animals", "file": "larger_creature_footsteps"},
+
+  "water_drip": {"folder": "environmental", "file": "water_drip"},
+  "distant_water_flow": {"folder": "environmental", "file": "distant_water_flow"},
+  "wind_passage": {"folder": "environmental", "file": "wind_passage"},
+  "rock_creak": {"folder": "environmental", "file": "rock_creak"},
+  "reverb_bed_low": {"folder": "environmental", "file": "reverb_bed_low"},
+  "rockslide_opening": {"folder": "environmental", "file": "rockslide_opening"},
+  "ambience_flavor_01": {"folder": "environmental", "file": "ambience_flavor_01"},
+  "ambience_flavor_02": {"folder": "environmental", "file": "ambience_flavor_02"},
+
+  "ui_confirm": {"folder": "ui", "file": "ui_confirm"},
+  "ui_back": {"folder": "ui", "file": "ui_back"}
+}

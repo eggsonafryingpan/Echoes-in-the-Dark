@@ -30,6 +30,7 @@ AudioDirector="*res://autoload/audio_director.gd"
 OverloadDetector="*res://autoload/overload_detector.gd"
 BatCompanion="*res://autoload/bat_companion.gd"
 EventDirector="*res://autoload/event_director.gd"
+SfxLibrary="*res://autoload/sfx_library.gd"
 
 [display]
 
