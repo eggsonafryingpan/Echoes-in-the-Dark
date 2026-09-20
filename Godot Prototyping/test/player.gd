@@ -5,12 +5,14 @@ const JUMP_VELOCITY = 4.5
 
 var isLocked: bool = false
 var isColliding: bool = false
-@onready var pivot = $CamOrigin
-@export var sens: int = 1
+## The head (§6.1): its rotation is GameState.orientation, set every physics
+## frame below -- never mouse, never the body's own transform. The body
+## (this CharacterBody3D) never rotates on its own; joystick input moves it
+## relative to pivot's facing instead.
+@onready var pivot: Node3D = $CamOrigin
 @onready var wall_audio: RaytracedAudioPlayer3D = $WallAudio
 @onready var hit_audio: RaytracedAudioPlayer3D = $HitAudio
 @onready var footsteps: AudioStreamPlayer3D = $FootSteps
-@onready var head: Node3D = $CamOrigin/Camera3D
 @onready var listener: AudioListener3D = $CamOrigin/Camera3D/RaytracedAudioListener
 @export var collision_ray_num: int = 10
 @export var collision_dist: int = 4
@@ -24,26 +26,25 @@ var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 	#isLocked = false
 
 func _ready():
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	#cave_generator.terrain_loaded.connect(_on_terrain_loaded)
-	# head is a position anchor only -- AudioDirector drives the listener's
-	# rotation from GameState.orientation, never from head's own rotation
-	# (CLAUDE_CODE_BRIEF.md §13 Phase 2). This mouse-look still rotates
-	# CamOrigin for the collision raycasts/camera view below; it no longer
-	# has any say over what the player hears face.
-	AudioDirector.register_listener(listener, head)
+	# pivot is a position anchor only here -- AudioDirector drives the
+	# listener's rotation from GameState.orientation directly, never from
+	# pivot's own transform (CLAUDE_CODE_BRIEF.md §13 Phase 2).
+	AudioDirector.register_listener(listener, pivot)
 
-func _input(event):
-	if event is InputEventMouseMotion:
-		rotate_y(deg_to_rad(-event.relative.x * sens))
-		pivot.rotate_x(deg_to_rad(-event.relative.y * sens))
-		pivot.rotation.x = clamp(pivot.rotation.x, deg_to_rad(-90),deg_to_rad(45))
-		
 var prev_norm = null
 func _physics_process(delta: float) -> void:
 	if isLocked:
 		return
-	
+
+	# Head orientation is GameState.orientation alone (mock trace or live
+	# IMU) -- never mouse, never the body's transform (§6.1, §13 Phase-2
+	# follow-up). pivot.rotation is set purely for the camera view and the
+	# raycasts nested under it; movement below reads GameState directly
+	# rather than pivot's transform, so there's exactly one source of truth.
+	pivot.rotation = GameState.orientation
+	var facing := Basis.from_euler(Vector3(0.0, GameState.orientation.y, 0.0))
+
 	# Add the gravity.
 	if not is_on_floor():
 		velocity += get_gravity() * delta
@@ -51,14 +52,15 @@ func _physics_process(delta: float) -> void:
 	# Handle jump.
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
-		
+
 	if Input.is_action_just_pressed("quit"):
 		get_tree().quit()
 
-	# Get the input direction and handle the movement/deceleration.
-	# As good practice, you should replace UI actions with custom gameplay actions.
+	# Joystick moves relative to where the head faces (yaw only -- looking
+	# up/down must not change translation, §6.1); the body never rotates on
+	# its own.
 	var input_dir := Input.get_vector("left", "right", "up", "down")
-	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	var direction := (facing * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 	if direction:
 		velocity.x = direction.x * SPEED
 		velocity.z = direction.z * SPEED
@@ -77,7 +79,7 @@ func _physics_process(delta: float) -> void:
 		footsteps.set_stream_paused(false)
 	
 	var raycasts = []
-	var head = global_position + Vector3(0,1.5,0)
+	var head_pos = global_position + Vector3(0,1.5,0)
 	for i in range(collision_ray_num):
 		var step = deg_to_rad(360*(i/float(collision_ray_num)))
 		var ray_dir = Vector3(
@@ -85,10 +87,10 @@ func _physics_process(delta: float) -> void:
 			0,
 			cos(step)
 		)
-		
-		var from = head
+
+		var from = head_pos
 		var to = from + ray_dir * collision_dist
-		
+
 		var query = PhysicsRayQueryParameters3D.create(from,to)
 		query.exclude = [self]
 		var result = get_world_3d().direct_space_state.intersect_ray(query)
@@ -101,12 +103,12 @@ func _physics_process(delta: float) -> void:
 		raycasts.append(hit_vector)
 	if !raycasts.is_empty():
 		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
-		wall_audio.global_position = head + closest_dir * 0.9
+		wall_audio.global_position = head_pos + closest_dir * 0.9
 		if closest_dir.length() < 0.6:
 			if isTouching == false:
-				if closest_dir.dot(-global_transform.basis.z) > 0.4:
+				if closest_dir.dot(-facing.z) > 0.4:
 					isTouching = true
-					hit_audio.global_position = head + closest_dir * 0.9
+					hit_audio.global_position = head_pos + closest_dir * 0.9
 					hit_audio.play()
 		elif closest_dir.length() > 0.7:
 			isTouching = false
