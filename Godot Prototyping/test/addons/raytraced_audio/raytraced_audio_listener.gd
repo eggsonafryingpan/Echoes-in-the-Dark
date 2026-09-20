@@ -25,8 +25,6 @@ const SPEED_OF_SOUND: float = 343.0
 ## All [RaytracedAudioListener]s will be in this group
 const GROUP_NAME: StringName = &"raytraced_audio_listener"
 
-const AudioRay: Script = preload("res://addons/raytraced_audio/audio_ray.gd")
-
 enum RayScatterModel {
 	## Rays will be shot out in a random 3d direction
 	RANDOM,
