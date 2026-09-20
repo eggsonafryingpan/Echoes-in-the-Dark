@@ -16,7 +16,7 @@ extends Node
 ## "elevated" or "is_still" — SensorBridge only reports what the hardware/mock
 ## said, relative-baseline math and thresholds live downstream.
 
-enum SourceMode { LIVE, MOCK }
+enum SourceMode { LIVE, MOCK, DEV_MOUSE }
 
 ## orientation as Euler angles (radians), head-tracking reference frame (§0.1, §6.1)
 signal orientation_updated(euler: Vector3)
@@ -27,9 +27,14 @@ signal heart_rate_updated(bpm: float, valid: bool)
 ## fires once after the ~30s quiet-stillness baseline window completes (§3.3)
 signal baseline_ready(resting_bpm: float)
 
-@export var source_mode: SourceMode = SourceMode.MOCK
+## DEV_MOUSE (default) drives orientation from mouse motion for playtesting
+## navigation feel -- MOCK's scripted traces are for testing CALM/FOCUS/Stuck
+## against a known HR+orientation script, not for freely steering the
+## player, and using MOCK for that made forward movement curve on its own.
+## Switch to MOCK when testing sensor-driven mechanics specifically.
+@export var source_mode: SourceMode = SourceMode.DEV_MOUSE
 
-## Which MockSource trace to play when source_mode is MOCK. Ignored for LIVE.
+## Which MockSource trace to play when source_mode is MOCK. Ignored otherwise.
 @export var mock_trace: String = "startled_then_calming"
 
 ## LiveOSCSource's listening port. Must match the Python bridge's --godot-port.
@@ -59,6 +64,8 @@ func _ready() -> void:
 			var live := LiveOSCSource.new()
 			live.port = live_port
 			_source = live
+		SourceMode.DEV_MOUSE:
+			_source = DevMouseSource.new()
 
 	add_child(_source)
 	_source.orientation_sample.connect(_on_orientation_sample)

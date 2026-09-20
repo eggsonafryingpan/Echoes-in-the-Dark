@@ -58,6 +58,18 @@ func _ready():
 	else:
 		push_warning("No exit_marker assigned. Stuck detection is off, scanning still works.")
 
+	# Capturing the OS cursor is this scene's call, not DevMouseSource's --
+	# main_menu.tscn never runs this script, so the menu stays fully
+	# clickable regardless of which SensorBridge.source_mode is active.
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
 
 ## Each rung gives strictly more than the last (ported from
 ## scripts/player_bat_test.gd). Whether the player should be TOLD they've
