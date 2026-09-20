@@ -38,6 +38,7 @@ environment = SubResource("Environment_jqwnj")
 [node name="player" parent="." unique_id=1773885676 instance=ExtResource("2_d6mwi") node_paths=PackedStringArray("exit_marker")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0116167, -1.7267156, -4.466064)
 exit_marker = NodePath("../GoalMusic")
+spawn_yaw_offset = 1.6765244
 
 [node name="CaveMap" type="Node3D" parent="." unique_id=2095585918]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3517437, -1.2097435, 3.130443)

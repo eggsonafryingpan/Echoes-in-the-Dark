@@ -54,9 +54,9 @@ func _ready() -> void:
 ## Call once from the player scene's _ready(): tells AudioDirector which
 ## AudioListener3D to drive and which node's position stands in for the head
 ## (translation only). Orientation for both the listener and bat_source comes
-## exclusively from GameState.orientation (see _process) -- never from
-## position_anchor's own rotation -- so swapping the control scheme later
-## (decoupled head/movement, §6.1) needs no changes here.
+## exclusively from GameState.effective_orientation() (see _process) -- never
+## from position_anchor's own rotation -- so swapping the control scheme
+## later (decoupled head/movement, §6.1) needs no changes here.
 func register_listener(listener: AudioListener3D, position_anchor: Node3D) -> void:
 	_listener = listener
 	_position_anchor = position_anchor
@@ -66,7 +66,7 @@ func _process(_delta: float) -> void:
 	if _listener == null or _position_anchor == null:
 		return
 
-	var orientation := GameState.orientation
+	var orientation := GameState.effective_orientation()
 	_listener.global_position = _position_anchor.global_position
 	_listener.global_rotation = orientation
 
