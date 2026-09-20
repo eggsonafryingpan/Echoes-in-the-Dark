@@ -37,6 +37,9 @@ var do_wall_decoration_step : bool = true
 @export
 var do_voxel_addition : bool = true
 
+@export
+var crystal_preload : PackedScene
+
 var random_walk_positions : Array[Vector3] = []
 
 
@@ -101,14 +104,13 @@ func wall_additions_pass():
 		# Visualize the raycast.
 		$CurrentWalker.global_position = walk_position
 		
-		if raycast_result:
-			
+		if raycast_result and crystal_preload:
+
 			#Visualize the raycast pt2
 			$CurrentWalker/DebugRaycast.look_at(raycast_result.position)
 			
 			# Create new crystal
-			var new_instance : Node3D = [crystal_preload].pick_random().instantiate()
-			#var new_crystal_instance : Node3D = crystal_preload.instantiate()
+			var new_instance : Node3D = crystal_preload.instantiate()
 			self.add_child(new_instance)
 						
 			new_instance.global_position = raycast_result.position

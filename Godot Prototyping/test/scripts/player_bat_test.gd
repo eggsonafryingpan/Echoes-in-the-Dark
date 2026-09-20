@@ -105,7 +105,7 @@ func _on_stuck(level: int) -> void:
 		1:
 			Bat.say("Wait. Listen for a moment.", "hint_1")
 		2:
-			var hour := Bat.clock_to(exit_marker.global_position)
+			var hour: int = Bat.clock_to(exit_marker.global_position)
 			Bat.say("The music is %s." % Bat.clock_word(hour), "hint_2")
 		3:
 			Bat.scan("hint_3")
