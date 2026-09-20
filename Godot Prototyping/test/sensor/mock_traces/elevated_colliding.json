@@ -1,0 +1,13 @@
+{
+  "name": "elevated_colliding",
+  "description": "A stuck player (brief §5): HR stays elevated for an extended stretch with intermittent head motion. Pair with manually-triggered GameState.report_collision() calls in a test scene to exercise OverloadDetector's conjunctive AND (elevated HR + behavioral evidence) once Phase 3 builds it.",
+  "keyframes": [
+    {"t": 0.0,  "bpm": 80,  "still": true,  "pitch": 0.0, "yaw": 0.0,  "roll": 0.0},
+    {"t": 5.0,  "bpm": 108, "still": true,  "pitch": 0.0, "yaw": 0.2,  "roll": 0.0},
+    {"t": 10.0, "bpm": 118, "still": false, "pitch": 0.0, "yaw": -0.4, "roll": 0.0},
+    {"t": 18.0, "bpm": 122, "still": true,  "pitch": 0.0, "yaw": 0.3,  "roll": 0.0},
+    {"t": 30.0, "bpm": 120, "still": false, "pitch": 0.0, "yaw": -0.2, "roll": 0.0},
+    {"t": 40.0, "bpm": 119, "still": true,  "pitch": 0.0, "yaw": 0.1,  "roll": 0.0},
+    {"t": 60.0, "bpm": 121, "still": true,  "pitch": 0.0, "yaw": 0.0,  "roll": 0.0}
+  ]
+}

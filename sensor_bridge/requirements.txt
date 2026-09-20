@@ -1,0 +1,4 @@
+python-osc>=1.9
+ahrs>=0.3
+heartpy>=1.2
+numpy>=1.24
