@@ -1,0 +1,13 @@
+{
+  "name": "startled_then_calming",
+  "description": "Event 1 cold open (brief §10): HR spikes on the fall, then comes down as the bat's breathing cue lands. Head is mostly still (player is on the ground) except the brief jolt at impact.",
+  "keyframes": [
+    {"t": 0.0,  "bpm": 78,  "still": true,  "pitch": 0.0,  "yaw": 0.0,  "roll": 0.0},
+    {"t": 0.5,  "bpm": 132, "still": false, "pitch": 0.05, "yaw": 0.3,  "roll": 0.0},
+    {"t": 2.0,  "bpm": 138, "still": true,  "pitch": 0.0,  "yaw": 0.1,  "roll": 0.0},
+    {"t": 8.0,  "bpm": 125, "still": true,  "pitch": 0.0,  "yaw": -0.1, "roll": 0.0},
+    {"t": 16.0, "bpm": 105, "still": true,  "pitch": 0.0,  "yaw": 0.0,  "roll": 0.0},
+    {"t": 25.0, "bpm": 90,  "still": true,  "pitch": 0.0,  "yaw": 0.0,  "roll": 0.0},
+    {"t": 35.0, "bpm": 82,  "still": true,  "pitch": 0.0,  "yaw": 0.0,  "roll": 0.0}
+  ]
+}

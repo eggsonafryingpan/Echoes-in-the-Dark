@@ -10,6 +10,8 @@ var isColliding: bool = false
 @onready var wall_audio: RaytracedAudioPlayer3D = $WallAudio
 @onready var hit_audio: RaytracedAudioPlayer3D = $HitAudio
 @onready var footsteps: AudioStreamPlayer3D = $FootSteps
+@onready var head: Node3D = $CamOrigin/Camera3D
+@onready var listener: AudioListener3D = $CamOrigin/Camera3D/RaytracedAudioListener
 @export var collision_ray_num: int = 10
 @export var collision_dist: int = 4
 #@onready var cave_generator = $"../CaveGenerater/CSGCombiner3D/CSGBox3D"
@@ -24,6 +26,12 @@ var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	#cave_generator.terrain_loaded.connect(_on_terrain_loaded)
+	# head is a position anchor only -- AudioDirector drives the listener's
+	# rotation from GameState.orientation, never from head's own rotation
+	# (CLAUDE_CODE_BRIEF.md §13 Phase 2). This mouse-look still rotates
+	# CamOrigin for the collision raycasts/camera view below; it no longer
+	# has any say over what the player hears face.
+	AudioDirector.register_listener(listener, head)
 
 func _input(event):
 	if event is InputEventMouseMotion:

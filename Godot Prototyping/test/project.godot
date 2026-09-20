@@ -24,6 +24,12 @@ general/text_to_speech=true
 
 Bat="*uid://csyi67nhy3t2k"
 Stuck="*uid://bmugsso5pqaim"
+SensorBridge="*res://autoload/sensor_bridge.gd"
+GameState="*res://autoload/game_state.gd"
+AudioDirector="*res://autoload/audio_director.gd"
+OverloadDetector="*res://autoload/overload_detector.gd"
+BatCompanion="*res://autoload/bat_companion.gd"
+EventDirector="*res://autoload/event_director.gd"
 
 [display]
 
