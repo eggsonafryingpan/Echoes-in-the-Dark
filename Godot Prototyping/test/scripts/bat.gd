@@ -190,7 +190,7 @@ func _clock(origin: Vector3, basis: Basis, target: Vector3) -> int:
 	var to_target := target - origin
 	to_target.y = 0.0
 	if to_target.length_squared() < 0.0001:
-		return 12
+		return 0
 	to_target = to_target.normalized()
 
 	var forward := -basis.z
@@ -201,12 +201,11 @@ func _clock(origin: Vector3, basis: Basis, target: Vector3) -> int:
 	right.y = 0.0
 	right = right.normalized()
 
-	# +angle is to the player's right
+	# +angle is to the player's right. Bucket into the four CLOCK_WORDS
+	# quadrants (0 ahead, 1 right, 2 behind, 3 left) -- angle alone isn't a
+	# valid dict key, and scan()'s CLOCK_WORDS[entry.clock] has no fallback.
 	var angle := atan2(to_target.dot(right), to_target.dot(forward))
-	print("deg",angle)
-	var deg = (angle + PI/2) / (PI / 4)
-	print(deg)
-	#var hour := int(round(angle / (TAU / 12.0)))
-	#if hour <= 0:
-		#hour += 12
-	return deg
+	var quadrant := int(round(angle / (PI / 2.0))) % 4
+	if quadrant < 0:
+		quadrant += 4
+	return quadrant
