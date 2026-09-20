@@ -14,6 +14,9 @@ enum GeomType {
 }
 
 func _post_import(scene: Node) -> Node:
+	if not ClassDB.class_exists(&"SteamAudioGeometry"):
+		push_warning("SteamAudioPostImport: godot-steam-audio extension isn't loaded on this platform, skipping geometry generation.")
+		return scene
 	self.scene_root = scene
 	iterate(scene)
 	return scene
@@ -22,15 +25,15 @@ func _post_import(scene: Node) -> Node:
 func iterate(n: Node) -> void:
 	var typ := steam_audio_geom_type(n)
 	if typ != GeomType.NONE:
-		var g: Node 
+		var g: Node
 		match typ:
 			GeomType.STATIC:
-				g = SteamAudioGeometry.new() 
+				g = ClassDB.instantiate(&"SteamAudioGeometry")
 				g.name = "SteamAudioGeometry"
 			GeomType.DYNAMIC:
-				g = SteamAudioDynamicGeometry.new()
+				g = ClassDB.instantiate(&"SteamAudioDynamicGeometry")
 				g.name = "SteamAudioDynamicGeometry"
-		g.set_material(preload("res://addons/godot-steam-audio/materials/default_material.tres"))	
+		g.set_material(load("res://addons/godot-steam-audio/materials/default_material.tres"))
 		n.add_child(g)
 		g.owner = self.scene_root
 		
