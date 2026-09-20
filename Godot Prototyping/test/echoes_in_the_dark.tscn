@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://ds12ubxggbjrg"]
 
+[ext_resource type="PackedScene" uid="uid://btx6qd7c5pcfd" path="res://top_down_view.tscn" id="1_i35yt"]
 [ext_resource type="PackedScene" uid="uid://5pkq3yeene5a" path="res://player.tscn" id="2_d6mwi"]
 [ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
 [ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
@@ -27,6 +28,8 @@ uv1_triplanar = true
 [sub_resource type="BoxShape3D" id="BoxShape3D_jv6wj"]
 
 [node name="World" type="Node3D" unique_id=1184201749]
+
+[node name="TopDownView" parent="." unique_id=362832385 instance=ExtResource("1_i35yt")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
 environment = SubResource("Environment_jqwnj")
