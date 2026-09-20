@@ -31,6 +31,12 @@ func _ready():
 	# listener's rotation from GameState.orientation directly, never from
 	# pivot's own transform (CLAUDE_CODE_BRIEF.md §13 Phase 2).
 	AudioDirector.register_listener(listener, pivot)
+	# Bearings are computed from the head, not the body (scripts/bat.gd) --
+	# pivot is exactly that now that its rotation is GameState.orientation.
+	# Bat's own _unhandled_input already listens for "bat_scan"; this is the
+	# only wiring this scene needs (ported from sophias_cave.tscn's
+	# player_bat_test.gd).
+	Bat.head = pivot
 
 var prev_norm = null
 func _physics_process(delta: float) -> void:
