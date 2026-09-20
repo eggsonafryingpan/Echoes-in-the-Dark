@@ -1,3 +1,4 @@
+class_name AudioRay
 extends RayCast3D
 
 # dont you worry about this class, habibi

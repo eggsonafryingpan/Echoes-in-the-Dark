@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
 [ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="8_p46sw"]
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
+[ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="10_rtap"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -49,7 +50,8 @@ shape = SubResource("BoxShape3D_t1ucx")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 mesh = SubResource("BoxMesh_jqwnj")
 
-[node name="RaytracedAudioPlayer3D" type="RaytracedAudioPlayer3D" parent="." unique_id=1667717570]
+[node name="RaytracedAudioPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1667717570]
+script = ExtResource("10_rtap")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 16.312382)
 attenuation_model = 3
 volume_db = 14.349
@@ -72,7 +74,8 @@ shape = SubResource("BoxShape3D_jv6wj")
 wait_time = 0.2
 autostart = true
 
-[node name="AudioPlayer" type="RaytracedAudioPlayer3D" parent="SoundBox" unique_id=1158175298]
+[node name="AudioPlayer" type="AudioStreamPlayer3D" parent="SoundBox" unique_id=1158175298]
+script = ExtResource("10_rtap")
 attenuation_model = 3
 autoplay = true
 panning_strength = 0.0
