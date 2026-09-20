@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
 [ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="8_p46sw"]
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
-[ext_resource type="Script" uid="uid://cat7p06gm4nof" path="res://steam_audio_player.gd" id="9_txtix"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -56,7 +55,6 @@ attenuation_model = 3
 volume_db = 14.349
 max_distance = 150.59
 panning_strength = 0.0
-script = ExtResource("9_txtix")
 
 [node name="SoundBox" type="Area3D" parent="." unique_id=776409351 groups=["SoundBox"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.627335, -1.2379148, -4.914988)
