@@ -76,6 +76,7 @@ func _physics_process(delta: float) -> void:
 	# rather than pivot's transform, so there's exactly one source of truth.
 	pivot.rotation = GameState.effective_orientation()
 	var facing := Basis.from_euler(Vector3(0.0, GameState.effective_orientation().y, 0.0))
+	GameState.report_head_position(pivot.global_position)
 
 	# Add the gravity.
 	if not is_on_floor():
