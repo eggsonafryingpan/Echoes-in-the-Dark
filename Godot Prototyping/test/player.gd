@@ -18,10 +18,9 @@ var isColliding: bool = false
 @export var collision_dist: int = 4
 
 ## Unset until level design places a real objective in this scene (Phase 10,
-## §10.1). Stuck detection is off with no exit_marker assigned, same
-## fail-safe sophias_cave.tscn's player_bat_test.gd used -- scanning and
-## movement work either way, ported here so the ladder is ready the moment
-## a marker exists.
+## §10.1). Without it, distance-to-objective is never reported, so
+## OverloadDetector's no-progress signal simply never contributes --
+## collisions/confinement still work, matching the old Stuck fail-safe.
 @export var exit_marker: Node3D
 
 ## This scene's calibration: the physical player's real-world heading at
@@ -52,12 +51,6 @@ func _ready():
 	# player_bat_test.gd).
 	Bat.head = pivot
 
-	if exit_marker != null:
-		Stuck.configure(self, exit_marker)
-		Stuck.became_stuck.connect(_on_stuck)
-	else:
-		push_warning("No exit_marker assigned. Stuck detection is off, scanning still works.")
-
 	# Capturing the OS cursor is this scene's call, not DevMouseSource's --
 	# main_menu.tscn never runs this script, so the menu stays fully
 	# clickable regardless of which SensorBridge.source_mode is active.
@@ -69,20 +62,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-
-
-## Each rung gives strictly more than the last (ported from
-## scripts/player_bat_test.gd). Whether the player should be TOLD they've
-## been flagged is a question for testers, not for you.
-func _on_stuck(level: int) -> void:
-	match level:
-		1:
-			Bat.say("Wait. Listen for a moment.", "hint_1")
-		2:
-			var hour: int = Bat.clock_to(exit_marker.global_position)
-			Bat.say("The music is %s." % Bat.clock_word(hour), "hint_2")
-		3:
-			Bat.scan("hint_3")
 
 
 var prev_norm = null
@@ -120,6 +99,13 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 		velocity.z = move_toward(velocity.z, 0, SPEED)
+
+	# OverloadDetector's behavioral half reads these off GameState (§13
+	# Phase 3, migrated from "Stuck") -- confinement/collisions work
+	# regardless; no-progress only contributes once exit_marker is set.
+	GameState.report_position(global_position)
+	if exit_marker != null:
+		GameState.report_distance_to_objective(global_position.distance_to(exit_marker.global_position))
 
 
 	
@@ -163,7 +149,7 @@ func _physics_process(delta: float) -> void:
 					isTouching = true
 					hit_audio.global_position = head_pos + closest_dir * 0.9
 					hit_audio.play()
-					Stuck.report_collision()
+					GameState.report_collision()
 		elif closest_dir.length() > 0.7:
 			isTouching = false
 		#if closest_dir.dot(-global_transform.basis.z) < 1:
