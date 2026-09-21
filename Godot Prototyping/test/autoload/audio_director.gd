@@ -26,9 +26,38 @@ const BUS_ENVIRONMENTAL := &"Environmental"
 
 ## Reviewer-requested A/B toggle (§11): when false, overload never strips
 ## anything, so a demo operator can show the non-adaptive experience.
-var adaptive_enabled: bool = true
+## Flipping it off also immediately restores anything currently stripped,
+## so the "off" demo always shows the full mix rather than whatever
+## fraction happened to be stripped at the moment of the toggle.
+var adaptive_enabled: bool = true:
+	set(v):
+		adaptive_enabled = v
+		if not v:
+			_fade_bus(BUS_ENVIRONMENTAL, 1.0)
+			_fade_bus(BUS_ESSENTIAL, 1.0)
+
+## Operator hotkey for the A/B toggle (§11), bound in Project Settings > Input Map.
+const TOGGLE_ADAPTIVE_ACTION := &"toggle_adaptive_audio"
 
 @export var fade_seconds: float = 1.5
+
+## Base volume set via set_layer_volume(), independent of the strip/restore
+## fade fraction below -- the two compose into the bus's actual volume_db
+## (_apply_bus_volume) rather than fighting over the same value.
+var _base_volume_linear: Dictionary = {
+	BUS_PRIORITY: 1.0,
+	BUS_ESSENTIAL: 1.0,
+	BUS_ENVIRONMENTAL: 1.0,
+}
+
+## 1.0 = fully present, 0.0 = fully stripped. Priority never appears here --
+## it's never stripped, so it has no fraction to track.
+var _strip_fraction: Dictionary = {
+	BUS_ESSENTIAL: 1.0,
+	BUS_ENVIRONMENTAL: 1.0,
+}
+
+var _fade_tweens: Dictionary = {}
 
 ## Bat's virtual spatial source (§9.1): one clean audio path into the
 ## headphones, anchored to a fixed shoulder offset that tracks head rotation.
@@ -77,28 +106,71 @@ func _process(_delta: float) -> void:
 
 
 func strip_environmental() -> void:
-	pass  # Phase 3: fade BUS_ENVIRONMENTAL to silence if adaptive_enabled.
+	_fade_bus(BUS_ENVIRONMENTAL, 0.0)
+	layer_stripped.emit(BUS_ENVIRONMENTAL)
 
 
 func strip_essential() -> void:
-	pass  # Phase 3: fade BUS_ESSENTIAL to silence if adaptive_enabled.
+	_fade_bus(BUS_ESSENTIAL, 0.0)
+	layer_stripped.emit(BUS_ESSENTIAL)
 
 
 func restore_environmental() -> void:
-	pass  # Phase 3: fade BUS_ENVIRONMENTAL back in.
+	_fade_bus(BUS_ENVIRONMENTAL, 1.0)
+	layer_restored.emit(BUS_ENVIRONMENTAL)
 
 
 func restore_essential() -> void:
-	pass  # Phase 3: fade BUS_ESSENTIAL back in.
+	_fade_bus(BUS_ESSENTIAL, 1.0)
+	layer_restored.emit(BUS_ESSENTIAL)
 
 
 ## Main-menu per-layer volume control (§4). linear is 0..1; converted to dB
 ## so the slider behaves perceptually. This is the only place that should
-## ever touch these buses' base volume -- strip/restore (Phase 3) fade a
-## separate multiplier on top via AudioServer, not this value.
+## ever touch a bus's base volume -- strip/restore fade a separate
+## multiplier on top (_strip_fraction), composed together in
+## _apply_bus_volume() rather than the two fighting over the same value.
 func set_layer_volume(layer: StringName, linear: float) -> void:
-	var bus_idx := AudioServer.get_bus_index(layer)
-	if bus_idx == -1:
+	if not _base_volume_linear.has(layer):
 		push_warning("AudioDirector.set_layer_volume: unknown bus %s" % layer)
 		return
-	AudioServer.set_bus_volume_db(bus_idx, linear_to_db(clampf(linear, 0.0, 1.0)))
+	_base_volume_linear[layer] = clampf(linear, 0.0, 1.0)
+	_apply_bus_volume(layer)
+
+
+## target_fraction 0.0 = fully stripped, 1.0 = fully present. Stripping
+## (target < 1.0) is skipped while the A/B toggle has adaptation off, so a
+## demo operator never gets a strip landing after they've already switched
+## to the non-adaptive comparison; restoring always proceeds regardless.
+func _fade_bus(layer: StringName, target_fraction: float) -> void:
+	if not _strip_fraction.has(layer):
+		return  # Priority: never stripped, nothing to fade.
+	if target_fraction < 1.0 and not adaptive_enabled:
+		return
+
+	if _fade_tweens.has(layer) and is_instance_valid(_fade_tweens[layer]):
+		_fade_tweens[layer].kill()
+
+	var start_fraction: float = _strip_fraction[layer]
+	var tw := create_tween()
+	_fade_tweens[layer] = tw
+	tw.tween_method(_set_strip_fraction.bind(layer), start_fraction, target_fraction, fade_seconds)
+
+
+func _set_strip_fraction(fraction: float, layer: StringName) -> void:
+	_strip_fraction[layer] = fraction
+	_apply_bus_volume(layer)
+
+
+func _apply_bus_volume(layer: StringName) -> void:
+	var bus_idx := AudioServer.get_bus_index(layer)
+	if bus_idx == -1:
+		return
+	var base: float = _base_volume_linear.get(layer, 1.0)
+	var strip: float = _strip_fraction.get(layer, 1.0)
+	AudioServer.set_bus_volume_db(bus_idx, linear_to_db(base * strip))
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(TOGGLE_ADAPTIVE_ACTION):
+		adaptive_enabled = not adaptive_enabled

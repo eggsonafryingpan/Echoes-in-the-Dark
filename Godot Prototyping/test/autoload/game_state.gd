@@ -10,11 +10,22 @@ extends Node
 ##
 ## This node does not decide anything by itself — it is a shared read model.
 ## OverloadDetector reads it to decide overload; EventDirector and
-## AudioDirector read it for context. Keeping the decision logic out of here
-## is what will let the existing "Stuck" prototype's behavioral counters (no
-## progress / collisions / confinement) drop in as one input among several
-## once OverloadDetector exists (Phase 3) — that phase migrates Stuck's logic
-## here rather than duplicating it.
+## AudioDirector read it for context.
+##
+## The behavioral counters below are the "Stuck" prototype's tracking,
+## migrated here rather than duplicated (§13 Phase 3): rolling-window
+## collision counting, no-progress-toward-objective tracking, and
+## confinement/circling detection. OverloadDetector owns the DECISION
+## (thresholds, HR conjunction, hysteresis); this just tracks the raw
+## windows, fed by whatever's doing navigation each physics frame
+## (player.gd calls report_collision()/report_position()/
+## report_distance_to_objective()).
+##
+## Note: Stuck's actual third signal was confinement (circling within a
+## small radius), not the brief's literal "few object interactions" -- there
+## is no object-interaction tracking anywhere in this codebase to migrate.
+## Confinement is kept as the existing, working proxy; flagged for whoever
+## wants a real interaction counter later.
 
 signal elevated_changed(is_elevated: bool)
 signal still_changed(is_still: bool)
@@ -40,10 +51,26 @@ var hr_valid: bool = false
 var hr_bpm: float = -1.0
 var hr_elevated: bool = false
 
-## Behavioral evidence inputs for OverloadDetector (§5). Populated by the
-## navigation/collision system (§6.1) and event logic.
-var collision_count: int = 0
+## Unused so far -- no system increments this yet. Left in place rather than
+## removed as unrelated scope creep; OverloadDetector's behavioral test
+## doesn't use it (see confinement/collisions/no-progress below).
 var disorientation_count: int = 0
+
+## --- Behavioral tracking migrated from "Stuck" (§13 Phase 3) -------------
+
+@export var behavior_window_seconds: float = 20.0
+@export var confinement_radius: float = 3.0
+@export var no_progress_seconds: float = 25.0
+@export var collision_window_seconds: float = 15.0
+@export var collision_threshold: int = 4
+
+const _SAMPLE_INTERVAL := 0.5
+
+var _collision_times: Array[float] = []
+var _position_samples: Array = []  # [{t: float, pos: Vector3}]
+var _next_position_sample_t: float = 0.0
+var _best_distance_to_objective: float = INF
+var _t_best_distance: float = -1.0
 
 
 func _ready() -> void:
@@ -83,11 +110,84 @@ func _on_heart_rate_updated(bpm: float, valid: bool) -> void:
 		elevated_changed.emit(hr_elevated)
 
 
+## Call from the navigation/collision system on every wall hit.
 func report_collision() -> void:
-	# Phase 3: fold into a rolling window, same pattern as Stuck._collisions.
-	collision_count += 1
+	var now := Time.get_ticks_msec() / 1000.0
+	_collision_times.append(now)
+	_trim_collisions(now)
+
+
+## Call once per physics frame from the navigation system with the player's
+## current position, for confinement/circling detection. Internally
+## throttled to _SAMPLE_INTERVAL, same cadence Stuck used.
+func report_position(pos: Vector3) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now < _next_position_sample_t:
+		return
+	_next_position_sample_t = now + _SAMPLE_INTERVAL
+	_position_samples.append({"t": now, "pos": pos})
+	_trim_positions(now)
+
+
+## Call once per physics frame with the current distance to the level's
+## objective (e.g. player.global_position.distance_to(exit_marker.global_position)).
+## Tracks the best (smallest) distance seen and when it was last improved.
+func report_distance_to_objective(distance: float) -> void:
+	if distance < _best_distance_to_objective - 0.5:
+		_best_distance_to_objective = distance
+		_t_best_distance = Time.get_ticks_msec() / 1000.0
+
+
+## True once collision_threshold hits have landed within collision_window_seconds.
+## A single stray collision can never satisfy this on its own (§13 Phase 3
+## spike debounce) -- the threshold itself is the debounce.
+func recent_collision_count() -> int:
+	_trim_collisions(Time.get_ticks_msec() / 1000.0)
+	return _collision_times.size()
+
+
+## Seconds since distance-to-objective last improved. 0 until the first
+## report_distance_to_objective() call, so this never falsely reads as
+## "stuck" before navigation tracking has even started.
+func seconds_since_progress() -> float:
+	if _t_best_distance < 0.0:
+		return 0.0
+	return (Time.get_ticks_msec() / 1000.0) - _t_best_distance
+
+
+## True when the player has stayed within confinement_radius of their own
+## recent-average position for most of behavior_window_seconds -- circling
+## rather than exploring. Needs a mostly-full window before it means
+## anything, same as Stuck._confined().
+func is_confined() -> bool:
+	var expected := int(behavior_window_seconds / _SAMPLE_INTERVAL)
+	if _position_samples.size() < int(expected * 0.8):
+		return false
+
+	var centre := Vector3.ZERO
+	for s in _position_samples:
+		centre += s.pos
+	centre /= float(_position_samples.size())
+
+	var max_r := 0.0
+	for s in _position_samples:
+		max_r = maxf(max_r, centre.distance_to(s.pos))
+	return max_r < confinement_radius
+
+
+func _trim_collisions(now: float) -> void:
+	while _collision_times.size() > 0 and now - _collision_times[0] > collision_window_seconds:
+		_collision_times.pop_front()
+
+
+func _trim_positions(now: float) -> void:
+	while _position_samples.size() > 0 and now - _position_samples[0].t > behavior_window_seconds:
+		_position_samples.pop_front()
 
 
 func reset_counters() -> void:
-	collision_count = 0
 	disorientation_count = 0
+	_collision_times.clear()
+	_position_samples.clear()
+	_best_distance_to_objective = INF
+	_t_best_distance = -1.0
