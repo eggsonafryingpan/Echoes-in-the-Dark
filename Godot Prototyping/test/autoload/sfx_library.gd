@@ -22,7 +22,11 @@ extends Node
 
 const MANIFEST_PATH := "res://assets/sfx/manifest.json"
 const SFX_ROOT := "res://assets/sfx/"
-const _EXTENSIONS := ["wav", "ogg"]
+
+## mp3 added alongside the original wav/ogg contract: real deliveries have
+## arrived as mp3 (freesound-style downloads), and Godot imports mp3
+## natively same as the other two, so there's no reason to reject it.
+const _EXTENSIONS := ["wav", "ogg", "mp3"]
 
 var _manifest: Dictionary = {}
 var _cache: Dictionary = {}
