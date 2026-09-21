@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
 [ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="10_rtap"]
 [ext_resource type="Script" uid="uid://c32yps2o03th3" path="res://scripts/describable.gd" id="11_dsc"]
+[ext_resource type="PackedScene" path="res://spatial_sfx_source.tscn" id="12_sfxsrc"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -141,5 +142,104 @@ metadata/_custom_type_script = "uid://c32yps2o03th3"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 19.312382)
 script = ExtResource("10_rtap")
 bus = &"Priority"
+
+[node name="SwarmAmbience" parent="SwarmCluster" instance=ExtResource("12_sfxsrc") unique_id=5000000013]
+sfx_name = &"swarm_cue"
+bus = &"Environmental"
+
+[node name="Describable" parent="SwarmCluster/SwarmAmbience" unique_id=5000000014]
+label = "a swarm, buzzing thickly"
+detail = "Many small bodies, all moving -- but none of them scattering."
+priority = 10
+
+[node name="BatRoost" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000015]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, 1.2, -4.5)
+sfx_name = &"bat_chitter"
+bus = &"Environmental"
+
+[node name="Describable" parent="BatRoost" unique_id=5000000016]
+label = "something small, chittering, high up"
+detail = "Perched up near the ceiling. Quiet until you face it."
+
+[node name="RiverBigA" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000017]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.0, -1.5, -4.5)
+sfx_name = &"river_flow_large"
+bus = &"Environmental"
+
+[node name="Describable" parent="RiverBigA" unique_id=5000000018]
+label = "rushing water"
+detail = "A wide, steady flow, close by."
+
+[node name="RiverBigB" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000019]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.0, -1.5, -4.5)
+sfx_name = &"river_flow_large"
+bus = &"Environmental"
+
+[node name="Describable" parent="RiverBigB" unique_id=5000000020]
+label = "rushing water"
+detail = "The same wide flow, a little further along."
+
+[node name="WindPassage" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000021]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, -1.5, -6.5)
+sfx_name = &"wind_passage"
+bus = &"Environmental"
+
+[node name="Describable" parent="WindPassage" unique_id=5000000022]
+label = "wind moving through rock"
+detail = "A steady draft finding its way through."
+
+[node name="WindPassageSoft" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000023]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.0, -1.5, -2.5)
+sfx_name = &"wind_passage_soft"
+bus = &"Environmental"
+
+[node name="Describable" parent="WindPassageSoft" unique_id=5000000024]
+label = "a faint draft"
+detail = "Barely a breeze."
+
+[node name="WaterDrip" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000025]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.0, -1.5, -0.5)
+sfx_name = &"water_drip"
+bus = &"Environmental"
+
+[node name="Describable" parent="WaterDrip" unique_id=5000000026]
+label = "water dripping"
+detail = "Somewhere close, water is falling drop by drop."
+
+[node name="RiverSmallA" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000027]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, -1.2, -6.0)
+sfx_name = &"river_flow_small"
+bus = &"Environmental"
+
+[node name="Describable" parent="RiverSmallA" unique_id=5000000028]
+label = "a narrow stream"
+detail = "Thinner, quicker water than the river back the way you came."
+
+[node name="RiverSmallB" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000029]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, -1.2, -3.0)
+sfx_name = &"river_flow_small"
+bus = &"Environmental"
+
+[node name="Describable" parent="RiverSmallB" unique_id=5000000030]
+label = "a narrow stream"
+detail = "The same stream, curling further on."
+
+[node name="WaterfallA" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000031]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.98, 0.0, 14.0)
+sfx_name = &"waterfall"
+bus = &"Environmental"
+
+[node name="Describable" parent="WaterfallA" unique_id=5000000032]
+label = "falling water"
+detail = "Water dropping from a height, loud and constant."
+
+[node name="WaterfallB" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000033]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.98, 0.0, 20.0)
+sfx_name = &"waterfall"
+bus = &"Environmental"
+
+[node name="Describable" parent="WaterfallB" unique_id=5000000034]
+label = "falling water"
+detail = "The same fall, heard from the other side of the chamber."
 
 [connection signal="timeout" from="SoundBox/Timer" to="SoundBox" method="_on_timer_timeout"]
