@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://btx6qd7c5pcfd" path="res://top_down_view.tscn" id="1_i35yt"]
 [ext_resource type="PackedScene" uid="uid://5pkq3yeene5a" path="res://player.tscn" id="2_d6mwi"]
-[ext_resource type="Texture2D" uid="uid://d257ffddlidy4" path="res://icon.svg" id="7_j4lhy"]
+[ext_resource type="Texture2D" path="res://assets/rock.jpg" id="7_rock"]
 [ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
 [ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="8_p46sw"]
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
@@ -17,8 +17,9 @@ tonemap_mode = 3
 glow_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1xale"]
-albedo_texture = ExtResource("7_j4lhy")
+albedo_texture = ExtResource("7_rock")
 uv1_triplanar = true
+uv1_scale = Vector3(0.25, 0.25, 0.25)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_t1ucx"]
 
