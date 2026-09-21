@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="10_rtap"]
 [ext_resource type="Script" uid="uid://c32yps2o03th3" path="res://scripts/describable.gd" id="11_dsc"]
 [ext_resource type="PackedScene" path="res://spatial_sfx_source.tscn" id="12_sfxsrc"]
+[ext_resource type="Script" path="res://focusable.gd" id="13_focus"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -151,6 +152,13 @@ bus = &"Environmental"
 label = "a swarm, buzzing thickly"
 detail = "Many small bodies, all moving -- but none of them scattering."
 priority = 10
+
+[node name="Focusable" type="Node3D" parent="SwarmCluster" unique_id=5000000035]
+script = ExtResource("13_focus")
+audio_player_path = NodePath("../SwarmAmbience/AudioStreamPlayer3D")
+describable_path = NodePath("../SwarmAmbience/Describable")
+revealed_label = "many calm creatures"
+revealed_detail = "Predators and prey together, unnaturally still. Not a threat."
 
 [node name="BatRoost" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000015]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, 1.2, -4.5)

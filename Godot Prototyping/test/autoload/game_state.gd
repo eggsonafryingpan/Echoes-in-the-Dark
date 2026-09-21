@@ -46,6 +46,12 @@ var orientation: Vector3 = Vector3.ZERO
 ## there's exactly one place this gets applied.
 var yaw_offset: float = 0.0
 
+## Current head position in world space, reported every physics frame by
+## player.gd (pivot's position). Unthrottled -- unlike report_position()
+## below, which feeds a 0.5s-cadence rolling window for confinement, FOCUS
+## (§6.3, Phase 4) needs a fresh alignment check every frame.
+var head_position: Vector3 = Vector3.ZERO
+
 var is_still: bool = false
 var hr_valid: bool = false
 var hr_bpm: float = -1.0
@@ -108,6 +114,10 @@ func _on_heart_rate_updated(bpm: float, valid: bool) -> void:
 	if elevated != hr_elevated:
 		hr_elevated = elevated
 		elevated_changed.emit(hr_elevated)
+
+
+func report_head_position(pos: Vector3) -> void:
+	head_position = pos
 
 
 ## Call from the navigation/collision system on every wall hit.
