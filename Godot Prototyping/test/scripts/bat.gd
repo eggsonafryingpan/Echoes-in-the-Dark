@@ -46,8 +46,19 @@ var _speaking: bool = false
 var _queue: Array = []
 var _next_id: int = 1
 
+## Flat, non-spatial feedback (sweep/detected pings, the one-time startup
+## cue) -- deliberately on Master, not routed through AudioDirector's three
+## layers, so it's never silenced by overload stripping. The player needs
+## to hear whether their scan action registered regardless of audio-
+## complexity state.
+var _ui_player: AudioStreamPlayer = null
+
 
 func _ready() -> void:
+	_ui_player = AudioStreamPlayer.new()
+	add_child(_ui_player)
+	_play_ui(&"ui_startup")
+
 	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
 		push_error("TTS unavailable. Project Settings > Audio > General > Text To Speech must be on. On Linux you also need speech-dispatcher installed.")
 		return
@@ -58,6 +69,11 @@ func _ready() -> void:
 	DisplayServer.tts_set_utterance_callback(
 		DisplayServer.TTS_UTTERANCE_CANCELED, _on_utterance_done
 	)
+
+
+func _play_ui(sfx_name: StringName) -> void:
+	_ui_player.stream = SfxLibrary.get_stream(sfx_name)
+	_ui_player.play()
 
 
 func _pick_voice() -> void:
@@ -127,11 +143,14 @@ func scan(reason: String = "player_request") -> void:
 	if reason == "player_request" and now - _last_scan < SCAN_COOLDOWN:
 		return
 	_last_scan = now
+	_play_ui(&"ui_scan_sweep")
 
 	var found := nearby()
 	if found.is_empty():
 		say("Nothing close enough to make out.", reason, true)
 		return
+
+	_play_ui(&"ui_scan_detected")
 
 	var parts: Array[String] = []
 	for entry in found:
