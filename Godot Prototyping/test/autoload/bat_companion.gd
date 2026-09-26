@@ -50,11 +50,13 @@ signal spoke(line_id: StringName)
 ## directions rather than one smeared chord.
 @export var return_stagger: float = 0.12
 
-## Scan feedback is the player's confirmation that their own action
-## registered, so it must survive overload stripping (§4). The UI bus sends
-## straight to Master; AudioDirector only ever fades Essential and
-## Environmental, so nothing here can be silenced out from under the player.
-const BUS_UI := &"UI"
+## Where voices/generate_voices.sh writes. Clips are addressed by id alone,
+## so re-wording a line and re-running the generator changes nothing here —
+## that is the whole point of the id indirection. Extensions are tried in
+## order because the generator emits mp3 when ffmpeg or lame is installed
+## and wav otherwise; the game should not care which.
+const VOICE_DIR := "res://assets/sfx/voice/"
+const VOICE_EXTENSIONS := ["mp3", "wav", "ogg"]
 
 var head: Node3D = null
 var enabled: bool = true
@@ -62,13 +64,16 @@ var enabled: bool = true
 var _last_scan: float = -999.0
 var _sweep_player: AudioStreamPlayer = null
 var _ping_pool: Array[AudioStreamPlayer3D] = []
+var _voice_queue: Array = []
+var _voice_cache: Dictionary = {}
 
 
 func _ready() -> void:
 	_sweep_player = AudioStreamPlayer.new()
 	_sweep_player.name = "SweepPlayer"
-	_sweep_player.bus = BUS_UI
+	_sweep_player.bus = AudioDirector.BUS_UI
 	add_child(_sweep_player)
+	AudioDirector.bat_source.finished.connect(_pump_voice)
 
 
 ## Player-initiated echolocation. Silently no-ops inside the cooldown —
@@ -146,7 +151,7 @@ func _free_ping() -> AudioStreamPlayer3D:
 			return p
 
 	var ping := AudioStreamPlayer3D.new()
-	ping.bus = BUS_UI
+	ping.bus = AudioDirector.BUS_UI
 	ping.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	ping.max_distance = max_return_distance * 1.5
 	ping.unit_size = 4.0
@@ -155,5 +160,64 @@ func _free_ping() -> AudioStreamPlayer3D:
 	return ping
 
 
-func say(_line_id: StringName) -> void:
-	pass  # Phase 7: data-driven dialogue lookup, then delegate to speech backend.
+## Speak a pre-rendered line by id. The clip plays from AudioDirector's
+## bat_source, which is pinned to the shoulder offset and re-positioned
+## every frame from head orientation (§9.1) — so the voice is genuinely
+## located on the player's shoulder and turns with them, rather than
+## arriving flat in both ears.
+##
+## Pre-rendered rather than DisplayServer.tts_speak: the OS speech path is
+## not spatializable at all, so it could never come from the bat. Clips
+## also stay identical between sessions, which matters for a study.
+##
+## Lines queue rather than interrupt — the bat cutting itself off mid-word
+## reads as a bug, and CALM coaching is several short lines in sequence.
+func say(line_id: StringName) -> void:
+	if not enabled:
+		return
+
+	var stream := _voice_clip(line_id)
+	if stream == null:
+		push_warning(
+			"BatCompanion: no voice clip for '%s'. Add it to voices/lines.txt and re-run voices/generate_voices.sh."
+			% line_id
+		)
+		return
+
+	_voice_queue.append({"id": line_id, "stream": stream})
+	_pump_voice()
+
+
+func shut_up() -> void:
+	_voice_queue.clear()
+	AudioDirector.bat_source.stop()
+
+
+func is_speaking() -> bool:
+	return AudioDirector.bat_source.playing or not _voice_queue.is_empty()
+
+
+func _pump_voice() -> void:
+	var source := AudioDirector.bat_source
+	if source.playing or _voice_queue.is_empty():
+		return
+	var item: Dictionary = _voice_queue.pop_front()
+	source.stream = item.stream
+	source.play()
+	spoke.emit(item.id)
+
+
+## Looked up by id only — the generator owns filenames, so nothing here
+## needs to change when a line's wording does.
+func _voice_clip(line_id: StringName) -> AudioStream:
+	if _voice_cache.has(line_id):
+		return _voice_cache[line_id]
+
+	for ext in VOICE_EXTENSIONS:
+		var path := "%s%s.%s" % [VOICE_DIR, line_id, ext]
+		if ResourceLoader.exists(path):
+			var stream = load(path)
+			if stream is AudioStream:
+				_voice_cache[line_id] = stream
+				return stream
+	return null

@@ -1,0 +1,32 @@
+# Bat companion voice lines -- the single source of truth.
+#
+# Format:  id | text
+#
+# The game only ever asks for an id (BatCompanion.say(&"calm_intro")), so the
+# wording on the right is free to change as often as you like: edit the text,
+# re-run ./generate_voices.sh, and nothing in the code or the scenes moves.
+# Deleting a line here deletes its clip on the next run.
+#
+# ids are lowercase letters, digits and underscores. Keep the prefix grouping
+# (calm_, scan_, focus_, event_) so the folder stays readable.
+#
+# Wording below is PLACEHOLDER. Final lines are a human writing task (§0.1)
+# and are expected to change repeatedly -- that is what this pipeline is for.
+
+# --- CALM coaching (§8) --------------------------------------------------
+calm_intro | Slow it down with me.
+calm_breathe_in | In.
+calm_breathe_out | And out.
+calm_settling | That's it. Keep going.
+calm_recovered | Better. You've got it back.
+
+# --- Scan and FOCUS prompts (§9.2) ---------------------------------------
+# The scan itself says nothing -- direction comes from the pings. These are
+# only nudges about how to use it, never "something at seven o'clock".
+scan_nothing_close | Nothing close enough to pick up.
+scan_try_again | Try that again from somewhere else.
+focus_hold_to_identify | Hold still and face it. Give me a moment.
+focus_reveal_ready | There. Now I know what that is.
+
+# --- Attribution beat (§10, Event 3) -------------------------------------
+attribution | You found it. That's what's keeping them all calm.

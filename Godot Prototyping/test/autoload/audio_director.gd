@@ -24,6 +24,12 @@ const BUS_PRIORITY := &"Priority"
 const BUS_ESSENTIAL := &"Essential"
 const BUS_ENVIRONMENTAL := &"Environmental"
 
+## Outside the three-layer taxonomy on purpose: player-facing feedback and
+## the bat's own voice, neither of which may ever be stripped. Sends
+## straight to Master and has no strip fraction, so nothing below can fade
+## it. Owned here because this file owns bus names.
+const BUS_UI := &"UI"
+
 ## Reviewer-requested A/B toggle (§11): when false, overload never strips
 ## anything, so a demo operator can show the non-adaptive experience.
 ## Flipping it off also immediately restores anything currently stripped,
@@ -77,8 +83,15 @@ var _fade_tweens: Dictionary = {}
 ## Bat's virtual spatial source (§9.1): one clean audio path into the
 ## headphones, anchored to a fixed shoulder offset that tracks head rotation.
 ## Not raytraced -- it never has a wall between it and the listener, so
-## muffle/echo would just add artifacts. BatCompanion (Phase 6-7) assigns
-## .stream and calls .play()/.stop() on this; nothing else should.
+## muffle/echo would just add artifacts, and a RaytracedAudioPlayer3D would
+## reassign .bus out from under us the moment it came in range (see
+## spatial_sfx_source.gd). BatCompanion assigns .stream and calls
+## .play()/.stop() on this; nothing else should.
+##
+## On the UI bus, not Essential: the companion's voice carries CALM
+## coaching and FOCUS prompts, which are exactly the moments the overload
+## detector is most likely to be stripping. A bat that goes quiet when the
+## player most needs talking to would be the opposite of the mechanic.
 var bat_source: AudioStreamPlayer3D = null
 
 ## The AudioListener3D actually driving godot-steam-audio's (raytraced_audio's)
@@ -91,7 +104,7 @@ var _position_anchor: Node3D = null
 func _ready() -> void:
 	bat_source = AudioStreamPlayer3D.new()
 	bat_source.name = "BatSource"
-	bat_source.bus = BUS_ESSENTIAL
+	bat_source.bus = BUS_UI
 	add_child(bat_source)
 
 
