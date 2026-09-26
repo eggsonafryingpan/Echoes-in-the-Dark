@@ -7,26 +7,14 @@ extends Node
 ## pre-rendered clips, Piper, whatever — you change one function and nothing
 ## else in the project notices.
 ##
-## Bearings are reported as clock positions because that is the convention
-## orientation-and-mobility instructors actually teach. "Door at two o'clock"
-## is a phrase your players may already think in.
-##
-## Bearings are computed from the HEAD, not the body. That is deliberate: it
-## means the same object is described differently depending on where the player
-## is looking, which reinforces the head-direction coupling instead of
-## competing with it.
+## Speech only. This used to own the scan as well, and that scan spoke
+## "label, left, four metres" — the clock-bearing readout §9.2 calls out to
+## replace. Phase 6 moved the whole verb to BatCompanion, where a scan
+## renders spatialized bearing-only pings and says nothing at all; the clock
+## vocabulary went with it rather than lingering as dead code. Verbal lines
+## are now reserved for story beats, FOCUS prompts and CALM coaching (§9.2).
 
 signal spoke(text: String, reason: String)
-
-const MAX_ITEMS := 3
-const SCAN_COOLDOWN := 1.5
-
-const CLOCK_WORDS := {
-	0: "straight ahead",
-	1: "right",
-	2: "behind you",
-	3: "left"
-}
 
 ## Tuned to sound flat and synthetic rather than warm. Lower pitch, slightly
 ## fast. Adjust to taste — this is the bat's character.
@@ -34,14 +22,10 @@ const CLOCK_WORDS := {
 @export var pitch: float = 0.8
 @export var rate: float = 1.15
 
-## Set this from your level: Bat.head = $Player/Head
-var head: Node3D = null
-
 ## Turn off to silence the bat entirely (useful for a control condition).
 var enabled: bool = true
 
 var _voice: String = ""
-var _last_scan: float = -999.0
 var _speaking: bool = false
 var _queue: Array = []
 var _next_id: int = 1
@@ -85,9 +69,10 @@ func _pick_voice() -> void:
 
 
 ## Move this to your player script if you'd rather keep input in one place.
+## The action routes to BatCompanion, which owns the scan and its cooldown.
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"bat_scan"):
-		scan()
+		BatCompanion.scan()
 		get_viewport().set_input_as_handled()
 
 
@@ -128,103 +113,3 @@ func _pump() -> void:
 func _on_utterance_done(_utterance_id: int) -> void:
 	_speaking = false
 	_pump()
-
-
-# --- scanning -----------------------------------------------------------
-
-## Player-initiated area scan. reason is logged with the spoke signal so you
-## can separate requested speech from volunteered speech in your session data.
-func scan(reason: String = "player_request") -> void:
-	if head == null:
-		push_warning("Bat.head is not set.")
-		return
-
-	var now := Time.get_ticks_msec() / 1000.0
-	if reason == "player_request" and now - _last_scan < SCAN_COOLDOWN:
-		return
-	_last_scan = now
-	_play_ui(&"ui_scan_sweep")
-
-	var found := nearby()
-	if found.is_empty():
-		say("Nothing close enough to make out.", reason, true)
-		return
-
-	_play_ui(&"ui_scan_detected")
-
-	var parts: Array[String] = []
-	for entry in found:
-		var d: Describable = entry.node
-		parts.append("%s, %s, %d meters" % [
-			d.label, CLOCK_WORDS[entry.clock], int(round(entry.distance))
-		])
-		d.announced = true
-	say(". ".join(parts) + ".", reason, true)
-
-
-## Returns up to MAX_ITEMS dictionaries: {node, distance, clock}
-## sorted by priority then proximity.
-func nearby() -> Array:
-	var results: Array = []
-	if head == null:
-		return results
-	var origin := head.global_position
-	var basis := head.global_transform.basis
-
-	for node in get_tree().get_nodes_in_group(&"describable"):
-		var d := node as Describable
-		if d == null or not d.available():
-			continue
-		var dist := origin.distance_to(d.global_position)
-		if dist > d.scan_radius:
-			continue
-		results.append({
-			"node": d,
-			"distance": dist,
-			"clock": _clock(origin, basis, d.global_position),
-		})
-
-	results.sort_custom(func(a, b):
-		if a.node.priority != b.node.priority:
-			return a.node.priority > b.node.priority
-		return a.distance < b.distance
-	)
-	return results.slice(0, MAX_ITEMS)
-
-
-# --- bearings -----------------------------------------------------------
-
-## Clock hour of a world position relative to where the head is facing.
-func clock_to(target: Vector3) -> int:
-	if head == null:
-		return 12
-	return _clock(head.global_position, head.global_transform.basis, target)
-
-
-func clock_word(deg: int) -> String:
-	return CLOCK_WORDS.get(deg, "straight ahead")
-
-
-func _clock(origin: Vector3, basis: Basis, target: Vector3) -> int:
-	var to_target := target - origin
-	to_target.y = 0.0
-	if to_target.length_squared() < 0.0001:
-		return 0
-	to_target = to_target.normalized()
-
-	var forward := -basis.z
-	forward.y = 0.0
-	forward = forward.normalized()
-
-	var right := basis.x
-	right.y = 0.0
-	right = right.normalized()
-
-	# +angle is to the player's right. Bucket into the four CLOCK_WORDS
-	# quadrants (0 ahead, 1 right, 2 behind, 3 left) -- angle alone isn't a
-	# valid dict key, and scan()'s CLOCK_WORDS[entry.clock] has no fallback.
-	var angle := atan2(to_target.dot(right), to_target.dot(forward))
-	var quadrant := int(round(angle / (PI / 2.0))) % 4
-	if quadrant < 0:
-		quadrant += 4
-	return quadrant

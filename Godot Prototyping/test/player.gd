@@ -44,12 +44,12 @@ func _ready():
 	# pivot's own transform (CLAUDE_CODE_BRIEF.md §13 Phase 2).
 	AudioDirector.register_listener(listener, pivot)
 	GameState.yaw_offset = spawn_yaw_offset
-	# Bearings are computed from the head, not the body (scripts/bat.gd) --
-	# pivot is exactly that now that its rotation is GameState.orientation.
-	# Bat's own _unhandled_input already listens for "bat_scan"; this is the
-	# only wiring this scene needs (ported from sophias_cave.tscn's
-	# player_bat_test.gd).
-	Bat.head = pivot
+	# Scan bearings are measured from the head, not the body -- pivot is
+	# exactly that now that its rotation is GameState.orientation. Bat's
+	# _unhandled_input listens for "bat_scan" and forwards to BatCompanion,
+	# which owns the scan since Phase 6; this is the only wiring this scene
+	# needs (ported from sophias_cave.tscn's player_bat_test.gd).
+	BatCompanion.head = pivot
 
 	# Capturing the OS cursor is this scene's call, not DevMouseSource's --
 	# main_menu.tscn never runs this script, so the menu stays fully
