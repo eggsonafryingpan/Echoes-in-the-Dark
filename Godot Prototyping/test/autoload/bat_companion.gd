@@ -107,7 +107,7 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Player-initiated echolocation. Silently no-ops inside the cooldown —
 ## spamming the key must not stack sweeps on top of each other.
 func scan() -> void:
-	if not enabled:
+	if not enabled or GameState.input_locked:
 		return
 	if head == null:
 		push_warning("BatCompanion.head is not set.")

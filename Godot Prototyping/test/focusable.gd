@@ -87,7 +87,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if revealed_state:
+	if revealed_state or GameState.input_locked:
 		return
 
 	var dist: float = global_position.distance_to(GameState.head_position)

@@ -32,6 +32,161 @@ func start_event(_event: Event) -> void:
 	pass  # Phase 7: sequence in, set OverloadDetector.suppress_during_calm for CALM.
 
 
+# --- Event 1: the CALM cold open (§10) -----------------------------------
+#
+# Runs top to bottom. Each step is its own small function so the sequence
+# reads as a list rather than one long coroutine:
+#
+#   lock      movement, scan and FOCUS off -- the player is on the ground
+#   startle   falling whoosh, then the rock tumble landing on top of it
+#   elevated  panicked breathing + fast audible heartbeat + bilateral pulse
+#   prompt    the bat names the input (seeds it; never says "hold still")
+#   calm      the Phase 5 CALM gate exactly as-is, not reimplemented here
+#   resolve   bat confirms, environmental layer returns, controls unlock
+#
+# Skippable at any point (debug_skip_event). Whatever it is skipped from,
+# _finish_event_one always unlocks and restores -- a demo must never be
+# left with the controls locked because a step was cut short.
+
+signal event_one_step(step: StringName)
+
+const EVENT_ONE_STEPS: Array[StringName] = [
+	&"lock", &"startle", &"elevated", &"prompt", &"calm", &"resolve",
+]
+
+## Beat lengths for the cold open. Short: this is the first 15 seconds a
+## demoer ever hears, and §10 budgets Event 1 at ~2.5 min total with the
+## CALM loop taking most of it.
+@export var event_one_whoosh_seconds: float = 1.6
+@export var event_one_tumble_seconds: float = 2.4
+@export var event_one_prompt_seconds: float = 3.5
+
+## Filming aid: with no EmotiBit connected there is no real heart rate to
+## bring down, so debug_calm_assist starts a scripted descent that CALM
+## reads in place of the sensor. Ramps rather than snapping, so a take
+## looks like a recovery rather than a cheat.
+@export var debug_hr_ramp_bpm_per_second: float = 6.0
+
+var event_one_active: bool = false
+
+var _event_one_skip: bool = false
+var _event_one_pending: bool = false
+var _debug_hr: float = -1.0
+var _event_players: Dictionary = {}
+
+
+## Called by the main menu on Start Game. The gameplay scene is not loaded
+## yet at that point, so this only arms the event; _process starts it once
+## the player exists (BatCompanion.head is set in player.gd's _ready).
+func queue_event_one() -> void:
+	_event_one_pending = true
+
+
+func _process(_delta: float) -> void:
+	if _event_one_pending and BatCompanion.head != null:
+		_event_one_pending = false
+		start_event_one()
+
+
+func start_event_one() -> void:
+	if event_one_active:
+		return
+	event_one_active = true
+	_event_one_skip = false
+	event_started.emit(&"event_one")
+
+	for step in EVENT_ONE_STEPS:
+		if _event_one_skip:
+			break
+		event_one_step.emit(step)
+		await _run_event_one_step(step)
+
+	_finish_event_one()
+
+
+func _run_event_one_step(step: StringName) -> void:
+	match step:
+		&"lock":
+			GameState.input_locked = true
+		&"startle":
+			_play_event_sfx(&"whoosh", &"event1_falling_whoosh")
+			await _event_wait(event_one_whoosh_seconds)
+			_play_event_sfx(&"tumble", &"event1_rock_tumble")
+			await _event_wait(event_one_tumble_seconds)
+		&"elevated":
+			_play_event_sfx(&"breathing", &"breathing_panicked", true)
+			_play_event_sfx(&"heartbeat", &"heartbeat_elevated", true)
+			await _scripted_pulse()
+		&"prompt":
+			BatCompanion.say(&"event1_bat_startle")
+			await _event_wait(event_one_prompt_seconds)
+		&"calm":
+			start_calm_event()
+			while calm_active and not _event_one_skip:
+				await get_tree().process_frame
+		&"resolve":
+			BatCompanion.say(&"calm_recovered")
+			await _event_wait(1.0)
+
+
+## Always runs, skipped or not. Anything the sequence turned on gets turned
+## off here rather than at the end of the step that turned it on.
+func _finish_event_one() -> void:
+	event_one_active = false
+	_debug_hr = -1.0
+	for player in _event_players.values():
+		player.stop()
+	# "Passage ambience opens on success" (§10): the environmental layer is
+	# what that ambience lives on.
+	AudioDirector.restore_environmental()
+	GameState.input_locked = false
+	if calm_active:
+		_complete_calm(&"skipped")
+	event_completed.emit(&"event_one")
+
+
+func skip_event_one() -> void:
+	if not event_one_active:
+		return
+	_event_one_skip = true
+
+
+## §10's "scripted fast bilateral pulse" -- before CALM starts, so it is a
+## fixed panic rhythm rather than _update_bilateral_heartbeat's live rate.
+func _scripted_pulse() -> void:
+	for i in 8:
+		if _event_one_skip:
+			return
+		for device in Input.get_connected_joypads():
+			Input.start_joy_vibration(device, 0.8, 0.8, 0.1)
+		await _event_wait(0.32)
+
+
+## Event SFX go to Priority: these are the current objective's sources for
+## the duration of the beat, and a scripted cold open that the overload
+## detector could fade mid-take would be unusable for filming. Nothing here
+## touches the goal music's own routing.
+func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = false) -> void:
+	if not _event_players.has(key):
+		var player := AudioStreamPlayer.new()
+		player.name = "Event_%s" % key
+		player.bus = AudioDirector.BUS_PRIORITY
+		add_child(player)
+		_event_players[key] = player
+
+	var stream: AudioStream = SfxLibrary.get_stream(sfx_name)
+	if looping and (stream is AudioStreamMP3 or stream is AudioStreamOggVorbis):
+		stream.loop = true
+	_event_players[key].stream = stream
+	_event_players[key].play()
+
+
+func _event_wait(seconds: float) -> void:
+	if seconds <= 0.0:
+		return
+	await get_tree().create_timer(seconds).timeout
+
+
 # --- CALM (§8, §13 Phase 5) ----------------------------------------------
 #
 # Escalation ladder, all present, not just one:
@@ -102,12 +257,13 @@ func _physics_process(delta: float) -> void:
 
 	# Motion-gated: only a trustworthy, valid HR sample updates the
 	# reference/smoothed trend (§3.2, §8 "motion-gated windows only").
-	if GameState.hr_valid and GameState.hr_bpm > 0.0:
+	var bpm := _current_bpm(delta)
+	if bpm > 0.0:
 		if _calm_start_bpm < 0.0:
-			_calm_start_bpm = GameState.hr_bpm
-			_calm_smoothed_bpm = GameState.hr_bpm
+			_calm_start_bpm = bpm
+			_calm_smoothed_bpm = bpm
 		else:
-			_calm_smoothed_bpm = lerpf(_calm_smoothed_bpm, GameState.hr_bpm, calm_smoothing)
+			_calm_smoothed_bpm = lerpf(_calm_smoothed_bpm, bpm, calm_smoothing)
 
 	_update_bilateral_heartbeat()
 	_update_escalation()
@@ -128,6 +284,37 @@ func _physics_process(delta: float) -> void:
 		elif dwell_ok:
 			reason = &"dwell"
 		_complete_calm(reason)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"debug_calm_assist"):
+		start_calm_assist()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"debug_skip_event"):
+		skip_event_one()
+		get_viewport().set_input_as_handled()
+
+
+## Filming / no-hardware path: hands CALM a scripted descent starting from
+## wherever the rate currently is, so the drop reads as continuous rather
+## than as a jump the moment the key is pressed. The other no-hardware
+## path is SensorBridge.source_mode = MOCK with the startled_then_calming
+## trace, which drives the same numbers from a recorded script.
+func start_calm_assist() -> void:
+	if _debug_hr >= 0.0:
+		return
+	_debug_hr = _calm_smoothed_bpm if _calm_smoothed_bpm > 0.0 else 130.0
+
+
+## The heart rate CALM actually reads: normally the motion-gated sensor
+## value, or the scripted descent while the filming assist is running.
+func _current_bpm(delta: float) -> float:
+	if _debug_hr >= 0.0:
+		_debug_hr = maxf(_debug_hr - debug_hr_ramp_bpm_per_second * delta, 40.0)
+		return _debug_hr
+	if GameState.hr_valid and GameState.hr_bpm > 0.0:
+		return GameState.hr_bpm
+	return -1.0
 
 
 func _complete_calm(reason: StringName) -> void:

@@ -66,7 +66,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 var prev_norm = null
 func _physics_process(delta: float) -> void:
-	if isLocked:
+	if isLocked or GameState.input_locked:
 		return
 
 	# Head orientation is GameState.orientation alone (mock trace or live

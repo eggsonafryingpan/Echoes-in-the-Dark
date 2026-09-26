@@ -13,6 +13,11 @@
 # Wording below is PLACEHOLDER. Final lines are a human writing task (§0.1)
 # and are expected to change repeatedly -- that is what this pipeline is for.
 
+# --- Event 1, the CALM cold open (§10) -----------------------------------
+# Names the input, seeds it, never instructs -- "hold still" is exactly what
+# this line must not say.
+event1_bat_startle | Woah. Your heart's pounding, I can feel it. Slow it down with me.
+
 # --- CALM coaching (§8) --------------------------------------------------
 # calm_guide is the one line EventDirector actually fires today (the second
 # escalation hint, §8 step 5). The rest are seeded for Phase 7 sequencing.
