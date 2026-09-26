@@ -2,16 +2,16 @@
 
 [ext_resource type="PackedScene" uid="uid://btx6qd7c5pcfd" path="res://top_down_view.tscn" id="1_i35yt"]
 [ext_resource type="PackedScene" uid="uid://5pkq3yeene5a" path="res://player.tscn" id="2_d6mwi"]
-[ext_resource type="Texture2D" path="res://assets/rock.jpg" id="7_rock"]
+[ext_resource type="Texture2D" uid="uid://d1blo68wkr5k4" path="res://assets/rock.jpg" id="7_rock"]
 [ext_resource type="PackedScene" path="res://cave_level_square.tscn" id="8_0ahar"]
 [ext_resource type="Script" uid="uid://bui1bxyy4myh4" path="res://sound_box.gd" id="8_p46sw"]
 [ext_resource type="Script" uid="uid://bwtkw4yi5ls2e" path="res://makeCollision.gd" id="9_gmqpq"]
 [ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="10_rtap"]
 [ext_resource type="Script" uid="uid://c32yps2o03th3" path="res://scripts/describable.gd" id="11_dsc"]
 [ext_resource type="PackedScene" path="res://spatial_sfx_source.tscn" id="12_sfxsrc"]
-[ext_resource type="Script" path="res://focusable.gd" id="13_focus"]
-[ext_resource type="Script" path="res://scripts/audio_debug_overlay.gd" id="14_adbg"]
-[ext_resource type="Script" path="res://scripts/filming_overlay.gd" id="15_film"]
+[ext_resource type="Script" uid="uid://c6pk6pwrk5rem" path="res://focusable.gd" id="13_focus"]
+[ext_resource type="Script" uid="uid://bug7f6n11tenj" path="res://scripts/audio_debug_overlay.gd" id="14_adbg"]
+[ext_resource type="Script" uid="uid://cf800p11uu5nm" path="res://scripts/filming_overlay.gd" id="15_film"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -22,8 +22,8 @@ glow_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1xale"]
 albedo_texture = ExtResource("7_rock")
-uv1_triplanar = true
 uv1_scale = Vector3(0.25, 0.25, 0.25)
+uv1_triplanar = true
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_t1ucx"]
 
@@ -40,7 +40,7 @@ uv1_scale = Vector3(0.25, 0.25, 0.25)
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1089338932]
 environment = SubResource("Environment_jqwnj")
 
-[node name="player" parent="." unique_id=1773885676 instance=ExtResource("2_d6mwi") node_paths=PackedStringArray("exit_marker")]
+[node name="player" parent="." unique_id=1773885676 node_paths=PackedStringArray("exit_marker") instance=ExtResource("2_d6mwi")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0116167, -1.7267156, -4.466064)
 exit_marker = NodePath("../GoalMusic")
 spawn_yaw_offset = 1.6765244
@@ -62,12 +62,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59221494, 0, 1.3580753)
 mesh = SubResource("BoxMesh_jqwnj")
 
 [node name="RaytracedAudioPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1667717570]
-script = ExtResource("10_rtap")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 16.312382)
 attenuation_model = 3
 volume_db = 14.349
 max_distance = 150.59
 panning_strength = 0.0
+script = ExtResource("10_rtap")
 
 [node name="SoundBox" type="Area3D" parent="." unique_id=776409351 groups=["SoundBox"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.627335, -1.2379148, -4.914988)
@@ -86,184 +86,151 @@ wait_time = 0.2
 autostart = true
 
 [node name="AudioPlayer" type="AudioStreamPlayer3D" parent="SoundBox" unique_id=1158175298]
-script = ExtResource("10_rtap")
 attenuation_model = 3
 autoplay = true
 panning_strength = 0.0
+script = ExtResource("10_rtap")
 
-[node name="LandmarkRubble" type="Node3D" parent="." unique_id=5000000001]
+[node name="LandmarkRubble" type="Node3D" parent="." unique_id=705032705]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.011617, -1.726716, -2.466064)
 
-[node name="Describable" type="Node3D" parent="LandmarkRubble" unique_id=5000000002]
+[node name="Describable" type="Node3D" parent="LandmarkRubble" unique_id=705032706]
 script = ExtResource("11_dsc")
 label = "loose rubble"
 detail = "A small collapse of loose rock, harmless underfoot."
 metadata/_custom_type_script = "uid://c32yps2o03th3"
 
-[node name="LandmarkWater" type="Node3D" parent="." unique_id=5000000003]
+[node name="LandmarkWater" type="Node3D" parent="." unique_id=705032707]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.627335, -1.237915, -6.914988)
 
-[node name="Describable" type="Node3D" parent="LandmarkWater" unique_id=5000000004]
+[node name="Describable" type="Node3D" parent="LandmarkWater" unique_id=705032708]
 script = ExtResource("11_dsc")
 label = "trickling water"
 detail = "Water seeping down the rock, somewhere close."
 metadata/_custom_type_script = "uid://c32yps2o03th3"
 
-[node name="SwarmCluster" type="Node3D" parent="." unique_id=5000000005]
+[node name="SwarmCluster" type="Node3D" parent="." unique_id=705032709]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.627335, -1.237915, -2.914988)
 
-[node name="SmallCreatureA" type="Node3D" parent="SwarmCluster" unique_id=5000000006]
+[node name="SmallCreatureA" type="Node3D" parent="SwarmCluster" unique_id=705032710]
 
-[node name="Describable" type="Node3D" parent="SwarmCluster/SmallCreatureA" unique_id=5000000007]
+[node name="Describable" type="Node3D" parent="SwarmCluster/SmallCreatureA" unique_id=705032711]
 script = ExtResource("11_dsc")
 label = "small creature"
 detail = "Something small, breathing slow. It doesn't move."
 priority = 10
 metadata/_custom_type_script = "uid://c32yps2o03th3"
 
-[node name="SmallCreatureB" type="Node3D" parent="SwarmCluster" unique_id=5000000008]
+[node name="SmallCreatureB" type="Node3D" parent="SwarmCluster" unique_id=705032712]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
 
-[node name="Describable" type="Node3D" parent="SwarmCluster/SmallCreatureB" unique_id=5000000009]
+[node name="Describable" type="Node3D" parent="SwarmCluster/SmallCreatureB" unique_id=705032713]
 script = ExtResource("11_dsc")
 label = "small creature"
 detail = "Another one, just as still, right beside the first."
 priority = 10
 metadata/_custom_type_script = "uid://c32yps2o03th3"
 
-[node name="LargerCreature" type="Node3D" parent="SwarmCluster" unique_id=5000000010]
+[node name="LargerCreature" type="Node3D" parent="SwarmCluster" unique_id=705032714]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
 
-[node name="Describable" type="Node3D" parent="SwarmCluster/LargerCreature" unique_id=5000000011]
+[node name="Describable" type="Node3D" parent="SwarmCluster/LargerCreature" unique_id=705032715]
 script = ExtResource("11_dsc")
 label = "larger creature"
 detail = "Bigger than the others. Predator, maybe -- but just as calm."
 priority = 10
 metadata/_custom_type_script = "uid://c32yps2o03th3"
 
-[node name="GoalMusic" type="AudioStreamPlayer3D" parent="." unique_id=5000000012]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 19.312382)
-script = ExtResource("10_rtap")
-bus = &"Priority"
-
-[node name="SwarmAmbience" parent="SwarmCluster" instance=ExtResource("12_sfxsrc") unique_id=5000000013]
+[node name="SwarmAmbience" parent="SwarmCluster" unique_id=705032717 instance=ExtResource("12_sfxsrc")]
 sfx_name = &"swarm_cue"
-bus = &"Environmental"
-
-[node name="Describable" parent="SwarmCluster/SwarmAmbience" unique_id=5000000014]
 label = "a swarm, buzzing thickly"
 detail = "Many small bodies, all moving -- but none of them scattering."
-priority = 10
+scan_priority = 10
 
-[node name="Focusable" type="Node3D" parent="SwarmCluster" unique_id=5000000035]
+[node name="Focusable" type="Node3D" parent="SwarmCluster" unique_id=705032739]
 script = ExtResource("13_focus")
 audio_player_path = NodePath("../SwarmAmbience/AudioStreamPlayer3D")
 describable_path = NodePath("../SwarmAmbience/Describable")
 revealed_label = "many calm creatures"
 revealed_detail = "Predators and prey together, unnaturally still. Not a threat."
 
-[node name="BatRoost" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000015]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, 1.2, -4.5)
-sfx_name = &"bat_chitter"
-bus = &"Environmental"
+[node name="GoalMusic" type="AudioStreamPlayer3D" parent="." unique_id=705032716]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 19.312382)
+bus = &"Priority"
+script = ExtResource("10_rtap")
 
-[node name="Describable" parent="BatRoost" unique_id=5000000016]
+[node name="BatRoost" parent="." unique_id=705032719 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.2, -4.5)
+sfx_name = &"bat_chitter"
 label = "something small, chittering, high up"
 detail = "Perched up near the ceiling. Quiet until you face it."
 
-[node name="RiverBigA" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000017]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.0, -1.5, -4.5)
+[node name="RiverBigA" parent="." unique_id=705032721 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, -1.5, -4.5)
 sfx_name = &"river_flow_large"
-bus = &"Environmental"
-
-[node name="Describable" parent="RiverBigA" unique_id=5000000018]
-continuous = true
 label = "rushing water"
 detail = "A wide, steady flow, close by."
-
-[node name="RiverBigB" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000019]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.0, -1.5, -4.5)
-sfx_name = &"river_flow_large"
-bus = &"Environmental"
-
-[node name="Describable" parent="RiverBigB" unique_id=5000000020]
 continuous = true
+
+[node name="RiverBigB" parent="." unique_id=705032723 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, -1.5, -4.5)
+sfx_name = &"river_flow_large"
 label = "rushing water"
 detail = "The same wide flow, a little further along."
-
-[node name="WindPassage" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000021]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, -1.5, -6.5)
-sfx_name = &"wind_passage"
-bus = &"Environmental"
-
-[node name="Describable" parent="WindPassage" unique_id=5000000022]
 continuous = true
+
+[node name="WindPassage" parent="." unique_id=705032725 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, -1.5, -6.5)
+sfx_name = &"wind_passage"
 label = "wind moving through rock"
 detail = "A steady draft finding its way through."
-
-[node name="WindPassageSoft" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000023]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.0, -1.5, -2.5)
-sfx_name = &"wind_passage_soft"
-bus = &"Environmental"
-
-[node name="Describable" parent="WindPassageSoft" unique_id=5000000024]
 continuous = true
+
+[node name="WindPassageSoft" parent="." unique_id=705032727 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -1.5, -2.5)
+sfx_name = &"wind_passage_soft"
 label = "a faint draft"
 detail = "Barely a breeze."
+continuous = true
 
-[node name="WaterDrip" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000025]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.0, -1.5, -0.5)
+[node name="WaterDrip" parent="." unique_id=705032729 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -1.5, -0.5)
 sfx_name = &"water_drip"
-bus = &"Environmental"
-
-[node name="Describable" parent="WaterDrip" unique_id=5000000026]
 label = "water dripping"
 detail = "Somewhere close, water is falling drop by drop."
 
-[node name="RiverSmallA" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000027]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, -1.2, -6.0)
+[node name="RiverSmallA" parent="." unique_id=705032731 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -1.2, -6)
 sfx_name = &"river_flow_small"
-bus = &"Environmental"
-
-[node name="Describable" parent="RiverSmallA" unique_id=5000000028]
-continuous = true
 label = "a narrow stream"
 detail = "Thinner, quicker water than the river back the way you came."
-
-[node name="RiverSmallB" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000029]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, -1.2, -3.0)
-sfx_name = &"river_flow_small"
-bus = &"Environmental"
-
-[node name="Describable" parent="RiverSmallB" unique_id=5000000030]
 continuous = true
+
+[node name="RiverSmallB" parent="." unique_id=705032733 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -1.2, -3)
+sfx_name = &"river_flow_small"
 label = "a narrow stream"
 detail = "The same stream, curling further on."
-
-[node name="WaterfallA" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000031]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.98, 0.0, 14.0)
-sfx_name = &"waterfall"
-bus = &"Environmental"
-
-[node name="Describable" parent="WaterfallA" unique_id=5000000032]
 continuous = true
+
+[node name="WaterfallA" parent="." unique_id=705032735 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.98, 0, 14)
+sfx_name = &"waterfall"
 label = "falling water"
 detail = "Water dropping from a height, loud and constant."
-
-[node name="WaterfallB" parent="." instance=ExtResource("12_sfxsrc") unique_id=5000000033]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.98, 0.0, 20.0)
-sfx_name = &"waterfall"
-bus = &"Environmental"
-
-[node name="Describable" parent="WaterfallB" unique_id=5000000034]
 continuous = true
+
+[node name="WaterfallB" parent="." unique_id=705032737 instance=ExtResource("12_sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.98, 0, 20)
+sfx_name = &"waterfall"
 label = "falling water"
 detail = "The same fall, heard from the other side of the chamber."
+continuous = true
 
-[node name="AudioDebugOverlay" type="CanvasLayer" parent="." unique_id=5000000036]
+[node name="AudioDebugOverlay" type="CanvasLayer" parent="." unique_id=705032740]
 script = ExtResource("14_adbg")
 
-[node name="FilmingOverlay" type="CanvasLayer" parent="." unique_id=5000000037]
+[node name="FilmingOverlay" type="CanvasLayer" parent="." unique_id=705032741]
 script = ExtResource("15_film")
 
 [connection signal="timeout" from="SoundBox/Timer" to="SoundBox" method="_on_timer_timeout"]
