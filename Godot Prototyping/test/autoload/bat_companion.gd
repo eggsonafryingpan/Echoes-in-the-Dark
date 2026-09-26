@@ -12,11 +12,15 @@ extends Node
 ## moved to pre-rendered clips. The former "Bat" autoload held a runtime
 ## DisplayServer TTS backend and a scan that spoke label + clock bearing +
 ## distance — the "current label-reading" behavior §9.2 says to replace —
-## and is gone: nothing in the project synthesises speech at runtime now.
+## and is gone.
 ##
 ## Dialogue is clips addressed by id (voices/lines.txt + the generator),
 ## played on the shoulder-anchored source so the bat's voice comes from the
 ## bat. EventDirector fires lines by id and never sees a string of text.
+## An id with no clip yet falls back to runtime TTS reading that id's text
+## from the same file — see say() — so writing is never blocked on
+## rendering, but the fallback is flat rather than spatialized and every
+## id that uses it is named in a warning.
 ##
 ## What a return is, and is not: a short ping rendered in 3D at the source's
 ## bearing. Direction is carried by where the ping sits in space, proximity
@@ -63,6 +67,9 @@ signal spoke(line_id: StringName)
 const VOICE_DIR := "res://assets/sfx/voice/"
 const VOICE_EXTENSIONS := ["mp3", "wav", "ogg"]
 
+## Read for the runtime-TTS fallback, so an unrendered line still speaks.
+const LINES_PATH := "res://voices/lines.txt"
+
 var head: Node3D = null
 var enabled: bool = true
 
@@ -73,6 +80,9 @@ var _ping_pool: Array[AudioStreamPlayer3D] = []
 var _voice_queue: Array = []
 var _voice_cache: Dictionary = {}
 var _speaking_line: bool = false
+var _line_text: Dictionary = {}
+var _fallback_warned: Dictionary = {}
+var _tts_voice: String = ""
 
 
 func _ready() -> void:
@@ -83,6 +93,8 @@ func _ready() -> void:
 	_trigger_player = _make_flat_player("TriggerPlayer")
 	_sweep_player = _make_flat_player("SweepPlayer")
 	AudioDirector.bat_source.finished.connect(_on_bat_source_finished)
+	_load_line_text()
+	_setup_tts_fallback()
 
 
 ## Non-positional (AudioStreamPlayer, not 3D): the trigger blip and the
@@ -197,9 +209,18 @@ func _free_ping() -> AudioStreamPlayer3D:
 ## located on the player's shoulder and turns with them, rather than
 ## arriving flat in both ears.
 ##
-## Pre-rendered rather than DisplayServer.tts_speak: the OS speech path is
-## not spatializable at all, so it could never come from the bat. Clips
-## also stay identical between sessions, which matters for a study.
+## Hybrid, so a new line is playable the moment it is written rather than
+## after someone remembers to run the generator: if a clip exists for the
+## id it plays spatialized from the bat, and if not the id's text from
+## lines.txt is read aloud with runtime TTS. Rendering the clip later takes
+## over automatically — the clip path is simply tried first, so there is
+## nothing to switch over and no code to change.
+##
+## The fallback is a playtesting aid, not a shipping path: OS speech cannot
+## be spatialized, so a fallen-back line arrives flat in both ears instead
+## of from the shoulder, and it varies between machines. Every id that
+## falls back is named in a warning, once, so the list of what still needs
+## rendering is visible in the log rather than something to go hunting for.
 ##
 ## Lines queue rather than interrupt — the bat cutting itself off mid-word
 ## reads as a bug, and CALM coaching is several short lines in sequence.
@@ -208,15 +229,67 @@ func say(line_id: StringName) -> void:
 		return
 
 	var stream := _voice_clip(line_id)
-	if stream == null:
+	if stream != null:
+		_voice_queue.append({"id": line_id, "stream": stream})
+		_pump_voice()
+		return
+
+	_speak_unrendered(line_id)
+
+
+## No clip for this id yet: read its lines.txt text with runtime TTS.
+func _speak_unrendered(line_id: StringName) -> void:
+	var text: String = _line_text.get(line_id, "")
+	if text.is_empty():
 		push_warning(
-			"BatCompanion: no voice clip for '%s'. Add it to voices/lines.txt and re-run voices/generate_voices.sh."
+			"BatCompanion: '%s' has neither a rendered clip nor an entry in voices/lines.txt — nothing to say."
 			% line_id
 		)
 		return
 
-	_voice_queue.append({"id": line_id, "stream": stream})
-	_pump_voice()
+	if not _fallback_warned.has(line_id):
+		_fallback_warned[line_id] = true
+		push_warning(
+			"BatCompanion: '%s' has no rendered clip, speaking it with runtime TTS (flat, not from the bat). Run voices/generate_voices.sh to render it."
+			% line_id
+		)
+
+	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		return
+	DisplayServer.tts_speak(text, _tts_voice)
+	spoke.emit(line_id)
+
+
+## lines.txt is the same file the generator reads, so the spoken fallback
+## and the rendered clip always come from one source of truth for wording.
+func _load_line_text() -> void:
+	var file := FileAccess.open(LINES_PATH, FileAccess.READ)
+	if file == null:
+		push_warning("BatCompanion: %s not found — unrendered lines will be silent." % LINES_PATH)
+		return
+
+	while not file.eof_reached():
+		var line := file.get_line().strip_edges()
+		if line.is_empty() or line.begins_with("#"):
+			continue
+		var sep := line.find("|")
+		if sep == -1:
+			continue
+		_line_text[StringName(line.substr(0, sep).strip_edges())] = line.substr(sep + 1).strip_edges()
+
+
+## Match the rendered clips' voice where it exists, so a half-rendered set
+## does not switch character mid-conversation.
+func _setup_tts_fallback() -> void:
+	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		return
+	for v in DisplayServer.tts_get_voices():
+		if String(v.get("name", "")).to_lower() == "superstar":
+			_tts_voice = String(v.get("id", ""))
+			return
+	var english := DisplayServer.tts_get_voices_for_language("en")
+	if english.size() > 0:
+		_tts_voice = english[0]
 
 
 func shut_up() -> void:
