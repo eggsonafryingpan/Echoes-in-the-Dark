@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_2hs0m"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="4_b26j0"]
-[ext_resource type="AudioStream" uid="uid://cu5umeg22l37l" path="res://sounds/hit_sound.mp3" id="5_dw050"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_n7ghd"]
 [ext_resource type="Script" uid="uid://8yaubsn0472g" path="res://focus_mechanic.gd" id="6_nvl01"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="7_1jxqw"]
@@ -82,7 +81,6 @@ bus = &"RaytracedReverb"
 
 [node name="HitAudio" type="AudioStreamPlayer3D" parent="." unique_id=1655475557]
 script = ExtResource("9_rtap")
-stream = ExtResource("5_dw050")
 volume_db = 1.166
 unit_size = 4.0
 autoplay = true

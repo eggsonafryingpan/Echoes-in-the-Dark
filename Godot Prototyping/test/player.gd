@@ -51,6 +51,10 @@ func _ready():
 	# needs (ported from sophias_cave.tscn's player_bat_test.gd).
 	BatCompanion.head = pivot
 
+	# Looked up by logical name rather than pinned to a file in the scene,
+	# so swapping the wall thud is a manifest edit and nothing more.
+	hit_audio.stream = SfxLibrary.get_stream(&"wall_collision_thud")
+
 	# Capturing the OS cursor is this scene's call, not DevMouseSource's --
 	# main_menu.tscn never runs this script, so the menu stays fully
 	# clickable regardless of which SensorBridge.source_mode is active.
