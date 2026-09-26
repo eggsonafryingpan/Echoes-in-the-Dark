@@ -72,6 +72,10 @@ signal revealed()
 @export var revealed_label: String = ""
 @export var revealed_detail: String = ""
 
+## The discovery sting, played once when the reveal lands. Set to &"" on a
+## focus target that should resolve silently.
+@export var discovery_sfx: StringName = &"focus_discovery"
+
 var revealed_state: bool = false
 var focus_progress: float = 0.0  # 0..1
 
@@ -137,4 +141,32 @@ func _reveal() -> void:
 		if revealed_detail != "":
 			_describable.detail = revealed_detail
 		_describable.identified = true
+	_play_discovery()
 	revealed.emit()
+
+
+## The payoff: sustained attention turned an indistinct sound into
+## something recognised, and this is the moment that lands (§6.3).
+##
+## Priority bus, because the instant the mechanic rewards the player is
+## the worst possible instant for the overload detector to be fading
+## things out — and a plain AudioStreamPlayer3D rather than a raytraced
+## one, which would reassign its own bus on proximity and quietly escape
+## Priority (see spatial_sfx_source.gd).
+##
+## Spatialized at this node rather than flat, so the sting comes from the
+## thing that was just identified. The player is already facing it — that
+## is how the focus was built — so it arrives in front of them.
+func _play_discovery() -> void:
+	if discovery_sfx == &"":
+		return
+	var player := AudioStreamPlayer3D.new()
+	player.name = "DiscoverySting"
+	player.bus = AudioDirector.BUS_PRIORITY
+	player.stream = SfxLibrary.get_stream(discovery_sfx)
+	player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	player.max_distance = 30.0
+	player.unit_size = 6.0
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
