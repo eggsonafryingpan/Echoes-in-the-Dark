@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://c6pk6pwrk5rem" path="res://focusable.gd" id="13_focus"]
 [ext_resource type="Script" uid="uid://bug7f6n11tenj" path="res://scripts/audio_debug_overlay.gd" id="14_adbg"]
 [ext_resource type="Script" uid="uid://cf800p11uu5nm" path="res://scripts/filming_overlay.gd" id="15_film"]
+[ext_resource type="Script" path="res://scripts/object_debug_overlay.gd" id="16_objdbg"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -261,6 +262,9 @@ unit_size = 2.5
 
 [node name="AudioDebugOverlay" type="CanvasLayer" parent="." unique_id=705032740]
 script = ExtResource("14_adbg")
+
+[node name="ObjectDebugOverlay" type="CanvasLayer" parent="." unique_id=705032742]
+script = ExtResource("16_objdbg")
 
 [node name="FilmingOverlay" type="CanvasLayer" parent="." unique_id=705032741]
 script = ExtResource("15_film")
