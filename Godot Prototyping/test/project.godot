@@ -22,7 +22,6 @@ general/text_to_speech=true
 
 [autoload]
 
-Bat="*uid://csyi67nhy3t2k"
 SensorBridge="*res://autoload/sensor_bridge.gd"
 GameState="*res://autoload/game_state.gd"
 AudioDirector="*res://autoload/audio_director.gd"

@@ -7,11 +7,16 @@ extends Node
 ## (§9.1 default resolution — one clean audio path into the headphones, no
 ## physical shoulder speaker).
 ##
-## The scan owns the whole echolocation verb as of Phase 6: cooldown, which
-## sources return, and the spatialized pings themselves. The "Bat" autoload
-## keeps only the speech backend (TTS queueing via say()/_pump()) — its old
-## scan spoke label + clock bearing + distance, which is exactly the
-## "current label-reading" behavior §9.2 says to replace.
+## Sole owner of both verbs. The scan came here in Phase 6 (cooldown, which
+## sources return, the pings themselves); speech followed once dialogue
+## moved to pre-rendered clips. The former "Bat" autoload held a runtime
+## DisplayServer TTS backend and a scan that spoke label + clock bearing +
+## distance — the "current label-reading" behavior §9.2 says to replace —
+## and is gone: nothing in the project synthesises speech at runtime now.
+##
+## Dialogue is clips addressed by id (voices/lines.txt + the generator),
+## played on the shoulder-anchored source so the bat's voice comes from the
+## bat. EventDirector fires lines by id and never sees a string of text.
 ##
 ## What a return is, and is not: a short ping rendered in 3D at the source's
 ## bearing. Direction is carried by where the ping sits in space, proximity
@@ -67,6 +72,7 @@ var _sweep_player: AudioStreamPlayer = null
 var _ping_pool: Array[AudioStreamPlayer3D] = []
 var _voice_queue: Array = []
 var _voice_cache: Dictionary = {}
+var _speaking_line: bool = false
 
 
 func _ready() -> void:
@@ -76,7 +82,7 @@ func _ready() -> void:
 	# One AudioStreamPlayer can only carry one of them.
 	_trigger_player = _make_flat_player("TriggerPlayer")
 	_sweep_player = _make_flat_player("SweepPlayer")
-	AudioDirector.bat_source.finished.connect(_pump_voice)
+	AudioDirector.bat_source.finished.connect(_on_bat_source_finished)
 
 
 ## Non-positional (AudioStreamPlayer, not 3D): the trigger blip and the
@@ -90,6 +96,12 @@ func _make_flat_player(node_name: String) -> AudioStreamPlayer:
 	player.bus = AudioDirector.BUS_UI
 	add_child(player)
 	return player
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"bat_scan"):
+		scan()
+		get_viewport().set_input_as_handled()
 
 
 ## Player-initiated echolocation. Silently no-ops inside the cooldown —
@@ -209,21 +221,38 @@ func say(line_id: StringName) -> void:
 
 func shut_up() -> void:
 	_voice_queue.clear()
+	_speaking_line = false
 	AudioDirector.bat_source.stop()
 
 
 func is_speaking() -> bool:
-	return AudioDirector.bat_source.playing or not _voice_queue.is_empty()
+	return _speaking_line or not _voice_queue.is_empty()
 
 
 func _pump_voice() -> void:
 	var source := AudioDirector.bat_source
-	if source.playing or _voice_queue.is_empty():
+	if _voice_queue.is_empty():
 		return
+	# Only another *line* defers this one. bat_source also carries the bat's
+	# breathing during CALM (event_director.gd), and a guided count that
+	# waited politely behind a breathing loop would never be heard at all —
+	# the hint exists precisely because the player is struggling.
+	if _speaking_line and source.playing:
+		return
+
 	var item: Dictionary = _voice_queue.pop_front()
+	_speaking_line = true
 	source.stream = item.stream
+	# Reset gain: whatever else last used this player set its own level
+	# (CALM's breathing hint drops it to -6 dB and never puts it back).
+	source.volume_db = 0.0
 	source.play()
 	spoke.emit(item.id)
+
+
+func _on_bat_source_finished() -> void:
+	_speaking_line = false
+	_pump_voice()
 
 
 ## Looked up by id only — the generator owns filenames, so nothing here
