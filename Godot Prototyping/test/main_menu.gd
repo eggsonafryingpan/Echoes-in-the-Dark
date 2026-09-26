@@ -10,6 +10,9 @@ func _on_baseline_pressed():
 
 func _on_start_pressed():
 	print("Starting game...")
+	# Arms Event 1 (§10's cold open). The gameplay scene is not loaded yet,
+	# so EventDirector waits for the player to exist before starting it.
+	EventDirector.queue_event_one()
 	get_tree().change_scene_to_file("res://echoes_in_the_dark.tscn")
 
 func _on_quit_pressed():

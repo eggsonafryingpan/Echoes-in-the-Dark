@@ -52,6 +52,12 @@ var yaw_offset: float = 0.0
 ## (§6.3, Phase 4) needs a fresh alignment check every frame.
 var head_position: Vector3 = Vector3.ZERO
 
+## Set by EventDirector for the duration of a scripted beat (Event 1's cold
+## open, §10). Movement, the scan and FOCUS all check this rather than each
+## being reached into and disabled individually, so there is one flag to
+## clear and no way for a sequence to end leaving one of them still locked.
+var input_locked: bool = false
+
 var is_still: bool = false
 var hr_valid: bool = false
 var hr_bpm: float = -1.0
