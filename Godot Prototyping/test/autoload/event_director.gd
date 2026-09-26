@@ -148,7 +148,10 @@ func _update_escalation() -> void:
 			AudioDirector.bat_source.play()
 	if not _calm_hint2_fired and _calm_t >= calm_hint_2_seconds:
 		_calm_hint2_fired = true
-		Bat.say("Slow it down with me. In... and out...", "calm_guide")
+		# Pre-rendered clip by id, spatialized on the bat's shoulder, rather
+		# than runtime TTS. The wording lives in voices/lines.txt under
+		# calm_guide and can change there without touching this file.
+		BatCompanion.say(&"calm_guide")
 
 
 ## Bilateral (§6.2): identical magnitude on every connected joypad, pulsed

@@ -14,6 +14,9 @@
 # and are expected to change repeatedly -- that is what this pipeline is for.
 
 # --- CALM coaching (§8) --------------------------------------------------
+# calm_guide is the one line EventDirector actually fires today (the second
+# escalation hint, §8 step 5). The rest are seeded for Phase 7 sequencing.
+calm_guide | Slow it down with me. In... and out...
 calm_intro | Slow it down with me.
 calm_breathe_in | In.
 calm_breathe_out | And out.
