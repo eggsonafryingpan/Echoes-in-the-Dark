@@ -29,11 +29,26 @@ const SFX_ROOT := "res://assets/sfx/"
 const _EXTENSIONS := ["wav", "ogg", "mp3"]
 
 var _manifest: Dictionary = {}
+var _manifest_loaded: bool = false
 var _cache: Dictionary = {}
 var _placeholder: AudioStream = null
 
 
 func _ready() -> void:
+	_ensure_manifest()
+
+
+## The manifest loads on first use, not on _ready, because autoload order
+## is not a guarantee this file can make. SfxLibrary is registered last;
+## Bat is registered first and asked for a sound from its own _ready, so
+## the lookup arrived before the manifest existed, warned that a key it
+## does contain was missing, and cached the placeholder beep for the rest
+## of the session. Loading on demand makes lookups correct no matter who
+## asks first or where they sit in the autoload list.
+func _ensure_manifest() -> void:
+	if _manifest_loaded:
+		return
+	_manifest_loaded = true
 	_load_manifest()
 
 
@@ -53,6 +68,7 @@ func _load_manifest() -> void:
 ## back to a placeholder tone if the manifest doesn't list it, or if it does
 ## but no .wav/.ogg has been dropped in (or imported) yet.
 func get_stream(logical_name: String) -> AudioStream:
+	_ensure_manifest()
 	if _cache.has(logical_name):
 		return _cache[logical_name]
 

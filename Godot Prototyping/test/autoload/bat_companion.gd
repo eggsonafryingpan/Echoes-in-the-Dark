@@ -62,6 +62,7 @@ var head: Node3D = null
 var enabled: bool = true
 
 var _last_scan: float = -999.0
+var _trigger_player: AudioStreamPlayer = null
 var _sweep_player: AudioStreamPlayer = null
 var _ping_pool: Array[AudioStreamPlayer3D] = []
 var _voice_queue: Array = []
@@ -69,11 +70,26 @@ var _voice_cache: Dictionary = {}
 
 
 func _ready() -> void:
-	_sweep_player = AudioStreamPlayer.new()
-	_sweep_player.name = "SweepPlayer"
-	_sweep_player.bus = AudioDirector.BUS_UI
-	add_child(_sweep_player)
+	# Two separate non-positional players because the trigger blip and the
+	# sweep overlap: the blip answers "your press registered" the instant
+	# the key goes down, while the sweep is still running underneath it.
+	# One AudioStreamPlayer can only carry one of them.
+	_trigger_player = _make_flat_player("TriggerPlayer")
+	_sweep_player = _make_flat_player("SweepPlayer")
 	AudioDirector.bat_source.finished.connect(_pump_voice)
+
+
+## Non-positional (AudioStreamPlayer, not 3D): the trigger blip and the
+## sweep are the player's own instrument, not something in the cave, so
+## they belong flat in both ears rather than somewhere in the world. On the
+## UI bus, so overload stripping can never take away the confirmation that
+## the player's own action registered.
+func _make_flat_player(node_name: String) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	player.name = node_name
+	player.bus = AudioDirector.BUS_UI
+	add_child(player)
+	return player
 
 
 ## Player-initiated echolocation. Silently no-ops inside the cooldown —
@@ -90,7 +106,10 @@ func scan() -> void:
 		return
 	_last_scan = now
 
-	_sweep_player.stream = SfxLibrary.get_stream(&"echolocation_sweep")
+	# Trigger blip first, then the sweep under it. Both flat, both UI bus.
+	_trigger_player.stream = SfxLibrary.get_stream(&"ui_startup")
+	_trigger_player.play()
+	_sweep_player.stream = SfxLibrary.get_stream(&"ui_scan_sweep")
 	_sweep_player.play()
 
 	var found := _gather_returns()
@@ -141,7 +160,7 @@ func _emit_return(entry: Dictionary, delay: float) -> void:
 
 	var ping := _free_ping()
 	ping.global_position = head.global_position + entry.bearing * entry.distance
-	ping.stream = SfxLibrary.get_stream(&"echolocation_return")
+	ping.stream = SfxLibrary.get_stream(&"ui_scan_detected")
 	ping.play()
 
 
