@@ -146,6 +146,8 @@ sfx_name = &"swarm_cue"
 label = "a swarm, buzzing thickly"
 detail = "Many small bodies, all moving -- but none of them scattering."
 scan_priority = 10
+max_distance = 18.0
+unit_size = 4.0
 
 [node name="Focusable" type="Node3D" parent="SwarmCluster" unique_id=705032739]
 script = ExtResource("13_focus")
@@ -164,6 +166,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.2, -4.5)
 sfx_name = &"bat_chitter"
 label = "something small, chittering, high up"
 detail = "Perched up near the ceiling. Quiet until you face it."
+volume_db = -3.0
+max_distance = 16.0
+unit_size = 4.0
 
 [node name="RiverBigA" parent="." unique_id=705032721 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, -1.5, -4.5)
@@ -171,6 +176,9 @@ sfx_name = &"river_flow_large"
 label = "rushing water"
 detail = "A wide, steady flow, close by."
 continuous = true
+volume_db = -12.0
+max_distance = 12.0
+unit_size = 2.5
 
 [node name="RiverBigB" parent="." unique_id=705032723 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, -1.5, -4.5)
@@ -178,6 +186,9 @@ sfx_name = &"river_flow_large"
 label = "rushing water"
 detail = "The same wide flow, a little further along."
 continuous = true
+volume_db = -12.0
+max_distance = 12.0
+unit_size = 2.5
 
 [node name="WindPassage" parent="." unique_id=705032725 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, -1.5, -6.5)
@@ -185,6 +196,9 @@ sfx_name = &"wind_passage"
 label = "wind moving through rock"
 detail = "A steady draft finding its way through."
 continuous = true
+volume_db = -18.0
+max_distance = 10.0
+unit_size = 2.0
 
 [node name="WindPassageSoft" parent="." unique_id=705032727 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -1.5, -2.5)
@@ -192,12 +206,18 @@ sfx_name = &"wind_passage_soft"
 label = "a faint draft"
 detail = "Barely a breeze."
 continuous = true
+volume_db = -22.0
+max_distance = 8.0
+unit_size = 2.0
 
 [node name="WaterDrip" parent="." unique_id=705032729 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -1.5, -0.5)
 sfx_name = &"water_drip"
 label = "water dripping"
 detail = "Somewhere close, water is falling drop by drop."
+volume_db = -3.0
+max_distance = 14.0
+unit_size = 4.0
 
 [node name="RiverSmallA" parent="." unique_id=705032731 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -1.2, -6)
@@ -205,6 +225,9 @@ sfx_name = &"river_flow_small"
 label = "a narrow stream"
 detail = "Thinner, quicker water than the river back the way you came."
 continuous = true
+volume_db = -14.0
+max_distance = 9.0
+unit_size = 2.0
 
 [node name="RiverSmallB" parent="." unique_id=705032733 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -1.2, -3)
@@ -212,6 +235,9 @@ sfx_name = &"river_flow_small"
 label = "a narrow stream"
 detail = "The same stream, curling further on."
 continuous = true
+volume_db = -14.0
+max_distance = 9.0
+unit_size = 2.0
 
 [node name="WaterfallA" parent="." unique_id=705032735 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.98, 0, 14)
@@ -219,6 +245,9 @@ sfx_name = &"waterfall"
 label = "falling water"
 detail = "Water dropping from a height, loud and constant."
 continuous = true
+volume_db = -12.0
+max_distance = 16.0
+unit_size = 2.5
 
 [node name="WaterfallB" parent="." unique_id=705032737 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.98, 0, 20)
@@ -226,6 +255,9 @@ sfx_name = &"waterfall"
 label = "falling water"
 detail = "The same fall, heard from the other side of the chamber."
 continuous = true
+volume_db = -12.0
+max_distance = 16.0
+unit_size = 2.5
 
 [node name="AudioDebugOverlay" type="CanvasLayer" parent="." unique_id=705032740]
 script = ExtResource("14_adbg")
