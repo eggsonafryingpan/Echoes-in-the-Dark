@@ -32,9 +32,24 @@ const BUS_ENVIRONMENTAL := &"Environmental"
 var adaptive_enabled: bool = true:
 	set(v):
 		adaptive_enabled = v
-		if not v:
+		if not v and not force_strip:
 			_fade_bus(BUS_ENVIRONMENTAL, 1.0)
 			_fade_bus(BUS_ESSENTIAL, 1.0)
+
+## Manual strip for tuning and filming: holds both strippable layers in a
+## chosen state regardless of what OverloadDetector wants and regardless of
+## the A/B toggle above. While true, strip_*/restore_* from the detector are
+## ignored, so a forced state can't be undone by a detector tick landing a
+## moment later; setting it false restores both layers and hands control
+## back. Deliberately separate from adaptive_enabled: that switch answers
+## "would this build adapt at all", this one answers "show me the stripped
+## mix right now."
+var force_strip: bool = false:
+	set(v):
+		force_strip = v
+		var target := 0.0 if v else 1.0
+		_apply_fade(BUS_ENVIRONMENTAL, target)
+		_apply_fade(BUS_ESSENTIAL, target)
 
 ## Operator hotkey for the A/B toggle (§11), bound in Project Settings > Input Map.
 const TOGGLE_ADAPTIVE_ACTION := &"toggle_adaptive_audio"
@@ -106,23 +121,37 @@ func _process(_delta: float) -> void:
 
 
 func strip_environmental() -> void:
+	if force_strip:
+		return
 	_fade_bus(BUS_ENVIRONMENTAL, 0.0)
 	layer_stripped.emit(BUS_ENVIRONMENTAL)
 
 
 func strip_essential() -> void:
+	if force_strip:
+		return
 	_fade_bus(BUS_ESSENTIAL, 0.0)
 	layer_stripped.emit(BUS_ESSENTIAL)
 
 
 func restore_environmental() -> void:
+	if force_strip:
+		return
 	_fade_bus(BUS_ENVIRONMENTAL, 1.0)
 	layer_restored.emit(BUS_ENVIRONMENTAL)
 
 
 func restore_essential() -> void:
+	if force_strip:
+		return
 	_fade_bus(BUS_ESSENTIAL, 1.0)
 	layer_restored.emit(BUS_ESSENTIAL)
+
+
+## 1.0 = fully present, 0.0 = fully stripped. Priority reports 1.0 always —
+## it has no strip fraction because it is never stripped.
+func strip_fraction(layer: StringName) -> float:
+	return _strip_fraction.get(layer, 1.0)
 
 
 ## Main-menu per-layer volume control (§4). linear is 0..1; converted to dB
@@ -143,10 +172,16 @@ func set_layer_volume(layer: StringName, linear: float) -> void:
 ## demo operator never gets a strip landing after they've already switched
 ## to the non-adaptive comparison; restoring always proceeds regardless.
 func _fade_bus(layer: StringName, target_fraction: float) -> void:
-	if not _strip_fraction.has(layer):
-		return  # Priority: never stripped, nothing to fade.
 	if target_fraction < 1.0 and not adaptive_enabled:
 		return
+	_apply_fade(layer, target_fraction)
+
+
+## The fade itself, with no policy attached. force_strip goes straight here
+## so a manual override answers to neither the detector nor the A/B toggle.
+func _apply_fade(layer: StringName, target_fraction: float) -> void:
+	if not _strip_fraction.has(layer):
+		return  # Priority: never stripped, nothing to fade.
 
 	if _fade_tweens.has(layer) and is_instance_valid(_fade_tweens[layer]):
 		_fade_tweens[layer].kill()

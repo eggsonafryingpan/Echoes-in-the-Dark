@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://c32yps2o03th3" path="res://scripts/describable.gd" id="11_dsc"]
 [ext_resource type="PackedScene" path="res://spatial_sfx_source.tscn" id="12_sfxsrc"]
 [ext_resource type="Script" path="res://focusable.gd" id="13_focus"]
+[ext_resource type="Script" path="res://scripts/audio_debug_overlay.gd" id="14_adbg"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 ambient_light_source = 2
@@ -257,5 +258,8 @@ bus = &"Environmental"
 continuous = true
 label = "falling water"
 detail = "The same fall, heard from the other side of the chamber."
+
+[node name="AudioDebugOverlay" type="CanvasLayer" parent="." unique_id=5000000036]
+script = ExtResource("14_adbg")
 
 [connection signal="timeout" from="SoundBox/Timer" to="SoundBox" method="_on_timer_timeout"]
