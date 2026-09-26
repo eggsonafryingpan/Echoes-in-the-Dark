@@ -35,6 +35,7 @@ extends Node
 ## strip_essential() are what silently no-op when adaptive_enabled is false.
 
 signal overload_detected()
+signal escalated()
 signal recovered()
 
 ## Emitted every evaluation tick with the raw signal breakdown, for the
@@ -52,11 +53,20 @@ var suppress_during_calm: bool = false
 @export var recovery_hold_seconds: float = 4.0
 @export var eval_interval: float = 0.5
 
+## Stage 2 dwell: how long overload must stay active after environmental
+## has already gone before essential follows it (§4 "stripped second").
+## Placeholder like the other thresholds here — the real value needs
+## playtest data (§0.1), and it wants to be long enough that stage 1 has a
+## fair chance to help before the mix is cut further.
+@export var escalate_after_seconds: float = 8.0
+
 var _overloaded: bool = false
+var _escalated: bool = false
 var _t: float = 0.0
 var _next_eval: float = 0.0
 var _t_condition_true_since: float = -1.0
 var _t_condition_false_since: float = -1.0
+var _t_overloaded_since: float = -1.0
 
 ## Rolling log for the observer HUD/writeup -- capped so it never grows
 ## unbounded across a long session.
@@ -93,6 +103,7 @@ func _evaluate() -> void:
 		"behavioral_count": behavioral_count,
 		"raw_condition": raw_condition,
 		"overloaded": _overloaded,
+		"escalated": _escalated,
 	}
 	evaluation_log.append(log_entry)
 	if evaluation_log.size() > _LOG_CAP:
@@ -100,6 +111,7 @@ func _evaluate() -> void:
 	evaluated.emit(log_entry)
 
 	_advance_state(raw_condition)
+	_maybe_escalate()
 
 
 func _advance_state(raw_condition: bool) -> void:
@@ -109,11 +121,13 @@ func _advance_state(raw_condition: bool) -> void:
 			_t_condition_true_since = _t
 		if not _overloaded and _t - _t_condition_true_since >= debounce_seconds:
 			_overloaded = true
-			# Environmental first, essential second, leaving priority
-			# isolated (§4, §5). AudioDirector itself no-ops these if the
-			# A/B toggle has adaptation off.
+			_t_overloaded_since = _t
+			# Stage 1 only. Essential is a separate escalation that has to be
+			# earned by the overload persisting (_maybe_escalate), so there
+			# is a real intermediate state where ambience is gone and the
+			# route cues are still there -- §4's "stripped first" /
+			# "stripped second", rather than both at once.
 			AudioDirector.strip_environmental()
-			AudioDirector.strip_essential()
 			overload_detected.emit()
 	else:
 		_t_condition_true_since = -1.0
@@ -121,7 +135,24 @@ func _advance_state(raw_condition: bool) -> void:
 			_t_condition_false_since = _t
 		if _overloaded and _t - _t_condition_false_since >= recovery_hold_seconds:
 			_overloaded = false
-			# Restore in the opposite order (§4).
+			_escalated = false
+			_t_overloaded_since = -1.0
+			# Restore in the opposite order (§4): the cues that inform the
+			# route come back before the ambience that competes with them.
 			AudioDirector.restore_essential()
 			AudioDirector.restore_environmental()
 			recovered.emit()
+
+
+## Stage 2: essential follows only if the player is still overloaded well
+## after stage 1 landed. Measured from when overload began rather than from
+## the raw conjunction, so a brief dip in the signals doesn't reset the
+## clock -- that's what the recovery hysteresis above is for.
+func _maybe_escalate() -> void:
+	if not _overloaded or _escalated:
+		return
+	if _t - _t_overloaded_since < escalate_after_seconds:
+		return
+	_escalated = true
+	AudioDirector.strip_essential()
+	escalated.emit()
