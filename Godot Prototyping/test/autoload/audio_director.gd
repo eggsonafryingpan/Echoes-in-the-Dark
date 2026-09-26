@@ -52,10 +52,25 @@ var adaptive_enabled: bool = true:
 ## mix right now."
 var force_strip: bool = false:
 	set(v):
+		if v == force_strip:
+			return
 		force_strip = v
-		var target := 0.0 if v else 1.0
-		_apply_fade(BUS_ENVIRONMENTAL, target)
-		_apply_fade(BUS_ESSENTIAL, target)
+		if v:
+			# Snapshot what the detector had arrived at, so releasing the
+			# override hands back exactly what it took rather than blanket-
+			# restoring. Without this, dropping F3 while the detector is
+			# mid-escalation would un-strip a layer the detector still
+			# believes is stripped, and nothing would re-apply it until the
+			# next state transition.
+			_pre_force_fraction = {
+				BUS_ENVIRONMENTAL: _strip_fraction[BUS_ENVIRONMENTAL],
+				BUS_ESSENTIAL: _strip_fraction[BUS_ESSENTIAL],
+			}
+			_apply_fade(BUS_ENVIRONMENTAL, 0.0)
+			_apply_fade(BUS_ESSENTIAL, 0.0)
+		else:
+			_apply_fade(BUS_ENVIRONMENTAL, _pre_force_fraction.get(BUS_ENVIRONMENTAL, 1.0))
+			_apply_fade(BUS_ESSENTIAL, _pre_force_fraction.get(BUS_ESSENTIAL, 1.0))
 
 ## Operator hotkey for the A/B toggle (§11), bound in Project Settings > Input Map.
 const TOGGLE_ADAPTIVE_ACTION := &"toggle_adaptive_audio"
@@ -79,6 +94,10 @@ var _strip_fraction: Dictionary = {
 }
 
 var _fade_tweens: Dictionary = {}
+
+## What the detector had arrived at when force_strip was engaged, restored
+## verbatim when it is released.
+var _pre_force_fraction: Dictionary = {}
 
 ## Bat's virtual spatial source (§9.1): one clean audio path into the
 ## headphones, anchored to a fixed shoulder offset that tracks head rotation.

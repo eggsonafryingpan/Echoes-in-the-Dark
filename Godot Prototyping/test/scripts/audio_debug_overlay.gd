@@ -105,8 +105,11 @@ func _detector_line() -> String:
 		return "  detector: no evaluation yet"
 
 	var e: Dictionary = OverloadDetector.evaluation_log[-1]
+	var stage := "normal"
+	if e.overloaded:
+		stage = "OVERLOADED stage 2/2 (env+ess)" if e.escalated else "OVERLOADED stage 1/2 (env)"
 	return "  detector: %s   HR elevated %s   behavioral %d/3 (collisions %s, no-progress %s, confined %s)" % [
-		"OVERLOADED" if e.overloaded else "normal",
+		stage,
 		_yes_no(e.hr_elevated),
 		e.behavioral_count,
 		_yes_no(e.collisions),
