@@ -159,5 +159,9 @@
   "event1_rock_tumble": {
     "folder": "events",
     "file": "rockfalling2"
+  },
+  "focus_discovery": {
+    "folder": "priority",
+    "file": "discovery"
   }
 }
