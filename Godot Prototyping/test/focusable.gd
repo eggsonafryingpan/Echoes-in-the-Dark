@@ -3,11 +3,18 @@ extends Node3D
 
 ## Sustained head orientation toward this object raises its cue's volume
 ## and builds toward a "reveal" (identity/recognizability), per
-## CLAUDE_CODE_BRIEF.md §6.3. FOCUS supplies identity; the scan (§9.2,
-## Phase 6) supplies only bearing -- this is "the voluntary counterpart to
-## automatic layer removal" (§6.3). Attach as a component (sibling node) on
-## whatever Node3D represents a focus target; point audio_player_path at
-## whichever AudioStreamPlayer3D's volume should rise as focus builds.
+## CLAUDE_CODE_BRIEF.md §6.3. FOCUS supplies identity; the scan supplies
+## only bearing -- this is "the voluntary counterpart to automatic layer
+## removal" (§6.3). Attach as a component (sibling node) on whatever Node3D
+## represents a focus target; point audio_player_path at whichever
+## AudioStreamPlayer3D's volume should rise as focus builds.
+##
+## The two halves stay decoupled on purpose: BatCompanion.scan() never reads
+## a label and never consults this node, and this node never waits on a scan.
+## A player can hold focus on something they heard directly and identify it
+## without scanning at all; a scan tells them where to point but hands over
+## nothing about what is there. The only handoff is the `identified` flag
+## this sets on the linked Describable when the reveal lands (§9.2).
 ##
 ## Anti-lockout (§7), both mechanisms present, not just one:
 ##   1. Auto-relax: the alignment cone widens and the dwell required
@@ -129,4 +136,5 @@ func _reveal() -> void:
 			_describable.label = revealed_label
 		if revealed_detail != "":
 			_describable.detail = revealed_detail
+		_describable.identified = true
 	revealed.emit()

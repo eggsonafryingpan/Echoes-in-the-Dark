@@ -34,7 +34,19 @@ extends Node3D
 ## separately when you analyse whether cognitive mapping actually happened.
 @export var is_landmark: bool = false
 
+## True for sources that announce themselves continuously anyway — rivers,
+## waterfalls, wind through rock. The scan never returns these (§9.2): they
+## are already heard directly, so a ping on top of them spends one of the
+## scan's few returns telling the player something they cannot miss. The
+## scan is for discrete, quiet objects.
+@export var continuous: bool = false
+
 var announced: bool = false
+
+## Set by a sibling Focusable on reveal. Identity is earned through sustained
+## FOCUS, never handed over by the scan (§9.2) — nothing should speak this
+## object as a recognised thing while this is false.
+var identified: bool = false
 
 
 func _ready() -> void:
@@ -45,3 +57,10 @@ func _ready() -> void:
 
 func available() -> bool:
 	return not (announce_once and announced)
+
+
+## Eligible to produce a scan return. Distance is the caller's test, not
+## this one's — BatCompanion range-limits against its own max as well as
+## this node's scan_radius.
+func scannable() -> bool:
+	return available() and not continuous

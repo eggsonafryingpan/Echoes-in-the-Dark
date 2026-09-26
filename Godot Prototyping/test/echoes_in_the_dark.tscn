@@ -175,6 +175,7 @@ sfx_name = &"river_flow_large"
 bus = &"Environmental"
 
 [node name="Describable" parent="RiverBigA" unique_id=5000000018]
+continuous = true
 label = "rushing water"
 detail = "A wide, steady flow, close by."
 
@@ -184,6 +185,7 @@ sfx_name = &"river_flow_large"
 bus = &"Environmental"
 
 [node name="Describable" parent="RiverBigB" unique_id=5000000020]
+continuous = true
 label = "rushing water"
 detail = "The same wide flow, a little further along."
 
@@ -193,6 +195,7 @@ sfx_name = &"wind_passage"
 bus = &"Environmental"
 
 [node name="Describable" parent="WindPassage" unique_id=5000000022]
+continuous = true
 label = "wind moving through rock"
 detail = "A steady draft finding its way through."
 
@@ -202,6 +205,7 @@ sfx_name = &"wind_passage_soft"
 bus = &"Environmental"
 
 [node name="Describable" parent="WindPassageSoft" unique_id=5000000024]
+continuous = true
 label = "a faint draft"
 detail = "Barely a breeze."
 
@@ -220,6 +224,7 @@ sfx_name = &"river_flow_small"
 bus = &"Environmental"
 
 [node name="Describable" parent="RiverSmallA" unique_id=5000000028]
+continuous = true
 label = "a narrow stream"
 detail = "Thinner, quicker water than the river back the way you came."
 
@@ -229,6 +234,7 @@ sfx_name = &"river_flow_small"
 bus = &"Environmental"
 
 [node name="Describable" parent="RiverSmallB" unique_id=5000000030]
+continuous = true
 label = "a narrow stream"
 detail = "The same stream, curling further on."
 
@@ -238,6 +244,7 @@ sfx_name = &"waterfall"
 bus = &"Environmental"
 
 [node name="Describable" parent="WaterfallA" unique_id=5000000032]
+continuous = true
 label = "falling water"
 detail = "Water dropping from a height, loud and constant."
 
@@ -247,6 +254,7 @@ sfx_name = &"waterfall"
 bus = &"Environmental"
 
 [node name="Describable" parent="WaterfallB" unique_id=5000000034]
+continuous = true
 label = "falling water"
 detail = "The same fall, heard from the other side of the chamber."
 
