@@ -37,7 +37,7 @@
     "file": "water_splash_small"
   },
   "wall_collision_thud": {
-    "folder": "priority",
+    "folder": "essential",
     "file": "hit_wall"
   },
   "heartbeat_calm": {
