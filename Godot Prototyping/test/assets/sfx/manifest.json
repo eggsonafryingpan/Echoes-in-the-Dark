@@ -53,8 +53,8 @@
     "file": "breathing"
   },
   "breathing_panicked": {
-    "folder": "essential",
-    "file": "breathing_panicked"
+    "folder": "priority",
+    "file": "panicked_breathing"
   },
   "echolocation_sweep": {
     "folder": "essential",

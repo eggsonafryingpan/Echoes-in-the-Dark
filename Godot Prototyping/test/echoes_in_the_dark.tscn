@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://bug7f6n11tenj" path="res://scripts/audio_debug_overlay.gd" id="14_adbg"]
 [ext_resource type="Script" uid="uid://cf800p11uu5nm" path="res://scripts/filming_overlay.gd" id="15_film"]
 [ext_resource type="Script" path="res://scripts/object_debug_overlay.gd" id="16_objdbg"]
+[ext_resource type="Script" path="res://scripts/scan_ping_markers.gd" id="17_scanmk"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 background_mode = 2
@@ -373,5 +374,8 @@ script = ExtResource("16_objdbg")
 
 [node name="FilmingOverlay" type="CanvasLayer" parent="." unique_id=705032741]
 script = ExtResource("15_film")
+
+[node name="ScanPingMarkers" type="Node3D" parent="." unique_id=705032743]
+script = ExtResource("17_scanmk")
 
 [connection signal="timeout" from="SoundBox/Timer" to="SoundBox" method="_on_timer_timeout"]
