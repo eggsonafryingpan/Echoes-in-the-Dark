@@ -83,7 +83,8 @@ const TOGGLE_ADAPTIVE_ACTION := &"toggle_adaptive_audio"
 var _base_volume_linear: Dictionary = {
 	BUS_PRIORITY: 1.0,
 	BUS_ESSENTIAL: 1.0,
-	BUS_ENVIRONMENTAL: 1.0,
+	# ~-8 dB: the bed must sit under footsteps and the bat, not over them.
+	BUS_ENVIRONMENTAL: 0.4,
 }
 
 ## 1.0 = fully present, 0.0 = fully stripped. Priority never appears here --
@@ -124,6 +125,7 @@ func _ready() -> void:
 	bat_source = AudioStreamPlayer3D.new()
 	bat_source.name = "BatSource"
 	bat_source.bus = BUS_UI
+	bat_source.max_db = 12.0
 	add_child(bat_source)
 
 

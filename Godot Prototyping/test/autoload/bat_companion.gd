@@ -47,6 +47,10 @@ signal spoke(line_id: StringName)
 ## Fixed offset from the player's head, in head-local space (§9.1).
 @export var shoulder_offset: Vector3 = Vector3(0.3, -0.15, 0.0)
 
+## Bat voice gain. Above 0 dB so lines sit clearly over the environmental
+## bed; the runtime-TTS fallback always speaks at the OS maximum.
+@export var voice_volume_db: float = 8.0
+
 ## More simultaneous pings than this stop being separable as directions,
 ## which defeats the point of a bearing-only return.
 @export var max_returns: int = 3
@@ -256,7 +260,7 @@ func _speak_unrendered(line_id: StringName) -> void:
 
 	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
 		return
-	DisplayServer.tts_speak(text, _tts_voice)
+	DisplayServer.tts_speak(text, _tts_voice, 100)
 	spoke.emit(line_id)
 
 
@@ -318,7 +322,7 @@ func _pump_voice() -> void:
 	source.stream = item.stream
 	# Reset gain: whatever else last used this player set its own level
 	# (CALM's breathing hint drops it to -6 dB and never puts it back).
-	source.volume_db = 0.0
+	source.volume_db = voice_volume_db
 	source.play()
 	spoke.emit(item.id)
 
