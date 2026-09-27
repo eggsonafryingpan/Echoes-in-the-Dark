@@ -248,7 +248,7 @@ unit_size = 4.0
 
 [node name="Focusable" type="Node3D" parent="SwarmCluster" unique_id=705032739]
 script = ExtResource("13_focus")
-audio_player_path = NodePath("../SwarmAmbience/AudioStreamPlayer3D")
+audio_player_path = NodePath("../SwarmAmbience/Body/AudioStreamPlayer3D")
 describable_path = NodePath("../SwarmAmbience/Describable")
 revealed_label = "many calm creatures"
 revealed_detail = "Predators and prey together, unnaturally still. Not a threat."
@@ -276,6 +276,7 @@ continuous = true
 volume_db = -12.0
 max_distance = 12.0
 unit_size = 2.5
+body_size = Vector3(5, 0, 2)
 
 [node name="RiverBigB" parent="." unique_id=705032723 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, -1.5, -4.5)
@@ -286,6 +287,7 @@ continuous = true
 volume_db = -12.0
 max_distance = 12.0
 unit_size = 2.5
+body_size = Vector3(5, 0, 2)
 
 [node name="WindPassage" parent="." unique_id=705032725 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, -1.5, -6.5)
@@ -325,6 +327,7 @@ continuous = true
 volume_db = -14.0
 max_distance = 9.0
 unit_size = 2.0
+body_size = Vector3(1.2, 0, 3.2)
 
 [node name="RiverSmallB" parent="." unique_id=705032733 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -1.2, -3)
@@ -335,6 +338,7 @@ continuous = true
 volume_db = -14.0
 max_distance = 9.0
 unit_size = 2.0
+body_size = Vector3(1.2, 0, 3.2)
 
 [node name="WaterfallA" parent="." unique_id=705032735 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.98, 0, 14)
