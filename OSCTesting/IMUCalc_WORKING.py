@@ -30,13 +30,12 @@ with calibration_path.open("r", encoding="utf-8") as f:
 def updateSensor(sensor_name, axis, args):
     sensor = sensors[sensor_name]
     #In case xyz come in different orders
-    match axis:
-        case "X":
-            sensor[0] = [val - calibration[sensor_name][0] for val in args]
-        case "Y":
-            sensor[1] = [val - calibration[sensor_name][1] for val in args]
-        case "Z":
-            sensor[2] = [val - calibration[sensor_name][2] for val in args]
+    if axis == "X":
+        sensor[0] = [val - calibration[sensor_name][0] for val in args]
+    elif axis == "Y":
+        sensor[1] = [val - calibration[sensor_name][1] for val in args]
+    elif axis == "Z":
+        sensor[2] = [val - calibration[sensor_name][2] for val in args]
 
 
 def processData():
