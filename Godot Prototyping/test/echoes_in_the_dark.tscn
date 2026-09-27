@@ -291,7 +291,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.98, 0, 20)
 sfx_name = &"waterfall"
 
 [node name="TopDownCamera" type="Camera3D" parent="." unique_id=2109764281]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, -50, 290, -15)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, -50, 327, -24)
 fov = 20.5
 script = ExtResource("12_4je4a")
 
