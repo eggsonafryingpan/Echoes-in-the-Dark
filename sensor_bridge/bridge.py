@@ -2,7 +2,7 @@
 
 Brief: CLAUDE_CODE_BRIEF.md §2, §3, §13 Phase 1.
 
-Ingests EmotiBit's raw 9-axis IMU and green-channel PPG over OSC, runs the
+Ingests EmotiBit's raw 9-axis IMU and red-channel PPG over OSC, runs the
 Madgwick orientation filter and the HeartPy heart-rate pipeline, applies the
 motion gate, and forwards clean orientation + heart-rate(+validity) to Godot
 over OSC on the address scheme Godot's LiveOSCSource listens on.
@@ -20,7 +20,7 @@ for day-to-day development -- Godot's MockSource replays canned traces with
 no Python process running at all (§3.5, mock-first development).
 
 EmotiBit OSC address convention assumed here: "<prefix>/<SENSOR>:<AXIS>",
-e.g. ".../GYRO:X", ".../ACC:Y", ".../PPG:GRN". Sensor/axis names are matched
+e.g. ".../GYRO:X", ".../ACC:Y", ".../PPG:RED". Sensor/axis names are matched
 on the address tail, so the prefix doesn't matter. Verify the exact addresses
 your EmotiBit firmware/oscilloscope setup emits with a plain OSC monitor
 before assuming this matches -- that's hardware bring-up, a human task.
@@ -42,9 +42,9 @@ from orientation import OrientationEstimator
 ORIENTATION_ADDRESS = "/echoes/orientation"
 HEART_RATE_ADDRESS = "/echoes/heart_rate"
 
-# EmotiBit's onboard green-channel PPG stream. Brief §3.1: green PPG, not the
-# onboard HR estimate, and not red/IR.
-PPG_GREEN_SENSOR = "PPG:GRN"
+# EmotiBit's onboard red-channel PPG stream. Brief §3.1: red PPG, not the
+# onboard HR estimate.
+PPG_RED_SENSOR = "PPG:RED"
 
 AXIS_INDEX = {"X": 0, "Y": 1, "Z": 2}
 
@@ -71,7 +71,7 @@ class SensorBridge:
                 self._set_axis(sensor, axis, values)
                 self._maybe_process_imu()
                 return
-        if tail == PPG_GREEN_SENSOR:
+        if tail == PPG_RED_SENSOR:
             if values:
                 self.heart_rate.add_sample(float(values[0]))
                 self._maybe_process_hr()
@@ -112,7 +112,7 @@ def main() -> None:
     parser.add_argument("--godot-host", default="127.0.0.1")
     parser.add_argument("--godot-port", type=int, default=8687, help="Port Godot's OSCServer/GodOSC listens on")
     parser.add_argument("--imu-rate", type=float, default=25.0, help="IMU packet rate, Hz")
-    parser.add_argument("--ppg-rate", type=float, default=25.0, help="Green-PPG sample rate, Hz")
+    parser.add_argument("--ppg-rate", type=float, default=25.0, help="Red-PPG sample rate, Hz")
     parser.add_argument("--hr-window", type=float, default=10.0, help="HeartPy sliding window, seconds")
     parser.add_argument("--still-threshold", type=float, default=0.05, help="rad/s below which the head counts as still")
     args = parser.parse_args()

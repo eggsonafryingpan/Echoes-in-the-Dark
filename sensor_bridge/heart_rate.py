@@ -1,6 +1,6 @@
-"""Green-channel PPG -> bandpass filter -> HeartPy sliding window -> BPM.
+"""Red-channel PPG -> bandpass filter -> HeartPy sliding window -> BPM.
 
-Brief CLAUDE_CODE_BRIEF.md §3: "Heart rate: green-channel PPG (not the
+Brief CLAUDE_CODE_BRIEF.md §3: "Heart rate: red-channel PPG (not the
 onboard estimate) -> bandpass filter -> HeartPy over a sliding window -> BPM."
 
 This class does not apply the motion gate itself -- the caller decides

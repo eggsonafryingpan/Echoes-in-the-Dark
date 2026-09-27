@@ -40,7 +40,7 @@ Per the paper, signal processing lives in **Python**, not Godot.
 **Process A — Python sensor bridge**
 - EmotiBit streams over **OSC**. `python-osc` ingests it.
 - **Orientation:** 9-axis IMU → **Madgwick filter** (`ahrs` library) → quaternion/euler.
-- **Heart rate:** **green-channel PPG** (not the onboard estimate) → bandpass filter → **HeartPy** over a sliding window → BPM.
+- **Heart rate:** **red-channel PPG** (not the onboard estimate) → bandpass filter → **HeartPy** over a sliding window → BPM.
 - **EDA** is logged but **not** used by the detector.
 - **Motion-gate** applied here (or exposed so Godot can): mark HR samples valid only when angular velocity is low.
 - Forwards orientation + HR (+ validity flag) to Godot via **GodOSC**.
@@ -59,7 +59,7 @@ Per the paper, signal processing lives in **Python**, not Godot.
 
 ### 3.1 Metrics used and why (forehead mount, constant head motion, live)
 - **IMU (9-axis)** — primary, always live; Madgwick → orientation. Drives FOCUS, navigation, motion-gate.
-- **HR (green PPG → HeartPy)** — trusted **only when the head is still** (PPG is wrecked by motion). Fine, because HR is only needed during CALM, when the player deliberately holds still.
+- **HR (red PPG → HeartPy)** — trusted **only when the head is still** (PPG is wrecked by motion). Fine, because HR is only needed during CALM, when the player deliberately holds still.
 - **Respiration** — not required; CALM keys off HR trend + breathing behavior, not a derived respiration channel.
 - **EDA** — logged, **not used** by the detector (paper).
 - **Temperature** — unused.
@@ -207,7 +207,7 @@ Organized pipeline; wire placeholders first (final assets are a human sourcing/l
 ## 13. Build order (stop for review after each phase)
 
 - **Phase 0** — Repo/project audit; add this file; scaffold the six autoloads; set up the three audio buses.
-- **Phase 1** — **Python sensor bridge** (OSC in, Madgwick, green-PPG+HeartPy, motion-gate, GodOSC out) **+** Godot `SensorBridge` + baseline; `MockSource`. Test on mock traces, no hardware.
+- **Phase 1** — **Python sensor bridge** (OSC in, Madgwick, red-PPG+HeartPy, motion-gate, GodOSC out) **+** Godot `SensorBridge` + baseline; `MockSource`. Test on mock traces, no hardware.
 - **Phase 2** — `AudioDirector`: priority/essential/environmental buses, steam-audio listener from head orientation, bat as spatial source, per-layer menu volumes.
 - **Phase 3** — `OverloadDetector` (conjunctive) → strip environmental→essential; CALM arbitration flag; **A/B adaptive toggle**.
 - **Phase 4** — FOCUS + anti-lockout (§6.3/§7).
