@@ -32,6 +32,12 @@ calm_recovered | Better. You've got it back.
 # The scan itself says nothing -- direction comes from the pings. These are
 # only nudges about how to use it, never "something at seven o'clock".
 scan_nothing_close | Nothing close enough to pick up.
+# Post-scan acknowledgements. BatCompanion picks one after the pings land,
+# by how many came back -- never which, never where. Flavor only.
+scan_found_one_a | Something's out there.
+scan_found_one_b | Picked something up.
+scan_found_few_a | I'm picking up a few things nearby.
+scan_found_few_b | There's more than one thing around us.
 scan_try_again | Try that again from somewhere else.
 focus_hold_to_identify | Hold still and face it. Give me a moment.
 focus_reveal_ready | There. Now I know what that is.

@@ -39,6 +39,9 @@ extends Node
 ## audio path may read its label.
 signal scan_performed(returns: Array)
 signal spoke(line_id: StringName)
+## One return's ping just started playing. Fires per return, at the moment
+## it becomes audible, so debug visuals line up with what the ear gets.
+signal return_pinged(entry: Dictionary)
 
 ## ~2-3s per §9.2. Single source of truth for scan pacing: Bat routes its
 ## input action straight here rather than keeping a second cooldown.
@@ -61,7 +64,30 @@ signal spoke(line_id: StringName)
 
 ## Returns fire nearest-first, this far apart, so several reads as distinct
 ## directions rather than one smeared chord.
-@export var return_stagger: float = 0.12
+@export var return_stagger: float = 0.35
+
+## Returns wait this long after the press. startup.mp3 peaks around
+## 0.2-0.5 s, and pings fired on top of it were masked outright -- the
+## original cause of "I scan and hear no returns".
+@export var return_delay: float = 0.7
+
+## Ping gain. detected.mp3 peaks at about -17 dBFS and the pings are
+## distance-attenuated on top of that, so at 0 dB they sat under the
+## environmental bed.
+@export var return_volume_db: float = 10.0
+
+## The sweep is a 3 s flat drone at roughly ping level; it fades out over
+## this long as the first return lands so the pings are not competing with it.
+@export var sweep_fade_seconds: float = 0.3
+
+## Speak a short, non-identifying acknowledgement after each scan.
+@export var speak_after_scan: bool = true
+## Gap between the last ping starting and the line.
+@export var scan_line_delay: float = 0.6
+
+const SCAN_LINES_NONE: Array[StringName] = [&"scan_nothing_close"]
+const SCAN_LINES_ONE: Array[StringName] = [&"scan_found_one_a", &"scan_found_one_b"]
+const SCAN_LINES_FEW: Array[StringName] = [&"scan_found_few_a", &"scan_found_few_b"]
 
 ## Where voices/generate_voices.sh writes. Clips are addressed by id alone,
 ## so re-wording a line and re-running the generator changes nothing here —
@@ -87,6 +113,11 @@ var _speaking_line: bool = false
 var _line_text: Dictionary = {}
 var _fallback_warned: Dictionary = {}
 var _tts_voice: String = ""
+var _sweep_tween: Tween = null
+var _last_scan_line: StringName = &""
+## Bumped per scan, so a stale scan's deferred line or sweep fade never
+## lands on top of a newer scan.
+var _scan_serial: int = 0
 
 
 func _ready() -> void:
@@ -137,13 +168,56 @@ func scan() -> void:
 	# Trigger blip first, then the sweep under it. Both flat, both UI bus.
 	_trigger_player.stream = SfxLibrary.get_stream(&"ui_startup")
 	_trigger_player.play()
+	if _sweep_tween != null:
+		_sweep_tween.kill()
+	_sweep_player.volume_db = 0.0
 	_sweep_player.stream = SfxLibrary.get_stream(&"ui_scan_sweep")
 	_sweep_player.play()
 
+	_scan_serial += 1
+	var serial := _scan_serial
 	var found := _gather_returns()
 	scan_performed.emit(found)
 	for i in found.size():
-		_emit_return(found[i], i * return_stagger)
+		_emit_return(found[i], return_delay + i * return_stagger)
+	_finish_scan(serial, found.size())
+
+
+## Fade the sweep as returns start, then acknowledge the scan in words.
+func _finish_scan(serial: int, count: int) -> void:
+	await get_tree().create_timer(return_delay).timeout
+	if serial != _scan_serial:
+		return
+	_sweep_tween = create_tween()
+	_sweep_tween.tween_property(_sweep_player, "volume_db", -60.0, sweep_fade_seconds)
+	_sweep_tween.tween_callback(_sweep_player.stop)
+
+	if not speak_after_scan:
+		return
+	var tail := maxf(0, count - 1) * return_stagger + scan_line_delay
+	await get_tree().create_timer(tail).timeout
+	if serial != _scan_serial:
+		return
+	_say_scan_line(count)
+
+
+## Flavor only: says *how many* in the vaguest terms, never what or where.
+## Skipped if the bat is already talking or CALM is running -- bat_source
+## carries CALM's breathing and coaching, and a scan quip must never
+## interrupt or queue behind that.
+func _say_scan_line(count: int) -> void:
+	if is_speaking() or EventDirector.calm_active:
+		return
+	var pool := SCAN_LINES_NONE
+	if count == 1:
+		pool = SCAN_LINES_ONE
+	elif count > 1:
+		pool = SCAN_LINES_FEW
+	var choices := pool.filter(func(id): return id != _last_scan_line)
+	if choices.is_empty():
+		choices = pool
+	_last_scan_line = choices.pick_random()
+	say(_last_scan_line)
 
 
 ## Nearest/highest-priority scannable sources in range, as
@@ -190,6 +264,7 @@ func _emit_return(entry: Dictionary, delay: float) -> void:
 	ping.global_position = head.global_position + entry.bearing * entry.distance
 	ping.stream = SfxLibrary.get_stream(&"ui_scan_detected")
 	ping.play()
+	return_pinged.emit(entry)
 
 
 func _free_ping() -> AudioStreamPlayer3D:
@@ -201,7 +276,9 @@ func _free_ping() -> AudioStreamPlayer3D:
 	ping.bus = AudioDirector.BUS_UI
 	ping.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	ping.max_distance = max_return_distance * 1.5
-	ping.unit_size = 4.0
+	ping.unit_size = 6.0
+	ping.volume_db = return_volume_db
+	ping.max_db = 12.0
 	add_child(ping)
 	_ping_pool.append(ping)
 	return ping
