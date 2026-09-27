@@ -69,7 +69,19 @@ const EVENT_ONE_STEPS: Array[StringName] = [
 
 var event_one_active: bool = false
 
+## Playtesting: start past the cold open entirely. Set from the command
+## line (`-- --skip-intro`) or the environment (ECHOES_SKIP_INTRO=1) so a
+## tester can jump straight to exploration without editing anything; the
+## main menu's F6 sets it for a single launch. Running
+## echoes_in_the_dark.tscn directly (the editor's Run Current Scene) never
+## queues Event 1 in the first place, so it needs neither.
+var skip_intro: bool = false
+
 var _event_one_skip: bool = false
+## Bumped on every start and every skip, so a sequence still awaiting a
+## timer when it was skipped wakes up, sees it is stale, and exits instead
+## of running its next step on top of the game.
+var _event_one_run: int = 0
 var _event_one_pending: bool = false
 var _debug_hr: float = -1.0
 var _event_players: Dictionary = {}
@@ -79,7 +91,15 @@ var _event_players: Dictionary = {}
 ## yet at that point, so this only arms the event; _process starts it once
 ## the player exists (BatCompanion.head is set in player.gd's _ready).
 func queue_event_one() -> void:
+	if skip_intro:
+		print("EventDirector: skipping Event 1 (skip_intro).")
+		return
 	_event_one_pending = true
+
+
+func _ready() -> void:
+	skip_intro = OS.get_cmdline_user_args().has("--skip-intro") \
+			or OS.get_environment("ECHOES_SKIP_INTRO") == "1"
 
 
 func _process(_delta: float) -> void:
@@ -93,15 +113,18 @@ func start_event_one() -> void:
 		return
 	event_one_active = true
 	_event_one_skip = false
+	_event_one_run += 1
+	var run := _event_one_run
 	event_started.emit(&"event_one")
 
 	for step in EVENT_ONE_STEPS:
-		if _event_one_skip:
-			break
+		if run != _event_one_run:
+			return  # Skipped mid-step; skip_event_one already finished it.
 		event_one_step.emit(step)
 		await _run_event_one_step(step)
 
-	_finish_event_one()
+	if run == _event_one_run:
+		_finish_event_one()
 
 
 func _run_event_one_step(step: StringName) -> void:
@@ -132,6 +155,8 @@ func _run_event_one_step(step: StringName) -> void:
 ## Always runs, skipped or not. Anything the sequence turned on gets turned
 ## off here rather than at the end of the step that turned it on.
 func _finish_event_one() -> void:
+	if not event_one_active:
+		return
 	event_one_active = false
 	_debug_hr = -1.0
 	for player in _event_players.values():
@@ -145,10 +170,17 @@ func _finish_event_one() -> void:
 	event_completed.emit(&"event_one")
 
 
+## Immediate: finishes now rather than after the current step's timers run
+## out, so F6 during the startle does not leave four more seconds of rock
+## fall and a bat line playing over the unlocked game.
 func skip_event_one() -> void:
 	if not event_one_active:
 		return
 	_event_one_skip = true
+	_event_one_run += 1
+	BatCompanion.shut_up()
+	_finish_event_one()
+	print("EventDirector: Event 1 skipped.")
 
 
 ## §10's "scripted fast bilateral pulse" -- before CALM starts, so it is a

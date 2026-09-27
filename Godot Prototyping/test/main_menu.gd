@@ -5,6 +5,14 @@ func _ready():
 	$VBoxContainer/Button2.pressed.connect(_on_start_pressed)
 	$VBoxContainer/Button3.pressed.connect(_on_quit_pressed)
 
+## Playtesting: F6 (debug_skip_event, the same key that skips the cold
+## open once it is running) starts the game with Event 1 skipped entirely.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"debug_skip_event"):
+		get_viewport().set_input_as_handled()
+		EventDirector.skip_intro = true
+		_on_start_pressed()
+
 func _on_baseline_pressed():
 	print("Baseline calibration starting...")
 
