@@ -9,7 +9,7 @@ pip install -r requirements.txt
 python bridge.py --listen-port 12346 --godot-port 8687
 ```
 
-Pipeline: EmotiBit OSC (9-axis IMU + green-channel PPG) → Madgwick
+Pipeline: EmotiBit OSC (9-axis IMU + red-channel PPG) → Madgwick
 orientation filter (`orientation.py`) + motion gate (`motion_gate.py`) +
 HeartPy sliding-window BPM (`heart_rate.py`) → forwarded to Godot's
 `LiveOSCSource` as `/echoes/orientation` (pitch, yaw, roll radians) and
