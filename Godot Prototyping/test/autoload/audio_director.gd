@@ -83,8 +83,9 @@ const TOGGLE_ADAPTIVE_ACTION := &"toggle_adaptive_audio"
 var _base_volume_linear: Dictionary = {
 	BUS_PRIORITY: 1.0,
 	BUS_ESSENTIAL: 1.0,
-	# ~-8 dB: the bed must sit under footsteps and the bat, not over them.
-	BUS_ENVIRONMENTAL: 0.4,
+	# ~-5 dB: under footsteps and the bat, but clearly present, so there
+	# is an audible bed for overload to strip (was 0.4 / -8 dB: too faint).
+	BUS_ENVIRONMENTAL: 0.55,
 }
 
 ## 1.0 = fully present, 0.0 = fully stripped. Priority never appears here --

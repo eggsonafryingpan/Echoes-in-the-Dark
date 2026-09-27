@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/object_debug_overlay.gd" id="16_objdbg"]
 [ext_resource type="Script" path="res://scripts/scan_ping_markers.gd" id="17_scanmk"]
 [ext_resource type="Script" path="res://scripts/hr_debug_overlay.gd" id="18_hrdbg"]
+[ext_resource type="Script" path="res://scripts/ambient_bed.gd" id="19_ambbed"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 background_mode = 2
@@ -361,6 +362,9 @@ continuous = true
 volume_db = -12.0
 max_distance = 16.0
 unit_size = 2.5
+
+[node name="AmbientBed" type="Node3D" parent="." unique_id=705032745]
+script = ExtResource("19_ambbed")
 
 [node name="TopDownCamera" type="Camera3D" parent="." unique_id=2109764281]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, -50, 327, -24)
