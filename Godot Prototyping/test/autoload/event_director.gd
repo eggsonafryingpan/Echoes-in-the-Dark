@@ -349,6 +349,22 @@ func _current_bpm(delta: float) -> float:
 	return -1.0
 
 
+## Snapshot for the playtest HR readout (hr_debug_overlay.gd). Read-only;
+## nothing on the audio path consults it.
+func calm_readout() -> Dictionary:
+	var relax_t: float = clampf(_calm_t / calm_relax_seconds, 0.0, 1.0)
+	return {
+		"active": calm_active,
+		"t": _calm_t,
+		"start_bpm": _calm_start_bpm,
+		"smoothed_bpm": _calm_smoothed_bpm,
+		"required_drop": lerpf(calm_generous_drop_bpm, calm_relaxed_drop_bpm, relax_t),
+		"dwell_seconds": calm_dwell_seconds,
+		"fail_forward_seconds": calm_fail_forward_seconds,
+		"assist_bpm": _debug_hr,
+	}
+
+
 func _complete_calm(reason: StringName) -> void:
 	calm_active = false
 	OverloadDetector.suppress_during_calm = false
