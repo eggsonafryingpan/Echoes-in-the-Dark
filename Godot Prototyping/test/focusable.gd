@@ -25,9 +25,10 @@ extends Node3D
 ##      of being in range at all, aligned or not. No permanent lockout is
 ##      possible from this component.
 ##
-## No visual movement/oscillation (§1, audio-only game) -- the only
-## observable effect is the linked player's volume and (on reveal) the
-## sibling Describable's label/detail, if any.
+## No visual movement/oscillation (§1, audio-only game) -- the observable
+## effects are all audio: the linked player's volume while building, and on
+## reveal the discovery sting, the source settling louder on a safer layer,
+## and a short bat acknowledgement (plus the Describable's label/detail).
 
 signal revealed()
 
@@ -75,6 +76,33 @@ signal revealed()
 ## The discovery sting, played once when the reveal lands. Set to &"" on a
 ## focus target that should resolve silently.
 @export var discovery_sfx: StringName = &"focus_discovery"
+## The sting peaks around -17 dBFS and is spatialized at the target, so at
+## 0 dB it could pass unnoticed under the bed from across the chamber.
+@export var discovery_volume_db: float = 6.0
+
+## --- After the reveal ------------------------------------------------------
+##
+## Before this block existed the reveal changed nothing you could hear:
+## focus drops the source to min_volume_db when it activates and builds it
+## back to max_volume_db, which is where the authored source sat to begin
+## with, and it stayed on whatever layer it was on (the swarm: Environmental,
+## the first thing overload strips). So the payoff was the sting and then
+## exactly the sound you started with.
+##
+## Now a revealed source stays clearer than it ever was before: it rises
+## revealed_boost_db above max_volume_db and moves to revealed_bus, out of
+## the layer that is stripped first. Something identified is no longer
+## texture -- it is a known thing in the scene. Essential, not Priority:
+## it informs the route but is not itself the objective (§4).
+@export var revealed_boost_db: float = 4.0
+@export var revealed_bus: StringName = &"Essential"
+@export var reveal_rise_seconds: float = 0.8
+
+## The bat reacts once the sting has landed -- acknowledges, never names
+## what it is (§1: the player discovers, the game does not explain).
+## &"" to stay silent.
+@export var reveal_line: StringName = &"focus_reveal_ready"
+@export var reveal_line_delay: float = 1.2
 
 var revealed_state: bool = false
 var focus_progress: float = 0.0  # 0..1
@@ -135,6 +163,7 @@ func _reveal() -> void:
 	revealed_state = true
 	focus_progress = 1.0
 	_apply_volume()
+	_hold_revealed()
 	if _describable != null:
 		if revealed_label != "":
 			_describable.label = revealed_label
@@ -142,7 +171,28 @@ func _reveal() -> void:
 			_describable.detail = revealed_detail
 		_describable.identified = true
 	_play_discovery()
+	_acknowledge()
 	revealed.emit()
+
+
+func _hold_revealed() -> void:
+	if _audio_player == null:
+		return
+	if revealed_bus != &"":
+		_audio_player.bus = revealed_bus
+	create_tween().tween_property(_audio_player, "volume_db",
+			max_volume_db + revealed_boost_db, reveal_rise_seconds)
+
+
+## Skipped during CALM, like the post-scan line: bat_source carries CALM's
+## coaching then, and this must not queue behind or talk over it.
+func _acknowledge() -> void:
+	if reveal_line == &"":
+		return
+	await get_tree().create_timer(reveal_line_delay).timeout
+	if not is_inside_tree() or EventDirector.calm_active:
+		return
+	BatCompanion.say(reveal_line)
 
 
 ## The payoff: sustained attention turned an indistinct sound into
@@ -164,6 +214,8 @@ func _play_discovery() -> void:
 	player.name = "DiscoverySting"
 	player.bus = AudioDirector.BUS_PRIORITY
 	player.stream = SfxLibrary.get_stream(discovery_sfx)
+	player.volume_db = discovery_volume_db
+	player.max_db = 12.0
 	player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	player.max_distance = 30.0
 	player.unit_size = 6.0
