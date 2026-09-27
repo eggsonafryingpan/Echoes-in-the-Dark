@@ -148,13 +148,17 @@ func _physics_process(delta: float) -> void:
 	if !raycasts.is_empty():
 		var closest_dir = raycasts.reduce(func(acc,curr): return curr if curr.length() < acc.length() else acc,raycasts[0])
 		wall_audio.global_position = head_pos + closest_dir * 0.9
-		if closest_dir.length() < 0.6:
+		# Pushing = the joystick is driving the player into this wall, so
+		# the thud keeps repeating for as long as they keep walking into it.
+		# Only the first contact counts as a collision for OverloadDetector.
+		var pushing: bool = direction != Vector3.ZERO and closest_dir.normalized().dot(direction) > 0.4
+		if closest_dir.length() < 0.6 and pushing:
+			hit_audio.global_position = head_pos + closest_dir * 0.9
+			if not hit_audio.playing:
+				hit_audio.play()
 			if isTouching == false:
-				if closest_dir.dot(-facing.z) > 0.4:
-					isTouching = true
-					hit_audio.global_position = head_pos + closest_dir * 0.9
-					hit_audio.play()
-					GameState.report_collision()
+				isTouching = true
+				GameState.report_collision()
 		elif closest_dir.length() > 0.7:
 			isTouching = false
 		#if closest_dir.dot(-global_transform.basis.z) < 1:
