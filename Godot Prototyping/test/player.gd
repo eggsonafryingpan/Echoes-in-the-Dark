@@ -182,7 +182,9 @@ func _physics_process(delta: float) -> void:
 			closest_dir = hit_vector
 	if closest_dir != null:
 		wall_audio.global_position = head_pos + closest_dir * 0.9
-		get_node("/root/World/Test").global_position = wall_audio.global_position
+		var wall_marker := get_node_or_null("../Test") as Node3D
+		if wall_marker:
+			wall_marker.global_position = wall_audio.global_position
 
 	if debug_draw_wall_rays:
 		_draw_wall_debug(ray_debug, closest_dir, head_pos)
