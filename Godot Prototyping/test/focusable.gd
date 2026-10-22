@@ -32,6 +32,11 @@ extends Node3D
 
 signal revealed()
 
+## Off = frozen: neither builds nor decays nor counts toward fail-forward.
+## For a target that only means something once its event has started (the
+## exit wind before Event 2).
+@export var active: bool = true
+
 ## Half-angle (degrees) of the "looking at it" cone at t=0, before relax.
 @export var focus_cone_start_deg: float = 15.0
 ## Half-angle (degrees) the cone relaxes to by relax_seconds.
@@ -120,6 +125,8 @@ var focus_progress: float = 0.0  # 0..1
 
 var _t_active: float = -1.0  # seconds since first in range; -1 = never yet
 var _audio_player: AudioStreamPlayer3D = null
+var _original_bus: StringName = &""
+var _settle_tween: Tween = null
 var _describable: Node = null
 # Last tick's geometry, kept only for focus_readout().
 var _in_range: bool = false
@@ -134,11 +141,13 @@ func _ready() -> void:
 		_audio_player = get_node_or_null(audio_player_path)
 	if _audio_player != null:
 		_audio_player.max_db = maxf(_audio_player.max_db, max_volume_db)
+		_original_bus = _audio_player.bus
 	_describable = get_node_or_null(describable_path) if describable_path != NodePath() else get_node_or_null("Describable")
 
 
 func _physics_process(delta: float) -> void:
-	if revealed_state:
+	if revealed_state or not active:
+		_in_range = false
 		return
 	if GameState.input_locked:
 		_in_range = false  # Frozen, not building: the readout should say so.
@@ -185,7 +194,27 @@ func _apply_volume() -> void:
 	_audio_player.volume_db = lerpf(min_volume_db, max_volume_db, focus_progress)
 
 
-func _reveal() -> void:
+## Skip/jump keys: reveal now. silent = no sting and no bat line, for
+## jumping past the event rather than skipping through it.
+func force_reveal(silent: bool = false) -> void:
+	if revealed_state:
+		return
+	_reveal(silent)
+
+
+## Back to never-focused, so a jump can replay the event.
+func reset() -> void:
+	if _settle_tween != null and _settle_tween.is_valid():
+		_settle_tween.kill()
+	revealed_state = false
+	focus_progress = 0.0
+	_t_active = -1.0
+	if _audio_player != null and _original_bus != &"":
+		_audio_player.bus = _original_bus
+	_apply_volume()
+
+
+func _reveal(silent: bool = false) -> void:
 	revealed_state = true
 	focus_progress = 1.0
 	_apply_volume()
@@ -196,8 +225,9 @@ func _reveal() -> void:
 		if revealed_detail != "":
 			_describable.detail = revealed_detail
 		_describable.identified = true
-	_play_discovery()
-	_acknowledge()
+	if not silent:
+		_play_discovery()
+		_acknowledge()
 	revealed.emit()
 
 
@@ -206,7 +236,8 @@ func _hold_revealed() -> void:
 		return
 	if revealed_bus != &"":
 		_audio_player.bus = revealed_bus
-	create_tween().tween_property(_audio_player, "volume_db",
+	_settle_tween = create_tween()
+	_settle_tween.tween_property(_audio_player, "volume_db",
 			revealed_volume_db, reveal_settle_seconds)
 
 

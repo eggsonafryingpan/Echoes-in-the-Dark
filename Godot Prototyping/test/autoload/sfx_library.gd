@@ -10,11 +10,13 @@ extends Node
 ## manifest stays the single source of truth for what a sound designer needs
 ## to deliver (see assets/sfx/README.md for the handoff list).
 ##
-## A missing or not-yet-imported file falls back to a procedurally generated
-## placeholder tone (a short sine beep, synthesized in code -- no binary
-## asset needed) so nothing is ever silent during development, and the
-## placeholder is obviously not a real sound rather than easy to mistake for
-## one.
+## A missing or not-yet-imported file falls back to a short SILENT
+## placeholder: missing means silent. It used to be a sine beep, so that a
+## gap was audible during development, but a beep in the middle of a scripted
+## beat reads as a bug while a missing layer just reads as a thinner mix.
+## Every missing name is still warned about once, so the gaps stay visible in
+## the log rather than in the player's ears. The placeholder is a real
+## (empty) stream rather than null, so no caller has to special-case it.
 ##
 ## Note: Godot still needs to import a freshly dropped file once (open the
 ## project in the editor, or run it headless once) before load() can see it
@@ -65,7 +67,7 @@ func _load_manifest() -> void:
 
 
 ## Returns the AudioStream for a logical name (e.g. "footstep_rock"). Falls
-## back to a placeholder tone if the manifest doesn't list it, or if it does
+## back to the silent placeholder if the manifest doesn't list it, or if it does
 ## but no .wav/.ogg has been dropped in (or imported) yet.
 func get_stream(logical_name: String) -> AudioStream:
 	_ensure_manifest()
@@ -76,14 +78,16 @@ func get_stream(logical_name: String) -> AudioStream:
 	if stream == null:
 		if not _manifest.has(logical_name):
 			push_warning("SfxLibrary: '%s' isn't in manifest.json -- add it there first." % logical_name)
+		else:
+			push_warning("SfxLibrary: '%s' has no asset yet; it will play silence." % logical_name)
 		stream = _get_placeholder()
 	_cache[logical_name] = stream
 	return stream
 
 
 ## True when a real file backs this name -- i.e. get_stream() would hand
-## back the asset rather than the placeholder tone. For callers where a
-## beep is worse than silence (a scripted beat a player is listening to).
+## back the asset rather than the silent placeholder. For callers that want
+## to skip a missing sound entirely rather than play silence in its slot.
 func has_stream(logical_name: String) -> bool:
 	return get_stream(logical_name) != _get_placeholder()
 
@@ -105,25 +109,16 @@ func _resolve(logical_name: String) -> AudioStream:
 	return null
 
 
+## Silence, a tenth of a second long. Short so a looping player on a
+## missing asset is not holding anything, and real silence rather than a
+## zero-length stream, which AudioStreamWAV refuses to play.
 func _get_placeholder() -> AudioStream:
 	if _placeholder != null:
 		return _placeholder
 
-	var sample_rate := 44100
-	var duration := 0.12
-	var freq := 880.0
-	var frame_count := int(sample_rate * duration)
-	var fade_frames := 200
-
+	var sample_rate := 22050
 	var data := PackedByteArray()
-	data.resize(frame_count * 2)  # 16-bit mono
-	for i in frame_count:
-		var t := float(i) / sample_rate
-		var envelope := minf(1.0, minf(i / float(fade_frames), (frame_count - i) / float(fade_frames)))
-		var sample := sin(TAU * freq * t) * 0.25 * envelope
-		var v := int(clampf(sample, -1.0, 1.0) * 32767.0)
-		data.encode_s16(i * 2, v)
-
+	data.resize(int(sample_rate * 0.1) * 2)  # 16-bit mono, zero-filled
 	var stream := AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
 	stream.mix_rate = sample_rate

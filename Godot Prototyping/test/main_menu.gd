@@ -16,12 +16,15 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_baseline_pressed():
 	print("Baseline calibration starting...")
 
+## The escape blockout (E1-E4). The original cave, echoes_in_the_dark.tscn,
+## is untouched and still runs on its own (Run Current Scene).
+const GAME_SCENE := "res://escape_level.tscn"
+
 func _on_start_pressed():
 	print("Starting game...")
-	# Arms Event 1 (§10's cold open). The gameplay scene is not loaded yet,
-	# so EventDirector waits for the player to exist before starting it.
-	EventDirector.queue_event_one()
-	get_tree().change_scene_to_file("res://echoes_in_the_dark.tscn")
+	# The level decides where the run starts (Event 1, or --event=N) when it
+	# registers with EventDirector; nothing to arm from here.
+	get_tree().change_scene_to_file(GAME_SCENE)
 
 func _on_quit_pressed():
 	get_tree().quit()

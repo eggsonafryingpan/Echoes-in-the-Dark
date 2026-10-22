@@ -4,6 +4,15 @@
 
 ---
 
+> **Story update (2026-10-22) — supersedes §10's arc and §11's "stealth deferred".** The demo is now *escape the cave by climbing out*, found by following **wind** (outside air leaking in). No music, no attribution beat. Four events, built on `escape_level.tscn` (the original cave scene is untouched):
+> - **E1 CALM** — unchanged cold open (`event_director.gd`).
+> - **E2 FOCUS** — hold your head on a faint outside-wind source buried in cave noise; the reveal makes it the heading, louder the closer you get to the exit (`scripts/events/exit_wind.gd`).
+> - **E3 STEALTH** — an animal passes; CALM (same machinery as E1) decides whether it notices you. Failing knocks you back to a checkpoint, never ends the run; retries relax and the third always passes (`stealth_encounter.gd`).
+> - **E4 ESCAPE** — rock-dodging climb; each rock is cued by DualSense rumble in one grip **and** the rock sound in the same ear, move away to dodge; hits slide you back (`rockfall_climb.gd`).
+> - **Agency** — a side branch leads to the animal's den; FOCUS on it and E3 gets easier.
+>
+> The paper's three contributions (§0.1) and every anti-lockout commitment stand unchanged. Playtest keys and the autopilot test are documented at the top of `autoload/event_director.gd` and in `tests/escape_autotest.gd`.
+
 ## 0. Context — what this is and why it matters
 
 An **audio-only** (no visuals) cave-exploration game for **blind and low-vision (BLV)** players, built in **Godot 4** with **godot-steam-audio**, using an **EmotiBit** worn on a headband for head-tracking and heart rate.

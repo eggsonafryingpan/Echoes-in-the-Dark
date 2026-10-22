@@ -163,5 +163,35 @@
   "focus_discovery": {
     "folder": "priority",
     "file": "discovery"
+  },
+  "outside_wind": {
+    "folder": "environmental",
+    "file": "wind_normal",
+    "_note": "PLACEHOLDER: wants a distinct outside-air wind (gustier/whistling) so it never reads as cave ambience. Priority layer (exit_wind.gd)."
+  },
+  "den_nest": {
+    "folder": "essential",
+    "file": "leaves_walking",
+    "_note": "PLACEHOLDER: dry nest rustle in the den (E3 reward focus target)."
+  },
+  "animal_footsteps": {
+    "folder": "essential",
+    "file": "sand_gravel_walking",
+    "_note": "PLACEHOLDER: heavy animal footsteps; played pitched down 0.65 (stealth_encounter.gd)."
+  },
+  "animal_growl": {
+    "folder": "essential",
+    "file": "breathing",
+    "_note": "PLACEHOLDER: low growl/breath; played pitched down 0.5."
+  },
+  "climb_rock_warning": {
+    "folder": "events",
+    "file": "rockfalling",
+    "_note": "Rock coming loose above, in the ear it will fall on (rockfall_climb.gd)."
+  },
+  "climb_rock_impact": {
+    "folder": "events",
+    "file": "rockfalling2",
+    "_note": "Rock landing."
   }
 }
