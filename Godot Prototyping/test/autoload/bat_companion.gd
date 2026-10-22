@@ -54,6 +54,14 @@ signal return_pinged(entry: Dictionary)
 ## bed; the runtime-TTS fallback always speaks at the OS maximum.
 @export var voice_volume_db: float = 8.0
 
+## The voice the runtime-TTS fallback speaks unrendered lines in -- change
+## this one line to swap it. An exact id from DisplayServer.tts_get_voices()
+## (the "id" field, not the display name: several voices share a name across
+## languages). Rendered clips are unaffected; their voice is set separately
+## in voices/generate_voices.sh. An id this machine doesn't have falls back
+## to the first English voice, with a warning listing what to use instead.
+@export var tts_voice_id: String = "com.apple.voice.enhanced.en-US.Joelle"  # "Joelle (Enhanced)"
+
 ## More simultaneous pings than this stop being separable as directions,
 ## which defeats the point of a bearing-only return.
 @export var max_returns: int = 3
@@ -359,18 +367,26 @@ func _load_line_text() -> void:
 		_line_text[StringName(line.substr(0, sep).strip_edges())] = line.substr(sep + 1).strip_edges()
 
 
-## Match the rendered clips' voice where it exists, so a half-rendered set
-## does not switch character mid-conversation.
+## Uses tts_voice_id when this machine has it. Keep it matching the rendered
+## clips' voice, so a half-rendered set does not switch character
+## mid-conversation.
 func _setup_tts_fallback() -> void:
 	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
 		return
+	var available: Array[String] = []
 	for v in DisplayServer.tts_get_voices():
-		if String(v.get("name", "")).to_lower() == "superstar":
-			_tts_voice = String(v.get("id", ""))
-			return
+		available.append(String(v.get("id", "")))
+	if available.has(tts_voice_id):
+		_tts_voice = tts_voice_id
+		return
+
 	var english := DisplayServer.tts_get_voices_for_language("en")
 	if english.size() > 0:
 		_tts_voice = english[0]
+	push_warning(
+		"BatCompanion: TTS voice '%s' is not installed here; using '%s'. English voices available: %s"
+		% [tts_voice_id, _tts_voice, ", ".join(english)]
+	)
 
 
 func shut_up() -> void:
