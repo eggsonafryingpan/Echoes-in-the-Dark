@@ -85,6 +85,8 @@ var _event_one_run: int = 0
 var _event_one_pending: bool = false
 var _debug_hr: float = -1.0
 var _event_players: Dictionary = {}
+var _event_fades: Dictionary = {}
+var _missing_sfx_warned: Dictionary = {}
 
 
 ## Called by the main menu on Start Game. The gameplay scene is not loaded
@@ -159,8 +161,9 @@ func _finish_event_one() -> void:
 		return
 	event_one_active = false
 	_debug_hr = -1.0
-	for player in _event_players.values():
-		player.stop()
+	for key in _event_players:
+		_kill_event_fade(key)
+		_event_players[key].stop()
 	# "Passage ambience opens on success" (§10): the environmental layer is
 	# what that ambience lives on.
 	AudioDirector.restore_environmental()
@@ -198,7 +201,20 @@ func _scripted_pulse() -> void:
 ## the duration of the beat, and a scripted cold open that the overload
 ## detector could fade mid-take would be unusable for filming. Nothing here
 ## touches the goal music's own routing.
-func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = false) -> void:
+##
+## A name with no delivered asset plays nothing rather than SfxLibrary's
+## placeholder tone: a beep in the middle of the cold open reads as a bug,
+## where a missing layer just reads as a thinner mix. Warned once per name
+## so the gap stays visible in the log.
+func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = false,
+		volume_db: float = 0.0) -> void:
+	if not SfxLibrary.has_stream(sfx_name):
+		if not _missing_sfx_warned.has(sfx_name):
+			_missing_sfx_warned[sfx_name] = true
+			push_warning("EventDirector: '%s' has no asset yet, skipping it rather than playing the placeholder beep." % sfx_name)
+		return
+
+	_kill_event_fade(key)
 	if not _event_players.has(key):
 		var player := AudioStreamPlayer.new()
 		player.name = "Event_%s" % key
@@ -210,7 +226,26 @@ func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = fals
 	if looping and (stream is AudioStreamMP3 or stream is AudioStreamOggVorbis):
 		stream.loop = true
 	_event_players[key].stream = stream
+	_event_players[key].volume_db = volume_db
 	_event_players[key].play()
+
+
+## Fade, then stop -- never a cut (§4). No-op for a key that never played.
+func _fade_out_event_sfx(key: StringName, seconds: float) -> void:
+	if not _event_players.has(key) or not _event_players[key].playing:
+		return
+	_kill_event_fade(key)
+	var player: AudioStreamPlayer = _event_players[key]
+	var tween := create_tween()
+	_event_fades[key] = tween
+	tween.tween_property(player, "volume_db", -60.0, seconds)
+	tween.tween_callback(player.stop)
+
+
+func _kill_event_fade(key: StringName) -> void:
+	if _event_fades.has(key) and is_instance_valid(_event_fades[key]):
+		_event_fades[key].kill()
+	_event_fades.erase(key)
 
 
 func _event_wait(seconds: float) -> void:
@@ -258,6 +293,15 @@ signal calm_completed(reason: StringName)  # &"hr_drop" | &"dwell" | &"fail_forw
 @export var calm_smoothing: float = 0.03
 @export var calm_hint_1_seconds: float = 8.0
 @export var calm_hint_2_seconds: float = 16.0
+
+## The breathing to follow. breathing.mp3 is a very quiet recording (peaks
+## around -33 dBFS), so it needs most of this gain just to reach the level
+## of the other event sounds; at the old -6 dB it was effectively inaudible.
+@export var calm_breathing_volume_db: float = 24.0
+## The player's own panicked breathing fades out over this long as the
+## breathing to follow comes in. Two breathing rhythms at once gave no
+## clear one to match.
+@export var calm_breathing_crossfade_seconds: float = 1.5
 
 var calm_active: bool = false
 
@@ -368,6 +412,7 @@ func calm_readout() -> Dictionary:
 func _complete_calm(reason: StringName) -> void:
 	calm_active = false
 	OverloadDetector.suppress_during_calm = false
+	_fade_out_event_sfx(&"calm_breathing", calm_breathing_crossfade_seconds)
 	calm_completed.emit(reason)
 	event_completed.emit(&"calm")
 
@@ -377,10 +422,12 @@ func _complete_calm(reason: StringName) -> void:
 func _update_escalation() -> void:
 	if not _calm_hint1_fired and _calm_t >= calm_hint_1_seconds:
 		_calm_hint1_fired = true
-		if AudioDirector.bat_source != null:
-			AudioDirector.bat_source.stream = SfxLibrary.get_stream(&"breathing_calm")
-			AudioDirector.bat_source.volume_db = -6.0
-			AudioDirector.bat_source.play()
+		# Hand over, not layer: the panicked loop goes as the slow one
+		# arrives, so there is exactly one breath to follow. On its own
+		# player rather than bat_source, so the spoken guide below talks
+		# over it instead of replacing it.
+		_fade_out_event_sfx(&"breathing", calm_breathing_crossfade_seconds)
+		_play_event_sfx(&"calm_breathing", &"breathing_calm", true, calm_breathing_volume_db)
 	if not _calm_hint2_fired and _calm_t >= calm_hint_2_seconds:
 		_calm_hint2_fired = true
 		# Pre-rendered clip by id, spatialized on the bat's shoulder, rather

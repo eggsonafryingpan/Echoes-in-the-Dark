@@ -81,6 +81,13 @@ func get_stream(logical_name: String) -> AudioStream:
 	return stream
 
 
+## True when a real file backs this name -- i.e. get_stream() would hand
+## back the asset rather than the placeholder tone. For callers where a
+## beep is worse than silence (a scripted beat a player is listening to).
+func has_stream(logical_name: String) -> bool:
+	return get_stream(logical_name) != _get_placeholder()
+
+
 func _resolve(logical_name: String) -> AudioStream:
 	if not _manifest.has(logical_name):
 		return null

@@ -28,7 +28,7 @@ extends Node3D
 ## No visual movement/oscillation (§1, audio-only game) -- the observable
 ## effects are all audio: the linked player's volume while building, and on
 ## reveal the discovery sting, the source settling louder on a safer layer,
-## and a short bat acknowledgement (plus the Describable's label/detail).
+## and the bat saying what it is (plus the Describable's label/detail).
 
 signal revealed()
 
@@ -37,21 +37,23 @@ signal revealed()
 ## Half-angle (degrees) the cone relaxes to by relax_seconds.
 @export var focus_cone_max_deg: float = 40.0
 
-## Seconds of continuous, aligned dwell needed to reveal at t=0.
-@export var focus_seconds_required: float = 4.0
+## Seconds of continuous, aligned dwell needed to reveal at t=0. Long
+## enough that the rise is something you hear happen rather than a switch:
+## at the old 4 s (relaxing to 1.5) it was over before it registered.
+@export var focus_seconds_required: float = 10.0
 ## What that required dwell relaxes to by relax_seconds.
-@export var focus_seconds_required_min: float = 1.5
+@export var focus_seconds_required_min: float = 6.0
 
 ## Progress lost per second while not aligned (fraction of 1.0) --
 ## "drifting decays it," not an instant reset.
-@export var decay_per_second: float = 0.4
+@export var decay_per_second: float = 0.2
 
 ## Auto-relax ramps linearly over this many seconds since first activated.
-@export var relax_seconds: float = 15.0
+@export var relax_seconds: float = 30.0
 
 ## Fail-forward: reveals regardless after this long in range, no matter
 ## how aligned the player has or hasn't been.
-@export var fail_forward_seconds: float = 25.0
+@export var fail_forward_seconds: float = 60.0
 
 ## How close the player needs to be for this to activate at all (avoids
 ## building/decaying progress based on stale alignment from far away).
@@ -60,8 +62,14 @@ signal revealed()
 ## AudioStreamPlayer3D whose volume rises as focus builds. Relative to this
 ## node (e.g. "../SwarmAmbience/AudioStreamPlayer3D").
 @export var audio_player_path: NodePath
-@export var min_volume_db: float = -24.0
-@export var max_volume_db: float = 0.0
+## Where the source sits with no focus on it, and where it peaks at full
+## focus. 0 dB is the authored level, so the peak is well above anything
+## the source does on its own: holding focus makes the sound itself
+## louder, not merely back to where it started. The player's max_db is
+## raised to match in _ready, or the 3D player's default +3 dB ceiling
+## would swallow the top of the rise at close range.
+@export var min_volume_db: float = -18.0
+@export var max_volume_db: float = 10.0
 
 ## Describable to update on reveal. Defaults to a "Describable" sibling if
 ## left unset; set explicitly when the object being focused isn't this
@@ -89,18 +97,21 @@ signal revealed()
 ## the first thing overload strips). So the payoff was the sting and then
 ## exactly the sound you started with.
 ##
-## Now a revealed source stays clearer than it ever was before: it rises
-## revealed_boost_db above max_volume_db and moves to revealed_bus, out of
-## the layer that is stripped first. Something identified is no longer
-## texture -- it is a known thing in the scene. Essential, not Priority:
-## it informs the route but is not itself the objective (§4).
-@export var revealed_boost_db: float = 4.0
+## Now a revealed source stays clearer than it was before anyone focused
+## on it: it settles at revealed_volume_db -- down from the focus peak,
+## which is too loud to live with, but above the authored 0 dB -- and moves
+## to revealed_bus, out of the layer that is stripped first. Something
+## identified is no longer texture -- it is a known thing in the scene.
+## Essential, not Priority: it informs the route but is not itself the
+## objective (§4).
+@export var revealed_volume_db: float = 5.0
 @export var revealed_bus: StringName = &"Essential"
-@export var reveal_rise_seconds: float = 0.8
+@export var reveal_settle_seconds: float = 2.0
 
-## The bat reacts once the sting has landed -- acknowledges, never names
-## what it is (§1: the player discovers, the game does not explain).
-## &"" to stay silent.
+## The bat reacts once the sting has landed, and says what the thing is.
+## Each target sets its own line id here (voices/lines.txt, focus_reveal_*);
+## the default is the generic acknowledgement for a target nobody has
+## written a line for yet. &"" to stay silent.
 @export var reveal_line: StringName = &"focus_reveal_ready"
 @export var reveal_line_delay: float = 1.2
 
@@ -110,20 +121,32 @@ var focus_progress: float = 0.0  # 0..1
 var _t_active: float = -1.0  # seconds since first in range; -1 = never yet
 var _audio_player: AudioStreamPlayer3D = null
 var _describable: Node = null
+# Last tick's geometry, kept only for focus_readout().
+var _in_range: bool = false
+var _aligned: bool = false
+var _angle: float = 0.0
+var _cone: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(&"focusable")
 	if audio_player_path != NodePath():
 		_audio_player = get_node_or_null(audio_player_path)
+	if _audio_player != null:
+		_audio_player.max_db = maxf(_audio_player.max_db, max_volume_db)
 	_describable = get_node_or_null(describable_path) if describable_path != NodePath() else get_node_or_null("Describable")
 
 
 func _physics_process(delta: float) -> void:
-	if revealed_state or GameState.input_locked:
+	if revealed_state:
+		return
+	if GameState.input_locked:
+		_in_range = false  # Frozen, not building: the readout should say so.
 		return
 
 	var dist: float = global_position.distance_to(GameState.head_position)
-	if dist > activation_radius:
+	_in_range = dist <= activation_radius
+	if not _in_range:
 		return  # Out of range: hold state, neither build nor decay.
 
 	if _t_active < 0.0:
@@ -141,8 +164,11 @@ func _physics_process(delta: float) -> void:
 	else:
 		to_target = to_target.normalized()
 	var angle: float = forward.angle_to(to_target)
+	_angle = angle
+	_cone = cone
+	_aligned = angle <= cone
 
-	if angle <= cone:
+	if _aligned:
 		focus_progress = clampf(focus_progress + delta / required, 0.0, 1.0)
 	else:
 		focus_progress = clampf(focus_progress - decay_per_second * delta, 0.0, 1.0)
@@ -181,7 +207,26 @@ func _hold_revealed() -> void:
 	if revealed_bus != &"":
 		_audio_player.bus = revealed_bus
 	create_tween().tween_property(_audio_player, "volume_db",
-			max_volume_db + revealed_boost_db, reveal_rise_seconds)
+			revealed_volume_db, reveal_settle_seconds)
+
+
+## Snapshot for the playtest focus readout (focus_debug_overlay.gd).
+## Read-only; nothing on the audio path consults it.
+func focus_readout() -> Dictionary:
+	return {
+		"in_range": _in_range,
+		"aligned": _aligned,
+		"angle_deg": rad_to_deg(_angle),
+		"cone_deg": rad_to_deg(_cone),
+		"progress": focus_progress,
+		"revealed": revealed_state,
+		"volume_db": _audio_player.volume_db if _audio_player != null else min_volume_db,
+		"min_volume_db": min_volume_db,
+		"max_volume_db": max_volume_db,
+		"t": _t_active,
+		"fail_forward_seconds": fail_forward_seconds,
+		"label": _describable.label if _describable != null else String(name),
+	}
 
 
 ## Skipped during CALM, like the post-scan line: bat_source carries CALM's

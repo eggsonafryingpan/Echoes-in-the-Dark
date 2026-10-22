@@ -203,8 +203,8 @@ func _finish_scan(serial: int, count: int) -> void:
 
 ## Flavor only: says *how many* in the vaguest terms, never what or where.
 ## Skipped if the bat is already talking or CALM is running -- bat_source
-## carries CALM's breathing and coaching, and a scan quip must never
-## interrupt or queue behind that.
+## carries CALM's coaching, and a scan quip must never interrupt or queue
+## behind that.
 func _say_scan_line(count: int) -> void:
 	if is_speaking() or EventDirector.calm_active:
 		return
@@ -387,18 +387,16 @@ func _pump_voice() -> void:
 	var source := AudioDirector.bat_source
 	if _voice_queue.is_empty():
 		return
-	# Only another *line* defers this one. bat_source also carries the bat's
-	# breathing during CALM (event_director.gd), and a guided count that
-	# waited politely behind a breathing loop would never be heard at all —
-	# the hint exists precisely because the player is struggling.
+	# Only another *line* defers this one: anything else that happens to be
+	# on bat_source must not hold up a guided count, which exists precisely
+	# because the player is struggling.
 	if _speaking_line and source.playing:
 		return
 
 	var item: Dictionary = _voice_queue.pop_front()
 	_speaking_line = true
 	source.stream = item.stream
-	# Reset gain: whatever else last used this player set its own level
-	# (CALM's breathing hint drops it to -6 dB and never puts it back).
+	# Reset gain: whatever else last used this player set its own level.
 	source.volume_db = voice_volume_db
 	source.play()
 	spoke.emit(item.id)

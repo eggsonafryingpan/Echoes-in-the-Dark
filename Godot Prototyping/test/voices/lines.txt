@@ -40,7 +40,11 @@ scan_found_few_a | I'm picking up a few things nearby.
 scan_found_few_b | There's more than one thing around us.
 scan_try_again | Try that again from somewhere else.
 focus_hold_to_identify | Hold still and face it. Give me a moment.
-focus_reveal_ready | There. Now I know what that is.
+# FOCUS reveals say what the thing is. One line per focus target, set as
+# that Focusable's reveal_line; focus_reveal_ready is only the fallback for
+# a target with no line of its own yet.
+focus_reveal_ready | There. Got it.
+focus_reveal_swarm | There. It's a swarm of insects. Calm ones. They're not a threat.
 
 # --- Attribution beat (§10, Event 3) -------------------------------------
 attribution | You found it. That's what's keeping them all calm.

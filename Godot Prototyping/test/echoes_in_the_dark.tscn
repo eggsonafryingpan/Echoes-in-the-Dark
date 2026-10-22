@@ -17,6 +17,7 @@
 [ext_resource type="Script" path="res://scripts/scan_ping_markers.gd" id="17_scanmk"]
 [ext_resource type="Script" path="res://scripts/hr_debug_overlay.gd" id="18_hrdbg"]
 [ext_resource type="Script" path="res://scripts/ambient_bed.gd" id="19_ambbed"]
+[ext_resource type="Script" path="res://scripts/focus_debug_overlay.gd" id="20_focdbg"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 background_mode = 2
@@ -255,6 +256,7 @@ audio_player_path = NodePath("../SwarmAmbience/Body/AudioStreamPlayer3D")
 describable_path = NodePath("../SwarmAmbience/Describable")
 revealed_label = "many calm creatures"
 revealed_detail = "Predators and prey together, unnaturally still. Not a threat."
+reveal_line = &"focus_reveal_swarm"
 
 [node name="GoalMusic" type="AudioStreamPlayer3D" parent="." unique_id=705032716]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.975967, 0, 19.312382)
@@ -385,5 +387,8 @@ script = ExtResource("17_scanmk")
 
 [node name="HrDebugOverlay" type="CanvasLayer" parent="." unique_id=705032744]
 script = ExtResource("18_hrdbg")
+
+[node name="FocusDebugOverlay" type="CanvasLayer" parent="." unique_id=705032760]
+script = ExtResource("20_focdbg")
 
 [connection signal="timeout" from="SoundBox/Timer" to="SoundBox" method="_on_timer_timeout"]
