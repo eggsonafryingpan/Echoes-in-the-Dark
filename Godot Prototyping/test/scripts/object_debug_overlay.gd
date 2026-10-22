@@ -73,8 +73,12 @@ func _build() -> void:
 	for describable in get_tree().get_nodes_in_group(&"describable"):
 		var node: Node3D = describable.get_parent()
 		var entry: Variant = COLOR_KEY.get(StringName(node.name), null)
-		var color: Color = entry[0] if entry != null else CONTINUOUS_COLOR
-		var key: String = entry[1] if entry != null else "continuous"
+		# Names outside the key (any scene but the original cave) fall back on
+		# what the object is: a continuous source, or a discrete one.
+		var color: Color = entry[0] if entry != null \
+				else (CONTINUOUS_COLOR if describable.continuous else Color.WHITE)
+		var key: String = entry[1] if entry != null \
+				else ("continuous" if describable.continuous else "object")
 
 		if node.find_children("*", "MeshInstance3D", true, false).is_empty():
 			_meshes_added += 1
@@ -159,7 +163,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_scan_performed(returns: Array) -> void:
 	_last_scan = []
 	for entry in returns:
-		_last_scan.append("%s %.1fm" % [entry.node.get_parent().name, entry.distance])
+		_last_scan.append("%s %.1fm %s%s" % [entry.node.get_parent().name, entry.distance,
+				entry.get("band", ""), " behind" if entry.get("behind", false) else ""])
 
 
 func _process(_delta: float) -> void:

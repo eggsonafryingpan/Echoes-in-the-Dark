@@ -22,30 +22,42 @@ extends Node
 ## rendering, but the fallback is flat rather than spatialized and every
 ## id that uses it is named in a warning.
 ##
-## What a return is, and is not: a short ping rendered in 3D at the source's
-## bearing. Direction is carried by where the ping sits in space, proximity
-## by how loud it is. There is no speech, no coordinate readout, and no
-## identity — two objects three metres apart sound identical because the
-## scan's answer is *where*, never *what*. Identity is earned by holding
-## FOCUS on a source (focusable.gd, §6.3); the two stay decoupled, and this
-## file never reads a Describable's label.
+## What a return is, and is not: one short chirp per object, rendered from
+## the object's direction. The scan answers *where* -- never *what* -- so
+## every return uses the same sound and nothing here reads a Describable's
+## label. Identity is earned by holding FOCUS on a source (focusable.gd,
+## §6.3); the two stay decoupled.
+##
+## How a return carries "where" (rework of the original scan, which pinged
+## everything in range with a 2 s clip, so returns smeared into one buzz):
+##   direction  the chirp plays 2 m from the head along the object's
+##              horizontal bearing, so panning alone places it.
+##   behind     stereo panning cannot tell front from back, so returns from
+##              behind use a muffled, lower chirp -- the way a head shadows
+##              sound arriving from behind it. Front returns are bright.
+##   distance   encoded twice, and the two agree: a near return comes back
+##              sooner AND louder (echo delay grows with distance, like real
+##              echolocation), a far one later and quieter.
+##   how many   at most max_returns, nearby objects merged into one return,
+##              and no two returns within min_separation_deg of each other,
+##              so each chirp is a direction you can point at.
 ##
 ## Dialogue is data-driven (§9.3): lines as resources/JSON with id, audio
 ## file, trigger, mandatory/cutscene flag. EventDirector fires by id.
 
-## returns is an Array of {bearing: Vector3, distance: float, node: Describable}.
-## The node reference is for instrumentation only (§11's sighted-observer
-## replay/HUD wants to know what returned) — nothing on the player-facing
-## audio path may read its label.
+## returns is an Array of return entries (see _gather_returns): position,
+## bearing, distance, behind, band, delay, volume_db, node, nodes. The node
+## references are for instrumentation only (§11's observer HUD wants to know
+## what returned) -- nothing on the player-facing audio path reads a label.
 signal scan_performed(returns: Array)
 signal spoke(line_id: StringName)
-## One return's ping just started playing. Fires per return, at the moment
+## One return's chirp just started playing. Fires per return, at the moment
 ## it becomes audible, so debug visuals line up with what the ear gets.
 signal return_pinged(entry: Dictionary)
 
-## ~2-3s per §9.2. Single source of truth for scan pacing: Bat routes its
-## input action straight here rather than keeping a second cooldown.
-@export var scan_cooldown: float = 2.5
+## Seconds between scans. A press inside it plays a soft dull tick instead
+## of scanning, so the button never feels dead and can never rapid-fire.
+@export var scan_cooldown: float = 3.0
 
 ## Fixed offset from the player's head, in head-local space (§9.1).
 @export var shoulder_offset: Vector3 = Vector3(0.3, -0.15, 0.0)
@@ -62,40 +74,57 @@ signal return_pinged(entry: Dictionary)
 ## to the first English voice, with a warning listing what to use instead.
 @export var tts_voice_id: String = "com.apple.voice.enhanced.en-US.Joelle"  # "Joelle (Enhanced)"
 
-## More simultaneous pings than this stop being separable as directions,
-## which defeats the point of a bearing-only return.
+## --- Scan ------------------------------------------------------------------
+
+## The most returns one scan gives back.
 @export var max_returns: int = 3
 
-## Hard range cap, applied on top of each Describable's own scan_radius —
+## Hard range cap, applied on top of each Describable's own scan_radius --
 ## "range-limited to proximate sources" (§9.2).
 @export var max_return_distance: float = 14.0
 
-## Returns fire nearest-first, this far apart, so several reads as distinct
-## directions rather than one smeared chord.
-@export var return_stagger: float = 0.35
+## Scannable objects closer together than this come back as ONE return at
+## their middle: a cluster of creatures is one thing to walk toward, and
+## three chirps from the same direction only read as a smear.
+@export var merge_radius: float = 2.5
 
-## Returns wait this long after the press. startup.mp3 peaks around
-## 0.2-0.5 s, and pings fired on top of it were masked outright -- the
-## original cause of "I scan and hear no returns".
-@export var return_delay: float = 0.7
+## A return within this many degrees (horizontal) of one already chosen is
+## dropped, so every chirp in a scan is a clearly different direction.
+@export var min_separation_deg: float = 35.0
 
-## Ping gain. detected.mp3 peaks at about -17 dBFS and the pings are
-## distance-attenuated on top of that, so at 0 dB they sat under the
-## environmental bed.
-@export var return_volume_db: float = 10.0
+## Echo delay after the outgoing chirp, nearest to farthest return.
+@export var near_delay: float = 0.15
+@export var far_delay: float = 0.9
+## Returns never land closer together than this, even two at almost the
+## same distance, so each is heard as its own chirp.
+@export var min_return_gap: float = 0.45
 
-## The sweep is a 3 s flat drone at roughly ping level; it fades out over
-## this long as the first return lands so the pings are not competing with it.
-@export var sweep_fade_seconds: float = 0.3
+## Return loudness, nearest to farthest (dB on top of the chirp itself).
+@export var near_volume_db: float = 2.0
+@export var far_volume_db: float = -14.0
 
-## Speak a short, non-identifying acknowledgement after each scan.
-@export var speak_after_scan: bool = true
-## Gap between the last ping starting and the line.
-@export var scan_line_delay: float = 0.6
+## Horizontal angle off straight-ahead past which a return counts as
+## behind and gets the muffled chirp. 100 rather than 90 so something
+## exactly beside you still sounds bright.
+@export var behind_angle_deg: float = 100.0
 
-const SCAN_LINES_NONE: Array[StringName] = [&"scan_nothing_close"]
-const SCAN_LINES_ONE: Array[StringName] = [&"scan_found_one_a", &"scan_found_one_b"]
-const SCAN_LINES_FEW: Array[StringName] = [&"scan_found_few_a", &"scan_found_few_b"]
+## Where returns are rendered: this far from the head along their bearing.
+## Close, so panning is clean and loudness is ours to set rather than the
+## 3D falloff's.
+@export var render_distance: float = 2.0
+
+## The bat says "nothing close" after a scan that found nothing, so silence
+## after a sweep is never mistaken for the scan not working. A scan that
+## did find things says nothing: the chirps are the answer.
+@export var speak_when_empty: bool = true
+@export var empty_line_delay: float = 0.5
+
+## Distance bands, for the debug markers and the observer HUD only. The
+## player hears distance continuously (delay + loudness), not in bands.
+const NEAR_BAND_MAX := 4.5
+const MID_BAND_MAX := 9.0
+
+const SCAN_LINE_EMPTY := &"scan_nothing_close"
 
 ## Where voices/generate_voices.sh writes. Clips are addressed by id alone,
 ## so re-wording a line and re-running the generator changes nothing here —
@@ -112,8 +141,9 @@ var head: Node3D = null
 var enabled: bool = true
 
 var _last_scan: float = -999.0
-var _trigger_player: AudioStreamPlayer = null
-var _sweep_player: AudioStreamPlayer = null
+## The player's own instrument: outgoing chirp, not-ready tick, recenter
+## confirmation. Flat (both ears) and on the UI bus, so it is never stripped.
+var _ui_player: AudioStreamPlayer = null
 var _ping_pool: Array[AudioStreamPlayer3D] = []
 var _voice_queue: Array = []
 var _voice_cache: Dictionary = {}
@@ -121,36 +151,36 @@ var _speaking_line: bool = false
 var _line_text: Dictionary = {}
 var _fallback_warned: Dictionary = {}
 var _tts_voice: String = ""
-var _sweep_tween: Tween = null
-var _last_scan_line: StringName = &""
-## Bumped per scan, so a stale scan's deferred line or sweep fade never
-## lands on top of a newer scan.
+## Bumped per scan, so a stale scan's deferred return or line never lands
+## on top of a newer scan.
 var _scan_serial: int = 0
+
+## Synthesized in code (_chirp) rather than delivered assets: their exact
+## shape is the design -- short, sharp attack, nothing to smear -- and a
+## missing file must never be able to make the scan silent.
+var _sound_out: AudioStreamWAV = null
+var _sound_front: AudioStreamWAV = null
+var _sound_behind: AudioStreamWAV = null
+var _sound_not_ready: AudioStreamWAV = null
+var _sound_recenter: AudioStreamWAV = null
 
 
 func _ready() -> void:
-	# Two separate non-positional players because the trigger blip and the
-	# sweep overlap: the blip answers "your press registered" the instant
-	# the key goes down, while the sweep is still running underneath it.
-	# One AudioStreamPlayer can only carry one of them.
-	_trigger_player = _make_flat_player("TriggerPlayer")
-	_sweep_player = _make_flat_player("SweepPlayer")
+	_ui_player = AudioStreamPlayer.new()
+	_ui_player.name = "ScanUiPlayer"
+	_ui_player.bus = AudioDirector.BUS_UI
+	add_child(_ui_player)
+
+	_sound_out = _chirp(1400.0, 4200.0, 0.22, 0.0, 0.45)
+	_sound_front = _chirp(3100.0, 2300.0, 0.09, 38.0, 0.6)
+	_sound_behind = _chirp(1150.0, 800.0, 0.13, 24.0, 0.6, 0.85)
+	_sound_not_ready = _chirp(320.0, 260.0, 0.06, 45.0, 0.35, 0.9)
+	_sound_recenter = _chirp(1900.0, 1900.0, 0.05, 50.0, 0.4)
+
 	AudioDirector.bat_source.finished.connect(_on_bat_source_finished)
+	GameState.recentered.connect(_on_recentered)
 	_load_line_text()
 	_setup_tts_fallback()
-
-
-## Non-positional (AudioStreamPlayer, not 3D): the trigger blip and the
-## sweep are the player's own instrument, not something in the cave, so
-## they belong flat in both ears rather than somewhere in the world. On the
-## UI bus, so overload stripping can never take away the confirmation that
-## the player's own action registered.
-func _make_flat_player(node_name: String) -> AudioStreamPlayer:
-	var player := AudioStreamPlayer.new()
-	player.name = node_name
-	player.bus = AudioDirector.BUS_UI
-	add_child(player)
-	return player
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -159,8 +189,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-## Player-initiated echolocation. Silently no-ops inside the cooldown —
-## spamming the key must not stack sweeps on top of each other.
+## Player-initiated echolocation. Inside the cooldown it only plays the
+## not-ready tick -- spamming the key can never stack scans.
 func scan() -> void:
 	if not enabled or GameState.input_locked:
 		return
@@ -170,107 +200,147 @@ func scan() -> void:
 
 	var now := Time.get_ticks_msec() / 1000.0
 	if now - _last_scan < scan_cooldown:
+		_play_ui(_sound_not_ready, -6.0)
 		return
 	_last_scan = now
 
-	# Trigger blip first, then the sweep under it. Both flat, both UI bus.
-	_trigger_player.stream = SfxLibrary.get_stream(&"ui_startup")
-	_trigger_player.play()
-	if _sweep_tween != null:
-		_sweep_tween.kill()
-	_sweep_player.volume_db = 0.0
-	_sweep_player.stream = SfxLibrary.get_stream(&"ui_scan_sweep")
-	_sweep_player.play()
-
+	_play_ui(_sound_out, -4.0)
 	_scan_serial += 1
 	var serial := _scan_serial
 	var found := _gather_returns()
 	scan_performed.emit(found)
-	for i in found.size():
-		_emit_return(found[i], return_delay + i * return_stagger)
-	_finish_scan(serial, found.size())
+	for entry in found:
+		_emit_return(entry, serial)
+	if found.is_empty() and speak_when_empty:
+		_say_empty(serial)
 
 
-## Fade the sweep as returns start, then acknowledge the scan in words.
-func _finish_scan(serial: int, count: int) -> void:
-	await get_tree().create_timer(return_delay).timeout
-	if serial != _scan_serial:
+func _play_ui(stream: AudioStream, volume_db: float) -> void:
+	_ui_player.stream = stream
+	_ui_player.volume_db = volume_db
+	_ui_player.play()
+
+
+## Two quick ticks: the player cannot see a recenter happen.
+func _on_recentered() -> void:
+	if _ui_player == null:
 		return
-	_sweep_tween = create_tween()
-	_sweep_tween.tween_property(_sweep_player, "volume_db", -60.0, sweep_fade_seconds)
-	_sweep_tween.tween_callback(_sweep_player.stop)
+	_play_ui(_sound_recenter, -8.0)
+	await get_tree().create_timer(0.09).timeout
+	_play_ui(_sound_recenter, -8.0)
 
-	if not speak_after_scan:
+
+func _say_empty(serial: int) -> void:
+	await get_tree().create_timer(empty_line_delay).timeout
+	if serial != _scan_serial or is_speaking() or EventDirector.calm_active:
 		return
-	var tail := maxf(0, count - 1) * return_stagger + scan_line_delay
-	await get_tree().create_timer(tail).timeout
-	if serial != _scan_serial:
-		return
-	_say_scan_line(count)
+	say(SCAN_LINE_EMPTY)
 
 
-## Flavor only: says *how many* in the vaguest terms, never what or where.
-## Skipped if the bat is already talking or CALM is running -- bat_source
-## carries CALM's coaching, and a scan quip must never interrupt or queue
-## behind that.
-func _say_scan_line(count: int) -> void:
-	if is_speaking() or EventDirector.calm_active:
-		return
-	var pool := SCAN_LINES_NONE
-	if count == 1:
-		pool = SCAN_LINES_ONE
-	elif count > 1:
-		pool = SCAN_LINES_FEW
-	var choices := pool.filter(func(id): return id != _last_scan_line)
-	if choices.is_empty():
-		choices = pool
-	_last_scan_line = choices.pick_random()
-	say(_last_scan_line)
-
-
-## Nearest/highest-priority scannable sources in range, as
-## {bearing, distance, node}. Continuous self-announcing sources are
-## excluded by Describable.scannable().
+## The few most relevant returns, nearest first, each with its timing and
+## loudness already decided. Steps: everything scannable in range -> merge
+## near neighbours into one cluster -> rank (priority, then distance) ->
+## keep only clearly separate directions, up to max_returns -> schedule.
 func _gather_returns() -> Array:
-	var results: Array = []
 	var origin := head.global_position
-
+	var candidates: Array = []
 	for node in get_tree().get_nodes_in_group(&"describable"):
 		var d := node as Describable
-		if d == null or not d.scannable():
+		if d == null or not d.scannable() or not d.is_visible_in_tree():
 			continue
-		var offset := d.global_position - origin
-		var distance := offset.length()
-		if distance > minf(d.scan_radius, max_return_distance):
+		var distance := origin.distance_to(d.global_position)
+		if distance > minf(d.scan_radius, max_return_distance) or distance < 0.3:
 			continue
-		if distance < 0.001:
-			continue  # Standing inside it: no meaningful bearing to render.
-		results.append({
-			"bearing": offset / distance,
-			"distance": distance,
-			"node": d,
-		})
-
-	results.sort_custom(func(a, b):
+		candidates.append({"node": d, "distance": distance})
+	candidates.sort_custom(func(a, b):
 		if a.node.priority != b.node.priority:
 			return a.node.priority > b.node.priority
 		return a.distance < b.distance
 	)
-	return results.slice(0, max_returns)
+
+	# Merge: each candidate joins the first cluster whose centre is within
+	# merge_radius, else starts its own. Ranked order means a cluster is
+	# named after (and ranked by) its most relevant member.
+	var clusters: Array = []
+	for c in candidates:
+		var pos: Vector3 = c.node.global_position
+		var joined := false
+		for cl in clusters:
+			if cl.position.distance_to(pos) <= merge_radius:
+				cl.nodes.append(c.node)
+				cl.position = cl.position.lerp(pos, 1.0 / cl.nodes.size())
+				joined = true
+				break
+		if not joined:
+			clusters.append({"position": pos, "nodes": [c.node], "priority": c.node.priority})
+
+	var yaw := GameState.effective_orientation().y
+	var head_basis := Basis.from_euler(Vector3(0.0, yaw, 0.0))
+	var chosen: Array = []
+	for cl in clusters:
+		if chosen.size() >= max_returns:
+			break
+		var offset: Vector3 = cl.position - origin
+		offset.y = 0.0
+		if offset.length() < 0.3:
+			continue
+		var bearing := offset.normalized()
+		var separate := true
+		for other in chosen:
+			if rad_to_deg(bearing.angle_to(other.bearing)) < min_separation_deg:
+				separate = false
+				break
+		if not separate:
+			continue
+		var local := head_basis.inverse() * bearing  # head space: -Z ahead, +X right
+		var off_ahead := rad_to_deg(Vector3.FORWARD.angle_to(local))
+		var distance := origin.distance_to(cl.position)
+		chosen.append({
+			"position": cl.position,
+			"bearing": bearing,
+			"local_bearing": local,
+			"distance": distance,
+			"behind": off_ahead > behind_angle_deg,
+			"band": _band(distance),
+			"node": cl.nodes[0],
+			"nodes": cl.nodes,
+		})
+
+	chosen.sort_custom(func(a, b): return a.distance < b.distance)
+	var last_delay := -INF
+	for entry in chosen:
+		var t := clampf(entry.distance / max_return_distance, 0.0, 1.0)
+		var delay := maxf(lerpf(near_delay, far_delay, t), last_delay + min_return_gap)
+		last_delay = delay
+		entry["delay"] = delay
+		entry["volume_db"] = lerpf(near_volume_db, far_volume_db, t)
+	return chosen
 
 
-## One ping, placed along the source's bearing at its real distance so
-## standard 3D attenuation does the nearer/louder work (§9.2). Every return
-## uses the same stream: a per-object timbre would leak identity.
-func _emit_return(entry: Dictionary, delay: float) -> void:
-	if delay > 0.0:
-		await get_tree().create_timer(delay).timeout
-		if head == null:
-			return  # Scene changed mid-sweep.
+func _band(distance: float) -> StringName:
+	if distance <= NEAR_BAND_MAX:
+		return &"near"
+	if distance <= MID_BAND_MAX:
+		return &"mid"
+	return &"far"
+
+
+## One chirp, placed render_distance from the head along the return's
+## horizontal bearing in head space -- recomputed when it fires, so a head
+## turned during the echo delay still hears the return from where the
+## object really is.
+func _emit_return(entry: Dictionary, serial: int) -> void:
+	await get_tree().create_timer(entry.delay).timeout
+	if serial != _scan_serial or head == null or not is_instance_valid(head):
+		return
+	var to_object: Vector3 = entry.position - head.global_position
+	to_object.y = 0.0
+	var bearing: Vector3 = to_object.normalized() if to_object.length() > 0.01 else entry.bearing
 
 	var ping := _free_ping()
-	ping.global_position = head.global_position + entry.bearing * entry.distance
-	ping.stream = SfxLibrary.get_stream(&"ui_scan_detected")
+	ping.global_position = head.global_position + bearing * render_distance
+	ping.stream = _sound_behind if entry.behind else _sound_front
+	ping.volume_db = entry.volume_db + (-2.0 if entry.behind else 0.0)
 	ping.play()
 	return_pinged.emit(entry)
 
@@ -282,14 +352,48 @@ func _free_ping() -> AudioStreamPlayer3D:
 
 	var ping := AudioStreamPlayer3D.new()
 	ping.bus = AudioDirector.BUS_UI
-	ping.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
-	ping.max_distance = max_return_distance * 1.5
-	ping.unit_size = 6.0
-	ping.volume_db = return_volume_db
+	# Loudness is set per return from distance; 3D falloff stays out of it.
+	ping.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 	ping.max_db = 12.0
+	ping.panning_strength = 1.0
 	add_child(ping)
 	_ping_pool.append(ping)
 	return ping
+
+
+## A short tone gliding f_start -> f_end with a fast attack and an
+## exponential decay (decay_rate per second; 0 = a gentle swell and fade,
+## used for the outgoing sweep). darken > 0 low-passes it, for the muffled
+## behind-you chirp. 16-bit mono.
+func _chirp(f_start: float, f_end: float, seconds: float, decay_rate: float,
+		amplitude: float, darken: float = 0.0) -> AudioStreamWAV:
+	var rate := 44100
+	var frames := int(rate * seconds)
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	var phase := 0.0
+	var smoothed := 0.0
+	var attack := int(rate * 0.003)
+	for i in frames:
+		var t := float(i) / rate
+		var f := lerpf(f_start, f_end, t / seconds)
+		phase += TAU * f / rate
+		var env: float
+		if decay_rate > 0.0:
+			env = exp(-decay_rate * t) * minf(1.0, float(i) / attack)
+		else:
+			env = sin(PI * t / seconds)
+		# A touch of second harmonic so it reads as a chirp, not a test tone.
+		var v := (sin(phase) + 0.25 * sin(2.0 * phase)) * env * amplitude
+		smoothed = lerpf(v, smoothed, darken)
+		var tail := minf(1.0, float(frames - i) / (rate * 0.004))
+		data.encode_s16(i * 2, int(clampf(smoothed * tail, -1.0, 1.0) * 32767.0))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = rate
+	stream.stereo = false
+	stream.data = data
+	return stream
 
 
 ## Speak a pre-rendered line by id. The clip plays from AudioDirector's
