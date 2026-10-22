@@ -29,6 +29,12 @@ extends Node
 
 signal elevated_changed(is_elevated: bool)
 signal still_changed(is_still: bool)
+## After every recenter (key, controller button, or automatic), so the bat
+## can confirm it audibly -- the player cannot see that it happened.
+signal recentered()
+
+## Keyboard C / DualSense touchpad click, bound in Project Settings.
+const RECENTER_ACTION := &"recenter_head"
 
 ## Resting HR + this margin (bpm) counts as "elevated." Relative to baseline,
 ## never absolute BPM (§3.3) — this is a placeholder default, not a tuned
@@ -37,14 +43,19 @@ signal still_changed(is_still: bool)
 
 var orientation: Vector3 = Vector3.ZERO
 
-## Per-scene calibration offset (yaw only): the physical player's real-world
-## heading at boot is arbitrary and has nothing to do with how a given level
-## was authored, so a scene's spawn point sets this once (see player.gd's
-## spawn_yaw_offset) to align yaw=0 with "forward into the level." Everything
-## that needs facing (AudioDirector's listener/bat source, player movement)
-## should read effective_orientation(), never `orientation` directly, so
+## Yaw calibration: the physical player's real-world heading (the EmotiBit
+## reports an absolute, magnetometer-referenced yaw) has nothing to do with
+## how a level was authored. recenter() sets this so that wherever the
+## player's head points right now becomes reference_yaw in the world.
+## Everything that needs facing (AudioDirector's listener/bat source, player
+## movement) reads effective_orientation(), never `orientation` directly, so
 ## there's exactly one place this gets applied.
 var yaw_offset: float = 0.0
+
+## The world yaw that "straight ahead" means right now: the level's forward
+## at the spawn point, or the forward of whichever checkpoint the player was
+## last placed at. Recentering points the player along it.
+var reference_yaw: float = 0.0
 
 ## Current head position in world space, reported every physics frame by
 ## player.gd (pivot's position). Unthrottled -- unlike report_position()
@@ -57,6 +68,11 @@ var head_position: Vector3 = Vector3.ZERO
 ## being reached into and disabled individually, so there is one flag to
 ## clear and no way for a sequence to end leaving one of them still locked.
 var input_locked: bool = false
+
+## Multiplies walking speed. 1 everywhere except E4's climb, which is
+## slower going (rockfall_climb.gd sets and resets it), so the shaft takes
+## long enough for the rocks to be a section rather than two dodges.
+var move_speed_scale: float = 1.0
 
 var is_still: bool = false
 var hr_valid: bool = false
@@ -85,6 +101,9 @@ var _best_distance_to_objective: float = INF
 var _t_best_distance: float = -1.0
 
 
+var _was_live_orientation: bool = false
+
+
 func _ready() -> void:
 	SensorBridge.orientation_updated.connect(_on_orientation_updated)
 	SensorBridge.heart_rate_updated.connect(_on_heart_rate_updated)
@@ -92,6 +111,36 @@ func _ready() -> void:
 
 func _on_orientation_updated(euler: Vector3) -> void:
 	orientation = euler
+	# The first live sample replaces the mouse's yaw with the headband's
+	# absolute one, which would swing the world by however far apart they
+	# happen to be. Recentering on that handover keeps the player facing
+	# where they were facing.
+	var live := SensorBridge.live_orientation_active()
+	if live and not _was_live_orientation:
+		recenter()
+	_was_live_orientation = live
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(RECENTER_ACTION):
+		recenter()
+		get_viewport().set_input_as_handled()
+
+
+## "Wherever I'm facing now is straight ahead": maps the current head yaw
+## onto reference_yaw. Pitch is left alone -- only yaw drifts and only yaw
+## steers.
+func recenter() -> void:
+	yaw_offset = reference_yaw - orientation.y
+	recentered.emit()
+
+
+## A scene or checkpoint saying which way "ahead" is. Recenters by default,
+## so the player arrives facing it.
+func set_reference_yaw(yaw: float, recenter_now: bool = true) -> void:
+	reference_yaw = yaw
+	if recenter_now:
+		recenter()
 
 
 ## orientation with the scene's yaw calibration applied -- read this, not

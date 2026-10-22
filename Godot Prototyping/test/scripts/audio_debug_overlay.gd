@@ -57,7 +57,9 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	for action in MUTE_ACTIONS:
-		if event.is_action_pressed(action):
+		# Exact match: Ctrl+1..4 are the event jump keys, and a plain-1 action
+		# would otherwise fire on Ctrl+1 as well.
+		if event.is_action_pressed(action, false, true):
 			_toggle_mute(MUTE_ACTIONS[action])
 			get_viewport().set_input_as_handled()
 			return

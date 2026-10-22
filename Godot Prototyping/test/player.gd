@@ -67,7 +67,7 @@ func _ready():
 	# listener's rotation from GameState.orientation directly, never from
 	# pivot's own transform (CLAUDE_CODE_BRIEF.md §13 Phase 2).
 	AudioDirector.register_listener(listener, pivot)
-	GameState.yaw_offset = spawn_yaw_offset
+	GameState.set_reference_yaw(spawn_yaw_offset)
 	# Scan bearings are measured from the head, not the body -- pivot is
 	# exactly that now that its rotation is GameState.orientation. Bat's
 	# _unhandled_input listens for "bat_scan" and forwards to BatCompanion,
@@ -129,8 +129,8 @@ func _physics_process(delta: float) -> void:
 	var input_dir := Input.get_vector("left", "right", "up", "down")
 	var direction := (facing * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 	if direction:
-		velocity.x = direction.x * SPEED
-		velocity.z = direction.z * SPEED
+		velocity.x = direction.x * SPEED * GameState.move_speed_scale
+		velocity.z = direction.z * SPEED * GameState.move_speed_scale
 	else:
 		velocity.x = move_toward(velocity.x, 0, SPEED)
 		velocity.z = move_toward(velocity.z, 0, SPEED)
