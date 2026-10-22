@@ -5,9 +5,16 @@ EmotiBit hardware is in the loop — day-to-day development uses Godot's
 `MockSource` instead, no Python process required (brief §3.5).
 
 ```
-pip install -r requirements.txt
-python bridge.py --listen-port 12346 --godot-port 8687
+python3.12 -m venv .venv            # Python 3.10+; macOS's bundled 3.9 won't import ahrs
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python bridge.py --listen-port 12346 --godot-port 8687
 ```
+
+Godot's `SensorBridge` defaults to LIVE mode, so with this running real
+heart rate and head orientation reach `GameState` with no editor change.
+Until live orientation arrives the mouse steers; the F10 readout's
+`source` line says which is driving. The old `OSCTesting/*_WORKING.py`
+scripts (`/Godot/IMU`, `/Godot/elevated`) are no longer read by the game.
 
 Pipeline: EmotiBit OSC (9-axis IMU + red-channel PPG) → Madgwick
 orientation filter (`orientation.py`) + motion gate (`motion_gate.py`) +

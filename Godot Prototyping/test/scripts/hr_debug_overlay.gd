@@ -112,6 +112,7 @@ func _readout(calm: Dictionary) -> String:
 		"--" if SensorBridge.resting_bpm <= 0.0 else "%.0f" % SensorBridge.resting_bpm,
 		"ELEVATED" if GameState.hr_elevated else "not elevated",
 	])
+	lines.append("source  " + SensorBridge.status_text())
 
 	if calm.active:
 		var drop: float = calm.start_bpm - calm.smoothed_bpm if calm.start_bpm > 0.0 else 0.0

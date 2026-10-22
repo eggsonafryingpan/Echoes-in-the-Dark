@@ -52,12 +52,13 @@ AXIS_INDEX = {"X": 0, "Y": 1, "Z": 2}
 class SensorBridge:
     def __init__(self, args: argparse.Namespace):
         self.args = args
-        self.orientation = OrientationEstimator(frequency=args.imu_rate)
+        self.orientation = OrientationEstimator(frequency=args.imu_rate, up_axis=args.up_axis)
         self.heart_rate = HeartRateEstimator(sample_rate=args.ppg_rate, window_seconds=args.hr_window)
         self.motion_gate = MotionGate(still_threshold=args.still_threshold)
 
         self._axes = {"GYRO": [None, None, None], "ACC": [None, None, None], "MAG": [None, None, None]}
         self._last_is_still = False
+        self._announced_up = False
 
         self.client = SimpleUDPClient(args.godot_host, args.godot_port)
 
@@ -90,10 +91,14 @@ class SensorBridge:
             return
 
         gyro = [math.radians(v) for v in gyro_deg]
-        euler, angular_velocity = self.orientation.update(gyro, acc, mag)
+        pitch_yaw_roll, angular_velocity = self.orientation.update(gyro, acc, mag)
         self._last_is_still = self.motion_gate.update(angular_velocity)
+        if not self._announced_up and self.orientation.up_index is not None:
+            self._announced_up = True
+            print(f"Orientation: sensor {'XYZ'[self.orientation.up_index]} axis is up; sending yaw only.")
 
-        self.client.send_message(ORIENTATION_ADDRESS, [float(euler[0]), float(euler[1]), float(euler[2])])
+        # Already in Godot's (pitch, yaw, roll) order -- see orientation.py.
+        self.client.send_message(ORIENTATION_ADDRESS, [float(v) for v in pitch_yaw_roll])
         self._axes = {"GYRO": [None, None, None], "ACC": [None, None, None], "MAG": [None, None, None]}
 
     def _maybe_process_hr(self) -> None:
@@ -115,6 +120,8 @@ def main() -> None:
     parser.add_argument("--ppg-rate", type=float, default=25.0, help="Red-PPG sample rate, Hz")
     parser.add_argument("--hr-window", type=float, default=10.0, help="HeartPy sliding window, seconds")
     parser.add_argument("--still-threshold", type=float, default=0.05, help="rad/s below which the head counts as still")
+    parser.add_argument("--up-axis", choices=["x", "y", "z"], default=None,
+                        help="Sensor axis that points up when worn (default: detected from gravity at startup)")
     args = parser.parse_args()
 
     bridge = SensorBridge(args)

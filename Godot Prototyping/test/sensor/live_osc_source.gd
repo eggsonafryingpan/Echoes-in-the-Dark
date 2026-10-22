@@ -19,6 +19,13 @@ const HEART_RATE_ADDRESS := "/echoes/heart_rate"
 
 @export var port: int = 8687
 
+## Engine-clock seconds of the last message on each address, -1 = never.
+## SensorBridge reads these to decide whether the live stream is actually
+## flowing (and to say so on the HR readout), rather than trusting that a
+## bound port means a running bridge.
+var last_orientation_t: float = -1.0
+var last_heart_rate_t: float = -1.0
+
 var _server: OSCServer = null
 
 
@@ -41,8 +48,10 @@ func _on_message(address: String, value, _time) -> void:
 		ORIENTATION_ADDRESS:
 			var v: Array = value if value is Array else [value]
 			if v.size() >= 3:
+				last_orientation_t = Time.get_ticks_msec() / 1000.0
 				orientation_sample.emit(Vector3(v[0], v[1], v[2]))
 		HEART_RATE_ADDRESS:
 			var v: Array = value if value is Array else [value]
 			if v.size() >= 2:
+				last_heart_rate_t = Time.get_ticks_msec() / 1000.0
 				heart_rate_sample.emit(float(v[0]), int(v[1]) != 0)

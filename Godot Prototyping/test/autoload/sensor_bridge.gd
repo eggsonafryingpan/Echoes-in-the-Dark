@@ -27,12 +27,26 @@ signal heart_rate_updated(bpm: float, valid: bool)
 ## fires once after the ~30s quiet-stillness baseline window completes (§3.3)
 signal baseline_ready(resting_bpm: float)
 
-## DEV_MOUSE (default) drives orientation from mouse motion for playtesting
-## navigation feel -- MOCK's scripted traces are for testing CALM/FOCUS/Stuck
-## against a known HR+orientation script, not for freely steering the
-## player, and using MOCK for that made forward movement curve on its own.
-## Switch to MOCK when testing sensor-driven mechanics specifically.
-@export var source_mode: SourceMode = SourceMode.DEV_MOUSE
+## LIVE (default) is the real pipeline: sensor_bridge/bridge.py -> OSC ->
+## LiveOSCSource. It is the default so that plugging the EmotiBit in is all
+## it takes for real heart rate to reach GameState -- no editor change, no
+## second receiver. Until live orientation is actually arriving (no bridge,
+## no headband), the mouse steers instead, so the same build stays playable
+## in autopilot; the moment live packets flow they take over. Heart rate in
+## LIVE comes from the bridge only: no fallback value, since an invented
+## resting rate would become the baseline and read as the player's own.
+##
+## DEV_MOUSE is mouse orientation plus a constant 70 bpm (the old default).
+## MOCK replays a scripted trace for testing CALM/overload against known
+## numbers; it drives orientation too, so the player can't steer under it.
+##
+## Override per launch without editing anything: `-- --sensor=mouse`,
+## `--sensor=mock`, `--sensor=live`, or ECHOES_SENSOR=<same>.
+@export var source_mode: SourceMode = SourceMode.LIVE
+
+## LIVE only: live orientation older than this counts as stopped, and the
+## mouse takes back over. Generous, so one dropped UDP packet never flips it.
+@export var live_stale_seconds: float = 1.0
 
 ## Which MockSource trace to play when source_mode is MOCK. Ignored otherwise.
 @export var mock_trace: String = "startled_then_calming"
@@ -40,8 +54,10 @@ signal baseline_ready(resting_bpm: float)
 ## LiveOSCSource's listening port. Must match the Python bridge's --godot-port.
 @export var live_port: int = 8687
 
-## Seconds of quiet stillness at session start used to compute resting_bpm
-## (§3.3). Folded into the spoken intro in the real game, not a visible wait.
+## Seconds of quiet stillness used to compute resting_bpm (§3.3). Counted
+## from the first valid heart-rate sample, not from launch: with live
+## hardware the bridge often starts after the game, and a window that had
+## already run out by then left the baseline unset for the whole session.
 @export var baseline_seconds: float = 30.0
 
 ## resting HR from the session-start baseline. Everything downstream reads
@@ -49,21 +65,30 @@ signal baseline_ready(resting_bpm: float)
 var resting_bpm: float = -1.0
 
 var _source: SensorSource = null
+## LIVE only: the mouse, standing in for orientation while live is silent.
+var _fallback: DevMouseSource = null
+var _live: LiveOSCSource = null
 var _baseline_samples: Array[float] = []
 var _baseline_elapsed: float = 0.0
 var _baseline_done: bool = false
 
 
 func _ready() -> void:
+	source_mode = _mode_override(source_mode)
 	match source_mode:
 		SourceMode.MOCK:
 			var mock := MockSource.new()
 			mock.trace_name = mock_trace
 			_source = mock
 		SourceMode.LIVE:
-			var live := LiveOSCSource.new()
-			live.port = live_port
-			_source = live
+			_live = LiveOSCSource.new()
+			_live.port = live_port
+			_source = _live
+			_fallback = DevMouseSource.new()
+			_fallback.emit_heart_rate = false
+			add_child(_fallback)
+			_fallback.orientation_sample.connect(_on_fallback_orientation)
+			_fallback.start()
 		SourceMode.DEV_MOUSE:
 			_source = DevMouseSource.new()
 
@@ -71,14 +96,63 @@ func _ready() -> void:
 	_source.orientation_sample.connect(_on_orientation_sample)
 	_source.heart_rate_sample.connect(_on_heart_rate_sample)
 	_source.start()
+	print("SensorBridge: %s" % status_text())
+
+
+func _mode_override(current: SourceMode) -> SourceMode:
+	var value := OS.get_environment("ECHOES_SENSOR")
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--sensor="):
+			value = arg.trim_prefix("--sensor=")
+	match value.to_lower():
+		"live":
+			return SourceMode.LIVE
+		"mouse", "dev_mouse":
+			return SourceMode.DEV_MOUSE
+		"mock":
+			return SourceMode.MOCK
+	return current
 
 
 func _process(delta: float) -> void:
-	if _baseline_done:
+	# The window only runs once real samples are arriving (see baseline_seconds).
+	if _baseline_done or _baseline_samples.is_empty():
 		return
 	_baseline_elapsed += delta
 	if _baseline_elapsed >= baseline_seconds:
 		_finish_baseline()
+
+
+## True while the bridge's orientation stream is flowing (LIVE only).
+func live_orientation_active() -> bool:
+	return _live != null and _live.last_orientation_t >= 0.0 \
+			and Time.get_ticks_msec() / 1000.0 - _live.last_orientation_t < live_stale_seconds
+
+
+## True while the bridge's heart-rate stream is flowing (LIVE only). Valid
+## or not: an invalid (motion-gated) sample still proves the bridge is up.
+func live_heart_rate_active() -> bool:
+	return _live != null and _live.last_heart_rate_t >= 0.0 \
+			and Time.get_ticks_msec() / 1000.0 - _live.last_heart_rate_t < 3.0
+
+
+## One line for the HR readout and the log: which pipeline is driving what.
+func status_text() -> String:
+	match source_mode:
+		SourceMode.MOCK:
+			return "MOCK trace '%s'" % mock_trace
+		SourceMode.DEV_MOUSE:
+			return "DEV_MOUSE (mouse head, fixed 70 bpm)"
+	return "LIVE :%d  head=%s  hr=%s" % [
+		live_port,
+		"EmotiBit" if live_orientation_active() else "mouse (no live data)",
+		"EmotiBit" if live_heart_rate_active() else "none yet",
+	]
+
+
+func _on_fallback_orientation(euler: Vector3) -> void:
+	if not live_orientation_active():
+		orientation_updated.emit(euler)
 
 
 func _on_orientation_sample(euler: Vector3) -> void:

@@ -1,4 +1,8 @@
+# Needs Python 3.10+ (ahrs 0.4 uses `X | Y` type syntax; macOS's bundled
+# 3.9 fails on import). On this Mac: /opt/homebrew/bin/python3.12.
 python-osc>=1.9
 ahrs>=0.3
 heartpy>=1.2
 numpy>=1.24
+# heartpy still imports pkg_resources, which setuptools 81 removed.
+setuptools<81

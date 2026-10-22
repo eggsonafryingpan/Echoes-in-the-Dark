@@ -24,6 +24,12 @@ extends SensorSource
 @export var mouse_sensitivity: float = 0.003
 @export var pitch_limit_deg: float = 80.0
 
+## Off when this source only stands in for a live sensor's orientation
+## (SensorBridge's LIVE mode before/without hardware): a made-up resting
+## rate would become the session baseline and be read by CALM as if it were
+## the player's own heart.
+@export var emit_heart_rate: bool = true
+
 var _yaw: float = 0.0
 var _pitch: float = 0.0
 
@@ -50,6 +56,8 @@ func _input(event: InputEvent) -> void:
 
 func _process(_delta: float) -> void:
 	orientation_sample.emit(Vector3(_pitch, _yaw, 0.0))
+	if not emit_heart_rate:
+		return
 	# Constant plausible resting rate rather than nothing, so HR-dependent
 	# systems (CALM, OverloadDetector) being built alongside navigation
 	# don't just silently stall while this source is active.
