@@ -29,15 +29,10 @@ calm_settling | That's it. Keep going.
 calm_recovered | Better. You've got it back.
 
 # --- Scan and FOCUS prompts (§9.2) ---------------------------------------
-# The scan itself says nothing -- direction comes from the pings. These are
-# only nudges about how to use it, never "something at seven o'clock".
+# The scan itself says nothing -- direction and distance come from the
+# chirps. The bat only speaks when nothing came back, so silence after a
+# sweep is never mistaken for the scan not working.
 scan_nothing_close | Nothing close enough to pick up.
-# Post-scan acknowledgements. BatCompanion picks one after the pings land,
-# by how many came back -- never which, never where. Flavor only.
-scan_found_one_a | Something's out there.
-scan_found_one_b | Picked something up.
-scan_found_few_a | I'm picking up a few things nearby.
-scan_found_few_b | There's more than one thing around us.
 scan_try_again | Try that again from somewhere else.
 focus_hold_to_identify | Hold still and face it. Give me a moment.
 # FOCUS reveals say what the thing is. One line per focus target, set as
@@ -48,3 +43,17 @@ focus_reveal_swarm | There. It's a swarm of insects. Calm ones. They're not a th
 
 # --- Attribution beat (§10, Event 3) -------------------------------------
 attribution | You found it. That's what's keeping them all calm.
+
+# --- The escape (E2-E4, story as of 2026-10) ------------------------------
+# React and seed, never route: no line says which way to go.
+e2_prompt | Wait. Do you feel that? The air's moving in here. Listen past the water.
+e2_reveal | That's wind. Real wind, from outside. That's our way out.
+den_reveal | A nest. Bones, fur. Something big sleeps here.
+den_reward | It walks the same way every time. I'll hear it coming early now.
+e3_warning | Something's coming. Something big.
+e3_warning_den | That's it. The one from the nest. It's still far off. We have time.
+e3_pass | It's gone. It never knew we were here.
+e3_caught | It heard us! Back, back. Breathe. Let it pass this time.
+e4_start | The rock up here is loose. Listen for it falling.
+e4_hit | Ow. Okay. We're okay. Keep climbing.
+e4_exit | Air. Real air. We made it out.

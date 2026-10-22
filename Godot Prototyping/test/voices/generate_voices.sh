@@ -10,7 +10,7 @@
 # The game addresses clips by id alone, so editing wording here needs zero
 # code and zero scene changes -- edit the text, re-run this, done.
 #
-#   ./generate_voices.sh              render with the Superstar voice
+#   ./generate_voices.sh              render with the Joelle (Enhanced) voice
 #   VOICE=Samantha ./generate_voices.sh   use a different macOS voice
 #
 # Output format depends on what is installed: mp3 if ffmpeg or lame is
@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-VOICE="${VOICE:-Superstar}"
+VOICE="${VOICE:-Joelle (Enhanced)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LINES_FILE="$HERE/lines.txt"
 OUT_DIR="$HERE/../assets/sfx/voice"
