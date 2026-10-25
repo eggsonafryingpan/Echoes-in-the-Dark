@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dp87hveptircw"
+path="res://.godot/imported/Classicals.de - Debussy - Reverie - L. 68.mp3-c4b96ce4790ecd487a452e56e78dbede.mp3str"
+
+[deps]
+
+source_file="res://sounds/Classicals.de - Debussy - Reverie - L. 68.mp3"
+dest_files=["res://.godot/imported/Classicals.de - Debussy - Reverie - L. 68.mp3-c4b96ce4790ecd487a452e56e78dbede.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

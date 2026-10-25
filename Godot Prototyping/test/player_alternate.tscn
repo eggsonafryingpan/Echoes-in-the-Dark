@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://by074wswnxb4s"]
+
+[ext_resource type="Script" uid="uid://cs3nhpjmd1eil" path="res://player_alternate.gd" id="1_j48we"]
+[ext_resource type="Script" uid="uid://8yaubsn0472g" path="res://focus_mechanic.gd" id="2_q72sq"]
+[ext_resource type="Script" uid="uid://bjpmu5sklv5h8" path="res://addons/raytraced_audio/raytraced_audio_listener.gd" id="3_ge5b7"]
+[ext_resource type="AudioStream" uid="uid://itkjn60ggyn4" path="res://sounds/chime.mp3" id="3_j48we"]
+[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="5_suiw2"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="6_a40fu"]
+[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="7_ojd53"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n8wo2"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jqwnj"]
+material = SubResource("StandardMaterial3D_n8wo2")
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_5khg4"]
+points = PackedVector3Array(-0.00019574165, 1, -0.00019574165, 0.19498825, -1, -0.9808144, -0.00019574165, -1, -1, -0.19518405, -1, -0.9808144, -0.382733, -1, -0.92404073, -0.5555991, -1, -0.83163667, -0.7071261, -1, -0.7071261, -0.83163667, -1, -0.5555991, -0.92404073, -1, -0.382733, -0.9808144, -1, -0.19518405, -1, -1, -0.00019574165, -0.9808144, -1, 0.19498825, -0.92404073, -1, 0.38253725, -0.83163667, -1, 0.55540323, -0.7071261, -1, 0.7069303, -0.5555991, -1, 0.8314409, -0.382733, -1, 0.92384493, -0.19518405, -1, 0.9806186, -0.00019574165, -1, 1, 0.19498825, -1, 0.9806186, 0.38253725, -1, 0.92384493, 0.55540323, -1, 0.8314409, 0.7069303, -1, 0.7069303, 0.8314409, -1, 0.55540323, 0.92384493, -1, 0.38253725, 0.9806186, -1, 0.19498825, 1, -1, -0.00019574165, 0.9806186, -1, -0.19518405, 0.92384493, -1, -0.382733, 0.8314409, -1, -0.5555991, 0.7069303, -1, -0.7071261, 0.55540323, -1, -0.83163667, 0.38253725, -1, -0.92404073)
+
+[node name="player" type="CharacterBody3D" unique_id=1773885676]
+script = ExtResource("1_j48we")
+
+[node name="BodyCol" type="CollisionShape3D" parent="." unique_id=417620728]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_4j7iv")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="." unique_id=230374153]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_jqwnj")
+
+[node name="CamOrigin" type="Node3D" parent="." unique_id=145752509]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="CamOrigin" unique_id=1371886751]
+
+[node name="SteamAudioListener" type="SteamAudioListener" parent="CamOrigin/Camera3D" unique_id=1632859968]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2, 0)
+
+[node name="VisionRaycast" type="RayCast3D" parent="CamOrigin/Camera3D" unique_id=587649564]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.58573174, -0.6821561)
+target_position = Vector3(0, 0, -100)
+collide_with_areas = true
+
+[node name="FocusDetection" type="Area3D" parent="CamOrigin/Camera3D" unique_id=1644230417]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.7373617, -0.5788397)
+script = ExtResource("2_q72sq")
+
+[node name="Chime" type="SteamAudioPlayer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=1436250904]
+distance_attenuation = true
+air_absorption = true
+transform = Transform3D(1, -1.1175849e-08, 3.8742928e-07, 1.1175844e-08, 1, 1.1175784e-08, -3.8742928e-07, -1.117578e-08, 1, 1.3785775, 2.7508378, 0.7154719)
+stream = ExtResource("3_j48we")
+attenuation_model = 3
+volume_db = 3.392
+panning_strength = 0.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CamOrigin/Camera3D/FocusDetection" unique_id=656119960]
+transform = Transform3D(2, 0, 0, 0, -8.742278e-08, -2, 0, 2, -8.742278e-08, 0, 1.1301115, -4.775784)
+shape = SubResource("ConvexPolygonShape3D_5khg4")
+
+[node name="WaitTimer" type="Timer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=1960064634]
+wait_time = 2.6
+one_shot = true
+
+[node name="Timer" type="Timer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=880916134]
+wait_time = 0.1
+autostart = true
+
+[node name="RaytracedAudioListener" type="AudioListener3D" parent="CamOrigin/Camera3D" unique_id=2003496138]
+script = ExtResource("3_ge5b7")
+
+[node name="OSCReceiverElevated" type="Node" parent="." unique_id=1429112926 node_paths=PackedStringArray("target_server")]
+script = ExtResource("5_suiw2")
+target_server = NodePath("../OSCServer")
+osc_address = "/Godot/elevated"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="OSCReceiverIMU" type="Node" parent="." unique_id=1535337702 node_paths=PackedStringArray("target_server")]
+script = ExtResource("6_a40fu")
+target_server = NodePath("../OSCServer")
+osc_address = "/Godot/IMU"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="OSCServer" type="Node" parent="." unique_id=562394645]
+script = ExtResource("7_ojd53")
+port = 8687
+metadata/_custom_type_script = "uid://w8v0v76wc4r2"
+
+[connection signal="timeout" from="CamOrigin/Camera3D/FocusDetection/WaitTimer" to="CamOrigin/Camera3D/FocusDetection" method="_on_wait_timer_timeout"]
+[connection signal="timeout" from="CamOrigin/Camera3D/FocusDetection/Timer" to="CamOrigin/Camera3D/FocusDetection" method="_on_timer_timeout"]

@@ -13,10 +13,10 @@
 [ext_resource type="Script" uid="uid://c6pk6pwrk5rem" path="res://focusable.gd" id="13_focus"]
 [ext_resource type="Script" uid="uid://bug7f6n11tenj" path="res://scripts/audio_debug_overlay.gd" id="14_adbg"]
 [ext_resource type="Script" uid="uid://cf800p11uu5nm" path="res://scripts/filming_overlay.gd" id="15_film"]
-[ext_resource type="Script" path="res://scripts/object_debug_overlay.gd" id="16_objdbg"]
-[ext_resource type="Script" path="res://scripts/scan_ping_markers.gd" id="17_scanmk"]
-[ext_resource type="Script" path="res://scripts/hr_debug_overlay.gd" id="18_hrdbg"]
-[ext_resource type="Script" path="res://scripts/ambient_bed.gd" id="19_ambbed"]
+[ext_resource type="Script" uid="uid://d2kx6dnusfx7c" path="res://scripts/object_debug_overlay.gd" id="16_objdbg"]
+[ext_resource type="Script" uid="uid://dwe4uhqfjyg54" path="res://scripts/scan_ping_markers.gd" id="17_scanmk"]
+[ext_resource type="Script" uid="uid://ctqc88wkk5qcq" path="res://scripts/hr_debug_overlay.gd" id="18_hrdbg"]
+[ext_resource type="Script" uid="uid://c0nwf2rp0xkgv" path="res://scripts/ambient_bed.gd" id="19_ambbed"]
 
 [sub_resource type="Environment" id="Environment_jqwnj"]
 background_mode = 2
@@ -247,7 +247,6 @@ label = "a swarm, buzzing thickly"
 detail = "Many small bodies, all moving -- but none of them scattering."
 scan_priority = 10
 max_distance = 18.0
-unit_size = 4.0
 
 [node name="Focusable" type="Node3D" parent="SwarmCluster" unique_id=705032739]
 script = ExtResource("13_focus")
@@ -268,7 +267,6 @@ label = "something small, chittering, high up"
 detail = "Perched up near the ceiling. Quiet until you face it."
 volume_db = -3.0
 max_distance = 16.0
-unit_size = 4.0
 
 [node name="RiverBigA" parent="." unique_id=705032721 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, -1.5, -4.5)
@@ -319,7 +317,6 @@ label = "water dripping"
 detail = "Somewhere close, water is falling drop by drop."
 volume_db = -3.0
 max_distance = 14.0
-unit_size = 4.0
 
 [node name="RiverSmallA" parent="." unique_id=705032731 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, -1.2, -6)

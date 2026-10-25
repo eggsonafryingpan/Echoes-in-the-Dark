@@ -3,7 +3,8 @@ extends Control
 func _ready():
 	$VBoxContainer/Button.pressed.connect(_on_baseline_pressed)
 	$VBoxContainer/Button2.pressed.connect(_on_start_pressed)
-	$VBoxContainer/Button3.pressed.connect(_on_quit_pressed)
+	$VBoxContainer/Button4.pressed.connect(_on_quit_pressed)
+	$VBoxContainer/Button3.pressed.connect(_on_minigame_pressed)
 
 ## Playtesting: F6 (debug_skip_event, the same key that skips the cold
 ## open once it is running) starts the game with Event 1 skipped entirely.
@@ -25,3 +26,6 @@ func _on_start_pressed():
 
 func _on_quit_pressed():
 	get_tree().quit()
+	
+func _on_minigame_pressed():
+	get_tree().change_scene_to_file("res://minigame.tscn")
