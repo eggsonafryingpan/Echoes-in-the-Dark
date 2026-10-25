@@ -51,7 +51,7 @@ collide_with_areas = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.7373617, -0.5788397)
 script = ExtResource("6_nvl01")
 
-[node name="Timer" type="Timer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=754899596]
+[node name="WaitTimer" type="Timer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=754899596]
 wait_time = 0.2
 autostart = true
 
@@ -96,4 +96,4 @@ script = ExtResource("7_1jxqw")
 port = 8687
 metadata/_custom_type_script = "uid://w8v0v76wc4r2"
 
-[connection signal="timeout" from="CamOrigin/Camera3D/FocusDetection/Timer" to="CamOrigin/Camera3D/FocusDetection" method="_on_timer_timeout"]
+[connection signal="timeout" from="CamOrigin/Camera3D/FocusDetection/WaitTimer" to="CamOrigin/Camera3D/FocusDetection" method="_on_timer_timeout"]

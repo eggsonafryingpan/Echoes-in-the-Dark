@@ -1,10 +1,6 @@
 extends Area3D
 
 @onready var raycast = $"../VisionRaycast"
-@onready var waitTimer = $WaitTimer
-@onready var chime = $Chime
-var focused = false
-var confirmed = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -18,25 +14,15 @@ func _process(delta: float) -> void:
 func _on_timer_timeout() -> void:
 	var overlap = get_overlapping_areas()
 	if overlap.size() == 0:
-		focused = false
-		waitTimer.stop()
-		chime.stream_paused = true
+		return
 	for a in overlap:
-		if a.is_in_group("SoundBox"):
-			print("sdfsd")
-			if !focused:
-				focused = true
-				if (!chime.playing):
-					chime.play()
-				waitTimer.start()
-			else:
-				if confirmed:
-					a.updateFocus()
-					focused = false
-					confirmed = false
-			return
-
-	
-
-func _on_wait_timer_timeout() -> void:
-	confirmed = true 
+		if !a.is_in_group("SoundBox"):
+			continue
+		raycast.look_at(a.global_transform.origin,Vector3.UP)
+		raycast.force_raycast_update()
+		if raycast.is_colliding():
+			var collider = raycast.get_collider()
+			if collider.is_in_group("SoundBox"):
+				collider.updateFocus()
+			
+		

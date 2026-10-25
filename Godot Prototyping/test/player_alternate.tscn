@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://by074wswnxb4s"]
 
 [ext_resource type="Script" uid="uid://cs3nhpjmd1eil" path="res://player_alternate.gd" id="1_j48we"]
-[ext_resource type="Script" uid="uid://8yaubsn0472g" path="res://focus_mechanic.gd" id="2_q72sq"]
+[ext_resource type="Script" uid="uid://cr6k8wwk0mlru" path="res://focus_detection_alternate.gd" id="2_j48we"]
 [ext_resource type="Script" uid="uid://bjpmu5sklv5h8" path="res://addons/raytraced_audio/raytraced_audio_listener.gd" id="3_ge5b7"]
-[ext_resource type="AudioStream" uid="uid://itkjn60ggyn4" path="res://sounds/chime.mp3" id="3_j48we"]
+[ext_resource type="AudioStream" uid="uid://bi40qu6uyu6dd" path="res://sounds/chimeShort.mp3" id="3_j48we"]
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="5_suiw2"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="6_a40fu"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="7_ojd53"]
@@ -44,7 +44,7 @@ collide_with_areas = true
 
 [node name="FocusDetection" type="Area3D" parent="CamOrigin/Camera3D" unique_id=1644230417]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.7373617, -0.5788397)
-script = ExtResource("2_q72sq")
+script = ExtResource("2_j48we")
 
 [node name="Chime" type="SteamAudioPlayer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=1436250904]
 distance_attenuation = true

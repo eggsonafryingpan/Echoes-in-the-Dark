@@ -13,7 +13,7 @@ func _ready() -> void:
 
 
 func updateFocus():
-	path.setRandSong() 
+	path.setNextSong() 
 		
 		
 	
