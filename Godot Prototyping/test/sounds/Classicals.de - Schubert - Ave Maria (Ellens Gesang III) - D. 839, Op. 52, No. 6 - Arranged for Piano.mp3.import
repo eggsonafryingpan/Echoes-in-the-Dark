@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cp32dhuuwffwj"
+path="res://.godot/imported/Classicals.de - Schubert - Ave Maria (Ellens Gesang III) - D. 839, Op. 52, No. 6 - Arranged for Piano.mp3-3377cb013b00247283bb47232c2d5d94.mp3str"
+
+[deps]
+
+source_file="res://sounds/Classicals.de - Schubert - Ave Maria (Ellens Gesang III) - D. 839, Op. 52, No. 6 - Arranged for Piano.mp3"
+dest_files=["res://.godot/imported/Classicals.de - Schubert - Ave Maria (Ellens Gesang III) - D. 839, Op. 52, No. 6 - Arranged for Piano.mp3-3377cb013b00247283bb47232c2d5d94.mp3str"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dcor4pe81hdtg"
+path="res://.godot/imported/Classicals.de - Debussy - Children's Corner - I. Doctor Gradus ad Parnassum.mp3-7867b0b378822e0ee3ec24e834e96e00.mp3str"
+
+[deps]
+
+source_file="res://sounds/Classicals.de - Debussy - Children's Corner - I. Doctor Gradus ad Parnassum.mp3"
+dest_files=["res://.godot/imported/Classicals.de - Debussy - Children's Corner - I. Doctor Gradus ad Parnassum.mp3-7867b0b378822e0ee3ec24e834e96e00.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
