@@ -10,11 +10,12 @@ python3.12 -m venv .venv            # Python 3.10+; macOS's bundled 3.9 won't im
 .venv/bin/python bridge.py --listen-port 12346 --godot-port 8687
 ```
 
-Godot's `SensorBridge` defaults to LIVE mode, so with this running real
-heart rate and head orientation reach `GameState` with no editor change.
-Until live orientation arrives the mouse steers; the F10 readout's
-`source` line says which is driving. The old `OSCTesting/*_WORKING.py`
-scripts (`/Godot/IMU`, `/Godot/elevated`) are no longer read by the game.
+Godot's `SensorBridge` defaults to DEV_MOUSE, so launch the game with
+`-- --sensor=live` (or set `ECHOES_SENSOR=live`) for real heart rate and head
+orientation to reach `GameState`. Until live orientation arrives the mouse
+steers; the F10 readout's `source` line says which is driving. LIVE takes
+port 8687, so the scene OSC receivers (`/Godot/IMU`, `/Godot/elevated`, as
+sent by `OSCTesting/*_WORKING.py`) only hear packets when it is off.
 
 Pipeline: EmotiBit OSC (9-axis IMU + red-channel PPG) → Madgwick
 orientation filter (`orientation.py`) + motion gate (`motion_gate.py`) +

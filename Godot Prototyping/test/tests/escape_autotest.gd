@@ -4,8 +4,8 @@ extends Node
 ## hardware, no hands: it steers the head through the mouse fallback and
 ## the legs through the movement actions, the same inputs a player has.
 ##
-##   Godot --path . escape_level.tscn -- --autotest            (watch it)
-##   Godot --headless --path . escape_level.tscn -- --autotest  (just results)
+##   Godot --path . escape_level.tscn -- --autotest --sensor=live            (watch it)
+##   Godot --headless --path . escape_level.tscn -- --autotest --sensor=live  (just results)
 ##
 ## Prints PASS/FAIL per check and quits with exit code 0 (all passed) or 1.
 ## Added by escape_level.gd only when --autotest is on the command line.

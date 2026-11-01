@@ -27,22 +27,23 @@ signal heart_rate_updated(bpm: float, valid: bool)
 ## fires once after the ~30s quiet-stillness baseline window completes (§3.3)
 signal baseline_ready(resting_bpm: float)
 
-## LIVE (default) is the real pipeline: sensor_bridge/bridge.py -> OSC ->
-## LiveOSCSource. It is the default so that plugging the EmotiBit in is all
-## it takes for real heart rate to reach GameState -- no editor change, no
-## second receiver. Until live orientation is actually arriving (no bridge,
-## no headband), the mouse steers instead, so the same build stays playable
-## in autopilot; the moment live packets flow they take over. Heart rate in
-## LIVE comes from the bridge only: no fallback value, since an invented
-## resting rate would become the baseline and read as the player's own.
+## DEV_MOUSE (default) is mouse orientation plus a constant 70 bpm. It opens
+## no OSC port, so the receivers in player.tscn and player_alternate.tscn
+## keep port 8687 to themselves.
 ##
-## DEV_MOUSE is mouse orientation plus a constant 70 bpm (the old default).
+## LIVE is the real pipeline: sensor_bridge/bridge.py -> OSC -> LiveOSCSource.
+## Until live orientation is actually arriving (no bridge, no headband), the
+## mouse steers instead; the moment live packets flow they take over. Heart
+## rate in LIVE comes from the bridge only: no fallback value, since an
+## invented resting rate would become the baseline and read as the player's
+## own. LIVE binds 8687 first, so those scene receivers go deaf while it runs.
+##
 ## MOCK replays a scripted trace for testing CALM/overload against known
 ## numbers; it drives orientation too, so the player can't steer under it.
 ##
 ## Override per launch without editing anything: `-- --sensor=mouse`,
 ## `--sensor=mock`, `--sensor=live`, or ECHOES_SENSOR=<same>.
-@export var source_mode: SourceMode = SourceMode.LIVE
+@export var source_mode: SourceMode = SourceMode.DEV_MOUSE
 
 ## LIVE only: live orientation older than this counts as stopped, and the
 ## mouse takes back over. Generous, so one dropped UDP packet never flips it.

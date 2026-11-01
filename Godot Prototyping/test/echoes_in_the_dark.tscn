@@ -292,26 +292,6 @@ max_distance = 12.0
 unit_size = 2.5
 body_size = Vector3(5, 0, 2)
 
-[node name="WindPassage" parent="." unique_id=705032725 instance=ExtResource("12_sfxsrc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, -1.5, -6.5)
-sfx_name = &"wind_passage"
-label = "wind moving through rock"
-detail = "A steady draft finding its way through."
-continuous = true
-volume_db = -18.0
-max_distance = 10.0
-unit_size = 2.0
-
-[node name="WindPassageSoft" parent="." unique_id=705032727 instance=ExtResource("12_sfxsrc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -1.5, -2.5)
-sfx_name = &"wind_passage_soft"
-label = "a faint draft"
-detail = "Barely a breeze."
-continuous = true
-volume_db = -22.0
-max_distance = 8.0
-unit_size = 2.0
-
 [node name="WaterDrip" parent="." unique_id=705032729 instance=ExtResource("12_sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -1.5, -0.5)
 sfx_name = &"water_drip"

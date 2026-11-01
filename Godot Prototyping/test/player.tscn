@@ -1,7 +1,10 @@
 [gd_scene format=4 uid="uid://5pkq3yeene5a"]
 
 [ext_resource type="Script" uid="uid://br0881wrqiahm" path="res://player.gd" id="1_2hs0m"]
+[ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="4_b26j0"]
+[ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="5_n7ghd"]
 [ext_resource type="Script" uid="uid://8yaubsn0472g" path="res://focus_mechanic.gd" id="6_nvl01"]
+[ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="7_1jxqw"]
 [ext_resource type="Script" uid="uid://bjpmu5sklv5h8" path="res://addons/raytraced_audio/raytraced_audio_listener.gd" id="8_rtal"]
 [ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="9_rtap"]
 
@@ -76,5 +79,22 @@ max_distance = 4.0
 panning_strength = 1.64
 bus = &"RaytracedReverb"
 script = ExtResource("9_rtap")
+
+[node name="OSCReceiverElevated" type="Node" parent="." unique_id=1429112926 node_paths=PackedStringArray("target_server")]
+script = ExtResource("4_b26j0")
+target_server = NodePath("../OSCServer")
+osc_address = "/Godot/elevated"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="OSCReceiverIMU" type="Node" parent="." unique_id=1535337702 node_paths=PackedStringArray("target_server")]
+script = ExtResource("5_n7ghd")
+target_server = NodePath("../OSCServer")
+osc_address = "/Godot/IMU"
+metadata/_custom_type_script = "uid://tdoy6n5ivl2p"
+
+[node name="OSCServer" type="Node" parent="." unique_id=562394645]
+script = ExtResource("7_1jxqw")
+port = 8687
+metadata/_custom_type_script = "uid://w8v0v76wc4r2"
 
 [connection signal="timeout" from="CamOrigin/Camera3D/FocusDetection/WaitTimer" to="CamOrigin/Camera3D/FocusDetection" method="_on_timer_timeout"]

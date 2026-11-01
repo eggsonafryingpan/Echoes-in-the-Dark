@@ -3,8 +3,8 @@ extends Node3D
 ## A constant ambient bed on the Environmental layer, everywhere in the
 ## cave -- not tied to any object, so there is always something for
 ## overload to strip and for the A/B demo (§11) to show being stripped.
-## The authored environmental sources (rivers, waterfalls, wind passages)
-## are deliberately local and fall silent a few metres away, which left
+## The authored environmental sources (rivers, waterfalls) are deliberately
+## local and fall silent a few metres away, which left
 ## most of the cave with no bed at all.
 ##
 ## Four emitters on a ring around the listener, following its position but
@@ -21,7 +21,8 @@ extends Node3D
 ## returns it.
 
 @export var bus: StringName = &"Environmental"
-@export var clips: Array[StringName] = [&"wind_passage", &"wind_passage_soft", &"wind_passage", &"wind_passage_soft"]
+## Never wind: wind means the exit (exit_wind.gd).
+@export var clips: Array[StringName] = [&"water_drip", &"river_flow_small", &"water_drip", &"river_flow_small"]
 @export var volume_db: float = -8.0
 @export var ring_radius: float = 6.0
 ## Above ear height, so the bed reads as the space itself rather than as
