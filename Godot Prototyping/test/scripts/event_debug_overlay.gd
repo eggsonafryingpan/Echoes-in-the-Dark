@@ -53,5 +53,5 @@ func _process(_delta: float) -> void:
 			"active" if climb.active else "idle", climb.rocks_dropped, climb.hits])
 	lines.append("head yaw %.0f°  ref %.0f°   C / touchpad = recenter" % [
 		rad_to_deg(GameState.effective_orientation().y), rad_to_deg(GameState.reference_yaw)])
-	lines.append("F6 skip · Ctrl+1-4 jump · F11 fail · F4 calm assist · V aerial")
+	lines.append("F6 skip · Ctrl+1-5 jump · F11 fail · F4 calm assist · V aerial")
 	_label.text = "\n".join(lines)

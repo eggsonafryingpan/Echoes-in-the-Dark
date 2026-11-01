@@ -1,6 +1,6 @@
 extends Node3D
 
-## E3: STEALTH. Something big walks past; stay calm and it never notices.
+## E4: STEALTH. Something big walks past; stay calm and it never notices.
 ##
 ## Walking into the trigger zone freezes the player (input_locked) and starts
 ## CALM in non-self-completing mode (EventDirector.start_calm_event(false)):
@@ -13,8 +13,14 @@ extends Node3D
 ##         where it was when the animal appeared by at least the required
 ##         drop, OR they are simply not elevated above their resting
 ##         baseline. The animal walks on to its end marker; E3 complete.
-##   FAIL  it charges, knocks the player back to the retry checkpoint (lost
+##   FAIL  it charges, throws the player back to the retry checkpoint (lost
 ##         ground, re-approach), and the encounter re-arms. Never ends the run.
+##
+## The player is locked for the whole of an encounter: from the moment they
+## are in the zone until the animal has gone, or until they have landed and
+## the bat has finished speaking. Free again means IDLE or DONE, nothing else.
+## The zone is polled rather than signalled, so standing in it when the event
+## arms starts the encounter too.
 ##
 ## Anti-lockout (§1): the required drop relaxes with every attempt, and the
 ## auto_pass_attempt-th attempt passes regardless -- after two knockbacks
@@ -31,7 +37,7 @@ extends Node3D
 
 const Event := preload("res://autoload/event_director.gd").Event
 
-enum State { IDLE, APPROACH, PASSING, CHARGING, DONE }
+enum State { IDLE, APPROACH, PASSING, CHARGING, RECOVERING, DONE }
 
 @export var level_path: NodePath = ^".."
 @export var trigger_path: NodePath
@@ -49,6 +55,10 @@ enum State { IDLE, APPROACH, PASSING, CHARGING, DONE }
 @export var den_approach_seconds: float = 24.0
 @export var pass_seconds: float = 7.0
 @export var charge_seconds: float = 0.7
+## The throw back to the checkpoint, and the longest the player then waits
+## on the bat before getting control back.
+@export var knockback_seconds: float = 1.4
+@export var recover_timeout: float = 6.0
 
 ## Required drop (bpm) on attempt 1, 2, ... -- the last entry repeats.
 @export var required_drop_by_attempt: Array[float] = [4.0, 2.0]
@@ -70,6 +80,7 @@ var attempt: int = 0
 var last_verdict: String = ""
 
 var _level: Node = null
+var _trigger: Area3D = null
 var _animal: Node3D = null
 var _steps: AudioStreamPlayer3D = null
 var _growl: AudioStreamPlayer3D = null
@@ -78,11 +89,14 @@ var _label: Label3D = null
 var _tween: Tween = null
 var _force_fail: bool = false
 var _t_state: float = 0.0
+## Bumped when a recovery is abandoned, so one still waiting on the bat wakes
+## up, sees it is stale and leaves the player alone.
+var _run: int = 0
 
 
 func _ready() -> void:
 	_level = get_node(level_path)
-	get_node(trigger_path).body_entered.connect(_on_trigger)
+	_trigger = get_node(trigger_path)
 
 	_animal = Node3D.new()
 	_animal.name = "Animal"
@@ -134,12 +148,10 @@ func _process(delta: float) -> void:
 		"\n" + last_verdict if last_verdict != "" else ""]
 
 
-func _on_trigger(body: Node3D) -> void:
-	if body != _level.player or state != State.IDLE:
-		return
-	if EventDirector.current_event != Event.STEALTH:
-		return
-	begin_encounter()
+func _physics_process(_delta: float) -> void:
+	if state == State.IDLE and EventDirector.current_event == Event.STEALTH \
+			and _trigger.overlaps_body(_level.player):
+		begin_encounter()
 
 
 func begin_encounter() -> void:
@@ -183,12 +195,15 @@ func skip() -> void:
 		attempt += 1
 		if not EventDirector.event_running:
 			EventDirector.begin(Event.STEALTH)
+	_run += 1
 	_kill_tween()
+	GameState.input_locked = true
 	_pass()
 
 
 ## Back to armed, for a jump. Attempt count resets too: a jump is a fresh run.
 func reset_encounter() -> void:
+	_run += 1
 	_kill_tween()
 	EventDirector.stop_calm_event(&"reset")
 	_steps.stop()
@@ -247,20 +262,34 @@ func _charge() -> void:
 	_tween.tween_callback(_knocked_back)
 
 
-## The hit: a thud and a hard bilateral rumble, then the player is back at
-## the retry checkpoint, free to move. Walking back into the zone re-arms
-## it -- attempt + 1, easier.
+## The hit: a thud and a hard bilateral rumble while the animal's steps die
+## away, a slide back to the retry checkpoint, and the bat's line. Only then
+## is the player free. Walking back into the zone re-arms it -- attempt + 1,
+## easier.
 func _knocked_back() -> void:
+	_set_state(State.RECOVERING)
+	_run += 1
+	var run := _run
 	_hit.play()
 	Haptics.pulse_both(1.0, 0.5)
 	EventDirector.stop_calm_event(&"stealth_caught")
-	_steps.stop()
-	var cp := get_node(retry_checkpoint_path) as Marker3D
-	_level.teleport_player(cp.global_position, cp.global_rotation.y)
-	_reset_animal()
-	_set_state(State.IDLE)
-	GameState.input_locked = false
+	BatCompanion.shut_up()
 	BatCompanion.say(caught_line)
+	_tween = create_tween()
+	_tween.tween_property(_steps, "volume_db", -40.0, knockback_seconds)
+
+	var cp := (get_node(retry_checkpoint_path) as Marker3D).global_position
+	cp.y = _level.player.global_position.y
+	await _level.slide_player_to(cp, knockback_seconds)
+	if run != _run:
+		return
+	await _level.wait_for_bat(recover_timeout)
+	if run != _run:
+		return
+	_steps.stop()
+	_set_state(State.IDLE)
+	_reset_animal()
+	GameState.input_locked = false
 
 
 func _required_drop() -> float:

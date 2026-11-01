@@ -69,6 +69,28 @@ var head_position: Vector3 = Vector3.ZERO
 ## clear and no way for a sequence to end leaving one of them still locked.
 var input_locked: bool = false
 
+## A sharp head movement: direction +1 up, -1 down. strength is the peak rate
+## as a multiple of flick_min_rate_deg, so it starts at 1.0.
+signal head_flicked(direction: int, strength: float)
+
+## A flick has to be fast AND big: this pitch rate (deg/s) starts one, and it
+## only counts once the head has travelled flick_min_travel_deg in that
+## direction within flick_capture_seconds. Speed alone would pass a tiny twitch
+## or a noisy sample; travel alone would pass a slow look up. Placeholders like
+## the other thresholds: the real values need a headband on a real head.
+@export var flick_min_rate_deg: float = 200.0
+@export var flick_min_travel_deg: float = 25.0
+@export var flick_capture_seconds: float = 0.3
+## Dead time after a flick, so the head coming back doesn't read as another.
+@export var flick_cooldown_seconds: float = 0.5
+
+var _flick_direction: int = 0
+var _flick_peak: float = 0.0
+var _flick_travel: float = 0.0
+var _t_flick_start: float = 0.0
+var _t_pitch_sample: float = 0.0
+var _t_next_flick: float = 0.0
+
 ## Multiplies walking speed. 1 everywhere except E4's climb, which is
 ## slower going (rockfall_climb.gd sets and resets it), so the shaft takes
 ## long enough for the rocks to be a section rather than two dodges.
@@ -103,14 +125,49 @@ var _t_best_distance: float = -1.0
 
 var _was_live_orientation: bool = false
 
+## What the sensor source last said, and the yaw added up from the scene OSC
+## receiver. orientation is the two together: the source re-sends its value
+## every frame, so anything written straight into orientation would be lost.
+var _source_orientation: Vector3 = Vector3.ZERO
+var _osc_yaw: float = 0.0
+## Set by the first /Godot/elevated true/false. From then on that decides
+## hr_elevated, not the bpm comparison.
+var _elevated_from_osc: bool = false
+
 
 func _ready() -> void:
 	SensorBridge.orientation_updated.connect(_on_orientation_updated)
 	SensorBridge.heart_rate_updated.connect(_on_heart_rate_updated)
+	SensorBridge.pitch_rate_updated.connect(_on_pitch_rate_updated)
+
+
+## osc_receiver_imu.gd: a change in head yaw, in radians.
+func add_head_turn(yaw: float) -> void:
+	_osc_yaw += yaw
+	orientation.y += yaw
+
+
+## osc_receiver_imu.gd: the head's pitch rate in rad/s, positive = up. Rate only:
+## pitch stays out of orientation, so looking up or down can't skew FOCUS (§6.1).
+func add_head_pitch_change(rate: float) -> void:
+	_on_pitch_rate_updated(rate)
+
+
+## osc_receiver.gd: the elevated state decided outside the game.
+func set_osc_elevated(elevated: bool) -> void:
+	_elevated_from_osc = true
+	_set_elevated(elevated)
+
+
+func _set_elevated(elevated: bool) -> void:
+	if elevated != hr_elevated:
+		hr_elevated = elevated
+		elevated_changed.emit(hr_elevated)
 
 
 func _on_orientation_updated(euler: Vector3) -> void:
-	orientation = euler
+	_source_orientation = euler
+	orientation = euler + Vector3(0.0, _osc_yaw, 0.0)
 	# The first live sample replaces the mouse's yaw with the headband's
 	# absolute one, which would swing the world by however far apart they
 	# happen to be. Recentering on that handover keeps the player facing
@@ -119,6 +176,37 @@ func _on_orientation_updated(euler: Vector3) -> void:
 	if live and not _was_live_orientation:
 		recenter()
 	_was_live_orientation = live
+
+
+## Detects flicks from the rate of the head's pitch, not its angle: how far the
+## head is tilted says nothing about how sharply it moved, and on the headband
+## the rate is the one pitch measure that doesn't depend on the mounting.
+func _on_pitch_rate_updated(rate: float) -> void:
+	# The mouse source reports an exact 0 every idle frame, even while the OSC
+	# receiver is streaming; those would cut the time between real samples.
+	if rate == 0.0:
+		return
+	var rate_deg := rad_to_deg(rate)
+	var now := Time.get_ticks_msec() / 1000.0
+	# Capped so a gap in the stream can't count as travel.
+	var dt := minf(now - _t_pitch_sample, 0.1)
+	_t_pitch_sample = now
+	if _flick_direction == 0:
+		if absf(rate_deg) >= flick_min_rate_deg and now >= _t_next_flick:
+			_flick_direction = 1 if rate_deg > 0.0 else -1
+			_flick_peak = absf(rate_deg)
+			_flick_travel = 0.0
+			_t_flick_start = now
+		return
+
+	_flick_peak = maxf(_flick_peak, rate_deg * _flick_direction)
+	_flick_travel += rate_deg * _flick_direction * dt
+	if _flick_travel >= flick_min_travel_deg:
+		head_flicked.emit(_flick_direction, _flick_peak / flick_min_rate_deg)
+		_flick_direction = 0
+		_t_next_flick = now + flick_cooldown_seconds
+	elif now - _t_flick_start >= flick_capture_seconds:
+		_flick_direction = 0
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -165,10 +253,8 @@ func _on_heart_rate_updated(bpm: float, valid: bool) -> void:
 	if SensorBridge.resting_bpm < 0.0:
 		return  # baseline not established yet
 
-	var elevated := bpm > SensorBridge.resting_bpm + elevated_margin_bpm
-	if elevated != hr_elevated:
-		hr_elevated = elevated
-		elevated_changed.emit(hr_elevated)
+	if not _elevated_from_osc:
+		_set_elevated(bpm > SensorBridge.resting_bpm + elevated_margin_bpm)
 
 
 func report_head_position(pos: Vector3) -> void:

@@ -16,6 +16,7 @@ extends SensorSource
 
 const ORIENTATION_ADDRESS := "/echoes/orientation"
 const HEART_RATE_ADDRESS := "/echoes/heart_rate"
+const PITCH_RATE_ADDRESS := "/echoes/pitch_rate"
 
 @export var port: int = 8687
 
@@ -55,3 +56,7 @@ func _on_message(address: String, value, _time) -> void:
 			if v.size() >= 2:
 				last_heart_rate_t = Time.get_ticks_msec() / 1000.0
 				heart_rate_sample.emit(float(v[0]), int(v[1]) != 0)
+		PITCH_RATE_ADDRESS:
+			var v: Array = value if value is Array else [value]
+			if v.size() >= 1:
+				pitch_rate_sample.emit(float(v[0]))

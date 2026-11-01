@@ -10,7 +10,12 @@ func _custom_control(address : String, vals : Array, time):
 	if vals != []:
 		if target_server.incoming_messages.has(osc_address):
 			print(address, "  Elevated: ", vals[0])
-			interval = vals[0] / 60
+			# elevationCalc_WORKING.py sends true/false, betterHR.py sends bpm.
+			if vals[0] is bool:
+				GameState.set_osc_elevated(vals[0])
+			elif vals[0] > 0.0:
+				SensorBridge.set_osc_heart_rate(vals[0])
+				interval = 60.0 / vals[0]
 	pass
 
 #in seconds

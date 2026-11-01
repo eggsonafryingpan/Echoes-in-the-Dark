@@ -14,6 +14,9 @@ signal orientation_sample(euler: Vector3)
 ## reading (§3.2) -- bpm should be ignored when valid is false.
 signal heart_rate_sample(bpm: float, valid: bool)
 
+## Head pitch rate in rad/s, positive = up.
+signal pitch_rate_sample(rate: float)
+
 
 func start() -> void:
 	pass

@@ -20,7 +20,7 @@
 event1_bat_greet | Hey! Are you okay? That was one rough fall.
 event1_bat_breathe | Okay, okay, calm down. Just breathe in, do it with me: deep breath in, hold it, and deep breath out.
 event1_bat_keep_breathing | Hey, you got this, keep breathing in and out, in and out.
-event1_bat_escape | Now that you've calmed down you look a lot better. Listen, we need to escape this cave together. I'm a robobat, and I've been stuck down in this cave for forever. Thankfully none of the other bats can tell I'm any different, but I'm getting sick of this cave and I need to leave to recharge my battery soon. With the remaining energy I have, I can activate echolocation and help us find the exit together. It's been a while since I've tried this... press the button E, that should activate it.
+event1_bat_escape | Now that you've calmed down you look a lot better. Listen, we need to escape this cave together. I'm a robobat, and I've been stuck down in this cave for forever. Thankfully none of the other bats can tell I'm any different, but I'm getting sick of this cave and I need to leave to recharge my battery soon. With the remaining energy I have, I can activate echolocation and help us find the exit together. It's been a while since I've tried this... press down on the joystick, that should activate it.
 
 # --- CALM coaching (§8) --------------------------------------------------
 # calm_guide is the one line EventDirector actually fires today (the second
@@ -49,11 +49,16 @@ focus_reveal_swarm | There. It's a swarm of insects. Calm ones. They're not a th
 attribution | You found it. That's what's keeping them all calm.
 
 # --- The escape (E2-E4, story as of 2026-10) ------------------------------
-# React and seed, never route: no line says which way to go.
-e2_prompt | Wait. Do you feel that? The air's moving in here. Listen past the water.
-e2_reveal | That's wind. Real wind, from outside. That's our way out.
+e2_follow_wind | Wait, do you feel that? There's a breeze in here. That's wind from outside. Let's follow the wind, it'll lead us out.
 den_reveal | A nest. Bones, fur. Something big sleeps here.
 den_reward | It walks the same way every time. I'll hear it coming early now.
+# The river (E3 in the run; the stealth and climb lines keep their old ids).
+river_intro | Woah, hold on. We can't get around this river, we have to jump it. Snap your head up, fast and hard, to jump. But listen first. When the water sounds quietest, the current is weakest, and that's the safest time to cross.
+river_missed | That was the quiet part. Don't worry, it'll come back around. Keep listening.
+river_swept | Too strong! The current threw us back. Wait until the water goes quiet, then jump.
+river_assist | The water's dying down. It's calm now. Jump whenever you're ready.
+river_crossed | We made it! Nice jump. Hear that? That's the wind. Keep following it.
+
 e3_warning | Something's coming. Something big.
 e3_warning_den | That's it. The one from the nest. It's still far off. We have time.
 e3_pass | It's gone. It never knew we were here.

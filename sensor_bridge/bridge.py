@@ -40,6 +40,7 @@ from orientation import OrientationEstimator
 
 # Outgoing addresses Godot's LiveOSCSource (sensor/live_osc_source.gd) listens for.
 ORIENTATION_ADDRESS = "/echoes/orientation"
+PITCH_RATE_ADDRESS = "/echoes/pitch_rate"
 HEART_RATE_ADDRESS = "/echoes/heart_rate"
 
 # EmotiBit's onboard red-channel PPG stream. Brief §3.1: red PPG, not the
@@ -100,6 +101,10 @@ class SensorBridge:
 
         # Already in Godot's (pitch, yaw, roll) order -- see orientation.py.
         self.client.send_message(ORIENTATION_ADDRESS, [float(v) for v in pitch_yaw_roll])
+        # Head flicks: the raw gyro about the axis the head nods around, so it
+        # needs no mounting-dependent pitch angle. Positive = up.
+        pitch_rate = gyro["xyz".index(self.args.pitch_axis)] * self.args.pitch_sign
+        self.client.send_message(PITCH_RATE_ADDRESS, [float(pitch_rate)])
         self._axes = {"GYRO": [None, None, None], "ACC": [None, None, None], "MAG": [None, None, None]}
 
     def _maybe_process_hr(self) -> None:
@@ -118,6 +123,10 @@ def main() -> None:
                         help="Port EmotiBit's OSC stream arrives on (EmotiBit Oscilloscope sends to 12345 by default)")
     parser.add_argument("--godot-host", default="127.0.0.1")
     parser.add_argument("--godot-port", type=int, default=8687, help="Port Godot's OSCServer/GodOSC listens on")
+    parser.add_argument("--pitch-axis", choices=["x", "y", "z"], default="z",
+                        help="Sensor axis the head nods around, for head flicks")
+    parser.add_argument("--pitch-sign", type=float, choices=[-1.0, 1.0], default=1.0,
+                        help="Set to -1 if looking up reads as looking down")
     parser.add_argument("--imu-rate", type=float, default=25.0, help="IMU packet rate, Hz")
     parser.add_argument("--ppg-rate", type=float, default=25.0, help="Red-PPG sample rate, Hz")
     parser.add_argument("--hr-window", type=float, default=10.0, help="HeartPy sliding window, seconds")

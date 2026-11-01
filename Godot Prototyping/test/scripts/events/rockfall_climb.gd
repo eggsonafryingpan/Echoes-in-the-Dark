@@ -1,6 +1,6 @@
 extends Node3D
 
-## E4: ESCAPE. Climb the shaft while rocks come down.
+## E5: ESCAPE. Climb the shaft while rocks come down.
 ##
 ## Every interval_seconds a rock is announced on one side of the player --
 ## left or right relative to where their HEAD faces -- in two channels that

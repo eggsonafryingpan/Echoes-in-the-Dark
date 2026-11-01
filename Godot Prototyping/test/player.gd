@@ -100,7 +100,7 @@ func _unhandled_input(event: InputEvent) -> void:
 var prev_norm = null
 func _physics_process(delta: float) -> void:
 	if isLocked or GameState.input_locked:
-		_end_wall_contact()
+		_hold_still()
 		return
 
 	# Head orientation is GameState.orientation alone (mock trace or live
@@ -220,6 +220,16 @@ func _physics_process(delta: float) -> void:
 	
 
 
+## Locked: the legs stop and go quiet, but the head stays the player's own, so
+## the view, the listener and head_position keep up with it.
+func _hold_still() -> void:
+	_end_wall_contact()
+	velocity = Vector3.ZERO
+	footsteps.set_stream_paused(true)
+	pivot.rotation = GameState.effective_orientation()
+	GameState.report_head_position(pivot.global_position)
+
+
 ## Pushing against a wall = move_and_slide collided with something near-
 ## vertical this frame while the joystick points into it. This is the
 ## physics engine's own answer to "is the capsule touching rock", so it
@@ -240,6 +250,8 @@ func _update_wall_contact(direction: Vector3, delta: float) -> void:
 			var normal := collision.get_normal()
 			if absf(normal.y) > wall_max_normal_y:
 				continue  # floor or ceiling
+			if (collision.get_collider() as Node).is_in_group(&"not_a_wall"):
+				continue  # the river's edge: stopped, but not by rock
 			if direction.dot(-normal) < wall_push_min_dot:
 				continue  # sliding along it, not into it
 			touching = true

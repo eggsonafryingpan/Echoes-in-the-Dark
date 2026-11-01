@@ -27,6 +27,10 @@ signal heart_rate_updated(bpm: float, valid: bool)
 ## fires once after the ~30s quiet-stillness baseline window completes (§3.3)
 signal baseline_ready(resting_bpm: float)
 
+## Head pitch rate in rad/s, positive = up. Separate from orientation_updated,
+## which carries no pitch from the headband.
+signal pitch_rate_updated(rate: float)
+
 ## DEV_MOUSE (default) is mouse orientation plus a constant 70 bpm. It opens
 ## no OSC port, so the receivers in player.tscn and player_alternate.tscn
 ## keep port 8687 to themselves.
@@ -72,6 +76,8 @@ var _live: LiveOSCSource = null
 var _baseline_samples: Array[float] = []
 var _baseline_elapsed: float = 0.0
 var _baseline_done: bool = false
+## True once osc_receiver.gd has delivered a real heart rate.
+var _osc_heart_rate: bool = false
 
 
 func _ready() -> void:
@@ -89,6 +95,7 @@ func _ready() -> void:
 			_fallback.emit_heart_rate = false
 			add_child(_fallback)
 			_fallback.orientation_sample.connect(_on_fallback_orientation)
+			_fallback.pitch_rate_sample.connect(_on_fallback_pitch_rate)
 			_fallback.start()
 		SourceMode.DEV_MOUSE:
 			_source = DevMouseSource.new()
@@ -96,6 +103,7 @@ func _ready() -> void:
 	add_child(_source)
 	_source.orientation_sample.connect(_on_orientation_sample)
 	_source.heart_rate_sample.connect(_on_heart_rate_sample)
+	_source.pitch_rate_sample.connect(_on_pitch_rate_sample)
 	_source.start()
 	print("SensorBridge: %s" % status_text())
 
@@ -143,7 +151,7 @@ func status_text() -> String:
 		SourceMode.MOCK:
 			return "MOCK trace '%s'" % mock_trace
 		SourceMode.DEV_MOUSE:
-			return "DEV_MOUSE (mouse head, fixed 70 bpm)"
+			return "DEV_MOUSE (mouse head, %s)" % ("OSC heart rate" if _osc_heart_rate else "fixed 70 bpm")
 	return "LIVE :%d  head=%s  hr=%s" % [
 		live_port,
 		"EmotiBit" if live_orientation_active() else "mouse (no live data)",
@@ -156,11 +164,37 @@ func _on_fallback_orientation(euler: Vector3) -> void:
 		orientation_updated.emit(euler)
 
 
+func _on_fallback_pitch_rate(rate: float) -> void:
+	if not live_orientation_active():
+		pitch_rate_updated.emit(rate)
+
+
+func _on_pitch_rate_sample(rate: float) -> void:
+	pitch_rate_updated.emit(rate)
+
+
 func _on_orientation_sample(euler: Vector3) -> void:
 	orientation_updated.emit(euler)
 
 
+## osc_receiver.gd: a real bpm. The first one drops any baseline built on the
+## source's stand-in rate, and from then on the stand-in is ignored.
+func set_osc_heart_rate(bpm: float) -> void:
+	if not _osc_heart_rate:
+		_osc_heart_rate = true
+		_baseline_samples.clear()
+		_baseline_elapsed = 0.0
+		_baseline_done = false
+		resting_bpm = -1.0
+	_report_heart_rate(bpm, true)
+
+
 func _on_heart_rate_sample(bpm: float, valid: bool) -> void:
+	if not _osc_heart_rate:
+		_report_heart_rate(bpm, valid)
+
+
+func _report_heart_rate(bpm: float, valid: bool) -> void:
 	heart_rate_updated.emit(bpm, valid)
 	if not _baseline_done and valid:
 		_baseline_samples.append(bpm)

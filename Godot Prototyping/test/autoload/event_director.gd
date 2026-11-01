@@ -6,9 +6,10 @@ extends Node
 ## cave by following the wind; supersedes the brief's music ending):
 ##
 ##   E1 CALM     fall in, bring the heart rate down       (this file)
-##   E2 FOCUS    pick the outside wind out of the noise   (escape_level.gd)
-##   E3 STEALTH  stay calm while an animal passes         (stealth_encounter.gd)
-##   E4 ESCAPE   dodge falling rocks up the climb         (rockfall_climb.gd)
+##   E2 WIND     the bat says to follow the wind          (escape_level.gd)
+##   E3 RIVER    jump the river when the current is weak  (river_crossing.gd)
+##   E4 STEALTH  stay calm while an animal passes         (stealth_encounter.gd)
+##   E5 ESCAPE   dodge falling rocks up the climb         (rockfall_climb.gd)
 ##
 ## Event 1 lives here because it needs nothing from a level. Events 2-4 need
 ## the level's geometry, so the level runs them and reports in through
@@ -19,8 +20,8 @@ extends Node
 ##
 ## Playtest keys (all events):
 ##   F6           skip: finish the current event now (or start the armed one)
-##   Ctrl+1..4    jump straight to Event 1..4 (teleports to its checkpoint)
-##   F11          force a failure (stealth: caught now; climb: hit now)
+##   Ctrl+1..5    jump straight to Event 1..5 (teleports to its checkpoint)
+##   F11          force a failure (river: swept; stealth: caught now; climb: hit now)
 ##   F4           CALM assist: a scripted heart-rate descent (E1 and E3)
 ## Launch straight into an event: `-- --event=3` or ECHOES_EVENT=3.
 ##
@@ -31,22 +32,22 @@ extends Node
 signal event_started(event_id: StringName)
 signal event_completed(event_id: StringName)
 
-enum Event { CALM, FOCUS, STEALTH, ESCAPE, DONE }
+enum Event { CALM, WIND, RIVER, STEALTH, ESCAPE, DONE }
 
-const EVENT_IDS: Array[StringName] = [&"event_one", &"event_two", &"event_three", &"event_four", &"done"]
-const EVENT_NAMES: Array[String] = ["E1 CALM", "E2 FOCUS", "E3 STEALTH", "E4 ESCAPE", "DONE"]
+const EVENT_IDS: Array[StringName] = [&"event_one", &"event_two", &"event_three", &"event_four", &"event_five", &"done"]
+const EVENT_NAMES: Array[String] = ["E1 CALM", "E2 WIND", "E3 RIVER", "E4 STEALTH", "E5 ESCAPE", "DONE"]
 
 ## The event the run is on: running if event_running, otherwise armed and
 ## waiting for the player to reach its trigger.
 var current_event: Event = Event.CALM
 var event_running: bool = false
 
-## The level running Events 2-4 (escape_level.gd), registered from its
+## The level running Events 2-5 (escape_level.gd), registered from its
 ## _ready. Null in scenes that only have Event 1 (the old cave), where the
 ## jump keys just say so.
 var level: Node = null
 
-## Launch-time jump target (1-4), from --event=N / ECHOES_EVENT. 0 = start
+## Launch-time jump target (1-5), from --event=N / ECHOES_EVENT. 0 = start
 ## from the top. Consumed by the level when it registers.
 var start_at_event: int = 0
 
@@ -86,13 +87,13 @@ func register_level(new_level: Node) -> void:
 		level.call_deferred(&"jump_to", (target - 1) as Event)
 	elif skip_intro:
 		_event_one_pending = false
-		current_event = Event.FOCUS
+		current_event = Event.WIND
 		print("EventDirector: skipping Event 1 (skip_intro).")
 	else:
 		_event_one_pending = true
 
 
-## Ctrl+1..4. Leaves whatever is running, cleanly, and starts the target.
+## Ctrl+1..5. Leaves whatever is running, cleanly, and starts the target.
 func jump_to(event: Event) -> void:
 	if level == null:
 		print("EventDirector: no escape level in this scene; jump keys do nothing here.")
@@ -116,7 +117,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			level.force_fail(current_event)
 		get_viewport().set_input_as_handled()
 	else:
-		for i in 4:
+		for i in 5:
 			if event.is_action_pressed(StringName("jump_event_%d" % (i + 1))):
 				jump_to(i as Event)
 				get_viewport().set_input_as_handled()
@@ -235,7 +236,7 @@ func _ready() -> void:
 		if arg.begins_with("--event="):
 			event_arg = arg.trim_prefix("--event=")
 	if event_arg.is_valid_int():
-		start_at_event = clampi(event_arg.to_int(), 1, 4)
+		start_at_event = clampi(event_arg.to_int(), 1, 5)
 
 
 func _process(_delta: float) -> void:

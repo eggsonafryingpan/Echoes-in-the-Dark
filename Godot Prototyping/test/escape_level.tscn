@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://spatial_sfx_source.tscn" id="sfxsrc"]
 [ext_resource type="Script" path="res://scripts/events/escape_level.gd" id="s_level"]
 [ext_resource type="Script" path="res://scripts/events/exit_wind.gd" id="s_wind"]
+[ext_resource type="Script" path="res://scripts/events/river_crossing.gd" id="s_river"]
 [ext_resource type="Script" path="res://scripts/events/stealth_encounter.gd" id="s_stealth"]
 [ext_resource type="Script" path="res://scripts/events/rockfall_climb.gd" id="s_climb"]
 [ext_resource type="Script" path="res://focusable.gd" id="s_focus"]
@@ -34,16 +35,22 @@ albedo_color = Color(0.5, 0.44, 0.36, 1)
 roughness = 1.0
 
 [sub_resource type="BoxShape3D" id="shape_E2_WindChamber"]
-size = Vector3(14, 3, 9)
+size = Vector3(18, 3, 8)
+
+[sub_resource type="BoxShape3D" id="shape_E3_River"]
+size = Vector3(18, 3, 5.5)
+
+[sub_resource type="BoxShape3D" id="shape_RiverBarrier"]
+size = Vector3(20, 8, 3)
 
 [sub_resource type="BoxShape3D" id="shape_E3_Stealth"]
-size = Vector3(6, 3, 3)
+size = Vector3(8, 3, 3)
 
 [sub_resource type="BoxShape3D" id="shape_E4_Climb"]
-size = Vector3(5, 3, 3)
+size = Vector3(8, 3, 3)
 
 [sub_resource type="BoxShape3D" id="shape_Exit"]
-size = Vector3(8, 3, 6)
+size = Vector3(10, 3, 6)
 
 [node name="EscapeLevel" type="Node3D"]
 script = ExtResource("s_level")
@@ -66,81 +73,81 @@ material = SubResource("rock_mat")
 [node name="CutLanding" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 0)
-size = Vector3(10, 40, 10)
+size = Vector3(13, 40, 10)
 
 [node name="CutPassageA" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, -12.5)
-size = Vector3(4, 40, 15)
+size = Vector3(6, 40, 15)
 
 [node name="CutWindChamber" type="CSGBox3D" parent="CaveBody"]
 operation = 2
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, -26)
-size = Vector3(14, 40, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, -28)
+size = Vector3(18, 40, 16)
 
 [node name="CutPassageB" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 20, -38)
-size = Vector3(4, 40, 12)
+size = Vector3(6, 40, 12)
 
 [node name="CutFork" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 20, -48)
-size = Vector3(8, 40, 8)
+size = Vector3(11, 40, 10)
 
 [node name="CutBranch" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 20, -48)
-size = Vector3(14, 40, 4)
+size = Vector3(14, 40, 6)
 
 [node name="CutDen" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 20, -48)
-size = Vector3(8, 40, 8)
+size = Vector3(10, 40, 10)
 
 [node name="CutPassageC" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 20, -56)
-size = Vector3(4, 40, 8)
+size = Vector3(6, 40, 8)
 
 [node name="CutStealthChamber" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 20, -69)
-size = Vector3(16, 40, 18)
+size = Vector3(20, 40, 18)
 
 [node name="CutAlcoveWest" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 20, -70)
-size = Vector3(12, 40, 12)
+size = Vector3(12, 40, 14)
 
 [node name="CutAlcoveEast" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 20, -69)
-size = Vector3(6, 40, 10)
+size = Vector3(6, 40, 12)
 
 [node name="CutPassageD" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 20, -89)
-size = Vector3(4, 40, 22)
+size = Vector3(6, 40, 22)
 
 [node name="CutShaft" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 20, -118.5)
-size = Vector3(5, 40, 37)
+size = Vector3(7, 40, 37)
 
 [node name="CutExitTop" type="CSGBox3D" parent="CaveBody"]
 operation = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 20, -141.5)
-size = Vector3(8, 40, 11)
+size = Vector3(10, 40, 11)
 
 [node name="Ramp" type="CSGBox3D" parent="CaveBody"]
 transform = Transform3D(1, 0, 0, 0, 0.986394, -0.164399, 0, 0.164399, 0.986394, 7, 2.4931, -118)
-size = Vector3(5, 1, 37.5966)
+size = Vector3(7, 1, 37.5966)
 material = SubResource("ramp_mat")
 
 [node name="ExitPlatform" type="CSGBox3D" parent="CaveBody"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2.5, -141.65)
-size = Vector3(8, 7, 10.7)
+size = Vector3(10, 7, 10.7)
 material = SubResource("ramp_mat")
 
 [node name="player" parent="." instance=ExtResource("player")]
@@ -187,6 +194,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
 [node name="E2_WindChamber" type="Marker3D" parent="Checkpoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -18)
 
+[node name="E3_RiverBank" type="Marker3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -25.5)
+
 [node name="E3_BeforeStealth" type="Marker3D" parent="Checkpoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -55)
 
@@ -196,10 +206,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -97)
 [node name="Triggers" type="Node3D" parent="."]
 
 [node name="E2_WindChamber" type="Area3D" parent="Triggers" groups=["debug_zone"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -26.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -24.5)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Triggers/E2_WindChamber"]
 shape = SubResource("shape_E2_WindChamber")
+
+[node name="E3_River" type="Area3D" parent="Triggers" groups=["debug_zone"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -26.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Triggers/E3_River"]
+shape = SubResource("shape_E3_River")
 
 [node name="E3_Stealth" type="Area3D" parent="Triggers" groups=["debug_zone"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1.5, -62)
@@ -254,27 +270,29 @@ unit_size = 6.0
 max_distance = 60.0
 max_db = 12.0
 
-[node name="Focusable" type="Node3D" parent="ExitWind"]
-script = ExtResource("s_focus")
-audio_player_path = NodePath("../Player")
-describable_path = NodePath("../Describable")
-focus_cone_start_deg = 18.0
-focus_seconds_required = 8.0
-focus_seconds_required_min = 5.0
-fail_forward_seconds = 45.0
-activation_radius = 20.0
-min_volume_db = -26.0
-max_volume_db = 2.0
-revealed_volume_db = -6.0
-revealed_bus = &"Priority"
-revealed_label = "wind from outside"
-reveal_line = &"e2_reveal"
-
 [node name="Describable" type="Node3D" parent="ExitWind"]
 script = ExtResource("s_desc")
 label = "a faint draft"
 priority = 50
 scan_radius = 14.0
+
+[node name="River" type="Node3D" parent="."]
+script = ExtResource("s_river")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -30.5)
+trigger_path = NodePath("../Triggers/E3_River")
+river_source_path = NodePath("../CaveNoise/River")
+
+[node name="NearBank" type="Marker3D" parent="River"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+
+[node name="FarBank" type="Marker3D" parent="River"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.5)
+
+[node name="Barrier" type="StaticBody3D" parent="River" groups=["not_a_wall"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="River/Barrier"]
+shape = SubResource("shape_RiverBarrier")
 
 [node name="Den" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, -48)
@@ -334,6 +352,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0.8, -71)
 [node name="Climb" type="Node3D" parent="."]
 script = ExtResource("s_climb")
 trigger_path = NodePath("../Triggers/E4_Climb")
+shaft_half_width = 2.9
 
 [node name="ShaftStart" type="Marker3D" parent="Climb"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -100)
@@ -364,16 +383,16 @@ bus = &"Environmental"
 volume_db = -5.0
 label = "water dripping"
 
-[node name="StreamChamber" parent="CaveNoise" instance=ExtResource("sfxsrc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -28.5)
-sfx_name = &"river_flow_small"
-bus = &"Environmental"
-volume_db = -9.0
+[node name="River" parent="CaveNoise" instance=ExtResource("sfxsrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -30.5)
+sfx_name = &"river_flow_large"
+bus = &"Priority"
+volume_db = 6.0
 continuous = true
-label = "a narrow stream"
-max_distance = 11.0
-unit_size = 2.5
-body_size = Vector3(1.2, 0, 4)
+label = "a river"
+max_distance = 30.0
+unit_size = 6.0
+body_size = Vector3(18, 0, 3)
 
 [node name="DripStealth" parent="CaveNoise" instance=ExtResource("sfxsrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -76)

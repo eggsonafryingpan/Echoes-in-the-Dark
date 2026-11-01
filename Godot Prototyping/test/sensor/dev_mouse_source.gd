@@ -32,6 +32,8 @@ extends SensorSource
 
 var _yaw: float = 0.0
 var _pitch: float = 0.0
+## Pitch moved since the last frame, for the pitch rate.
+var _pitch_moved: float = 0.0
 
 
 func start() -> void:
@@ -50,12 +52,16 @@ func _input(event: InputEvent) -> void:
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		return
 	_yaw -= event.relative.x * mouse_sensitivity
+	var before := _pitch
 	_pitch -= event.relative.y * mouse_sensitivity
 	_pitch = clampf(_pitch, deg_to_rad(-pitch_limit_deg), deg_to_rad(pitch_limit_deg))
+	_pitch_moved += _pitch - before
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	orientation_sample.emit(Vector3(_pitch, _yaw, 0.0))
+	pitch_rate_sample.emit(_pitch_moved / maxf(delta, 0.001))
+	_pitch_moved = 0.0
 	if not emit_heart_rate:
 		return
 	# Constant plausible resting rate rather than nothing, so HR-dependent
