@@ -1,7 +1,6 @@
 extends Control
 
 func _ready():
-	$VBoxContainer/Button.pressed.connect(_on_baseline_pressed)
 	$VBoxContainer/Button2.pressed.connect(_on_start_pressed)
 	$VBoxContainer/Button4.pressed.connect(_on_quit_pressed)
 	$VBoxContainer/Button3.pressed.connect(_on_minigame_pressed)
@@ -14,8 +13,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		EventDirector.skip_intro = true
 		_on_start_pressed()
 
-func _on_baseline_pressed():
-	print("Baseline calibration starting...")
+
 
 ## The escape blockout (E1-E4). The original cave, echoes_in_the_dark.tscn,
 ## is untouched and still runs on its own (Run Current Scene).

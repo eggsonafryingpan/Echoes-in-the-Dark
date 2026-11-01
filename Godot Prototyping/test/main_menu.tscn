@@ -30,10 +30,6 @@ alignment = 1
 layout_mode = 2
 text = "Echoes in the Dark"
 
-[node name="Button" type="Button" parent="VBoxContainer" unique_id=1061645064]
-layout_mode = 2
-text = "Set Baseline"
-
 [node name="Button2" type="Button" parent="VBoxContainer" unique_id=1067574970]
 layout_mode = 2
 text = "Start Game"
