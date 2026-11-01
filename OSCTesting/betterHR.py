@@ -70,7 +70,7 @@ def sendElevated():
 def update():
     global heartrate,sensors
     ppg = sensors["PPG:RED"]["raw_data"]
-    if ppg.length() == 0:
+    if ppg == []:
         return
     filtered_ppg = hp.filter_signal(
         ppg,
