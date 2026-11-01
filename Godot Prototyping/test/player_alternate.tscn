@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://c5jwtqaaj0kdx" path="res://osc_receiver.gd" id="5_suiw2"]
 [ext_resource type="Script" uid="uid://by563o2v7gv0e" path="res://osc_receiver_imu.gd" id="6_a40fu"]
 [ext_resource type="Script" uid="uid://w8v0v76wc4r2" path="res://addons/godOSC/scripts/OSCServer.gd" id="7_ojd53"]
+[ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="8_rtap"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4j7iv"]
 
@@ -34,9 +35,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
 [node name="Camera3D" type="Camera3D" parent="CamOrigin" unique_id=1371886751]
 
-[node name="SteamAudioListener" type="SteamAudioListener" parent="CamOrigin/Camera3D" unique_id=1632859968]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2, 0)
-
 [node name="VisionRaycast" type="RayCast3D" parent="CamOrigin/Camera3D" unique_id=587649564]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.58573174, -0.6821561)
 target_position = Vector3(0, 0, -100)
@@ -46,14 +44,13 @@ collide_with_areas = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.7373617, -0.5788397)
 script = ExtResource("2_j48we")
 
-[node name="Chime" type="SteamAudioPlayer" parent="CamOrigin/Camera3D/FocusDetection" unique_id=1436250904]
-distance_attenuation = true
-air_absorption = true
+[node name="Chime" type="AudioStreamPlayer3D" parent="CamOrigin/Camera3D/FocusDetection" unique_id=1436250904]
 transform = Transform3D(1, -1.1175849e-08, 3.8742928e-07, 1.1175844e-08, 1, 1.1175784e-08, -3.8742928e-07, -1.117578e-08, 1, 1.3785775, 2.7508378, 0.7154719)
 stream = ExtResource("3_j48we")
 attenuation_model = 3
 volume_db = 3.392
 panning_strength = 0.0
+script = ExtResource("8_rtap")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CamOrigin/Camera3D/FocusDetection" unique_id=656119960]
 transform = Transform3D(2, 0, 0, 0, -8.742278e-08, -2, 0, 2, -8.742278e-08, 0, 1.1301115, -4.775784)

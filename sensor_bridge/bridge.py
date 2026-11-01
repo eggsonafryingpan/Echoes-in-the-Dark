@@ -65,6 +65,7 @@ class SensorBridge:
     # --- incoming EmotiBit OSC ----------------------------------------------
 
     def handle_message(self, address: str, *values) -> None:
+        print(f"packet received on :{self.args.listen_port}  {address}  {list(values)}", flush=True)
         tail = address.rsplit("/", 1)[-1]
         if ":" in tail:
             sensor, axis = tail.split(":", 1)
@@ -113,7 +114,8 @@ class SensorBridge:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--listen-port", type=int, default=12346, help="Port EmotiBit's OSC stream arrives on")
+    parser.add_argument("--in-port", "--listen-port", dest="listen_port", type=int, default=12346,
+                        help="Port EmotiBit's OSC stream arrives on (EmotiBit Oscilloscope sends to 12345 by default)")
     parser.add_argument("--godot-host", default="127.0.0.1")
     parser.add_argument("--godot-port", type=int, default=8687, help="Port Godot's OSCServer/GodOSC listens on")
     parser.add_argument("--imu-rate", type=float, default=25.0, help="IMU packet rate, Hz")

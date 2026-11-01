@@ -12,6 +12,15 @@
 #
 #   ./generate_voices.sh              render with the Joelle (Enhanced) voice
 #   VOICE=Samantha ./generate_voices.sh   use a different macOS voice
+#   STRETCH=0.9 ./generate_voices.sh      change how slow the bat talks
+#
+# Pacing: the bat should sound like someone talking to you, not reading a
+# script. Three things slow it down, because the neural voices mostly
+# ignore `say -r` on its own:
+#   RATE      words per minute passed to `say -r` (default 120)
+#   PAUSE_MS  silence added after each sentence (default 350)
+#   STRETCH   time-stretch at the same pitch, via stretch.swift
+#             (default 0.85 = 85% speed; 1 turns it off)
 #
 # Output format depends on what is installed: mp3 if ffmpeg or lame is
 # present, otherwise 16-bit wav via afconvert, which ships with macOS. The
@@ -22,6 +31,9 @@
 set -euo pipefail
 
 VOICE="${VOICE:-Joelle (Enhanced)}"
+RATE="${RATE:-120}"
+PAUSE_MS="${PAUSE_MS:-350}"
+STRETCH="${STRETCH:-0.85}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LINES_FILE="$HERE/lines.txt"
 OUT_DIR="$HERE/../assets/sfx/voice"
@@ -74,7 +86,17 @@ mkdir -p "$OUT_DIR"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-echo "voice:   $VOICE"
+STRETCHER=""
+if [[ "$STRETCH" != "1" ]]; then
+	if ! command -v swiftc >/dev/null 2>&1; then
+		echo "ERROR: STRETCH=$STRETCH needs swiftc (xcode-select --install), or run with STRETCH=1." >&2
+		exit 1
+	fi
+	STRETCHER="$TMP_DIR/stretch"
+	swiftc -O "$HERE/stretch.swift" -o "$STRETCHER"
+fi
+
+echo "voice:   $VOICE  (rate $RATE, pause ${PAUSE_MS}ms, stretch $STRETCH)"
 echo "encoder: $ENCODER -> .$EXT"
 echo "output:  $OUT_DIR"
 echo
@@ -111,8 +133,16 @@ while IFS= read -r raw || [[ -n "$raw" ]]; do
 		fi
 	done
 
+	# A beat of silence after each sentence. Only in what `say` hears:
+	# lines.txt (and the game's TTS fallback, which reads it) stays plain.
+	spoken="$(printf '%s' "$text" | sed -E "s/([.?!]) /\1 [[slnc $PAUSE_MS]] /g")"
+
 	# </dev/null so `say` can never consume the lines.txt we are reading.
-	say -v "$VOICE" "$text" -o "$TMP_DIR/$id.aiff" </dev/null
+	say -v "$VOICE" -r "$RATE" "$spoken" -o "$TMP_DIR/$id.aiff" </dev/null
+	if [[ -n "$STRETCHER" ]]; then
+		"$STRETCHER" "$TMP_DIR/$id.aiff" "$TMP_DIR/$id.slow.aiff" "$STRETCH"
+		mv "$TMP_DIR/$id.slow.aiff" "$TMP_DIR/$id.aiff"
+	fi
 	encode "$TMP_DIR/$id.aiff" "$OUT_DIR/$id.$EXT"
 	IDS+=("$id")
 	echo "  rendered $id.$EXT"

@@ -65,6 +65,8 @@ signal return_pinged(entry: Dictionary)
 ## Bat voice gain. Above 0 dB so lines sit clearly over the environmental
 ## bed; the runtime-TTS fallback always speaks at the OS maximum.
 @export var voice_volume_db: float = 8.0
+## Silence between two queued lines, so they don't run back to back.
+@export var line_gap_seconds: float = 0.9
 
 ## The voice the runtime-TTS fallback speaks unrendered lines in -- change
 ## this one line to swap it. An exact id from DisplayServer.tts_get_voices()
@@ -148,6 +150,9 @@ var _ping_pool: Array[AudioStreamPlayer3D] = []
 var _voice_queue: Array = []
 var _voice_cache: Dictionary = {}
 var _speaking_line: bool = false
+## Bumped by shut_up(), so a line gap still counting down when the bat is
+## silenced doesn't start the next line afterwards.
+var _voice_serial: int = 0
 var _line_text: Dictionary = {}
 var _fallback_warned: Dictionary = {}
 var _tts_voice: String = ""
@@ -494,9 +499,16 @@ func _setup_tts_fallback() -> void:
 
 
 func shut_up() -> void:
+	_voice_serial += 1
 	_voice_queue.clear()
 	_speaking_line = false
 	AudioDirector.bat_source.stop()
+
+
+## Seconds the rendered clip for line_id runs, or -1 if it has none.
+func line_length(line_id: StringName) -> float:
+	var stream := _voice_clip(line_id)
+	return stream.get_length() if stream != null else -1.0
 
 
 func is_speaking() -> bool:
@@ -523,6 +535,17 @@ func _pump_voice() -> void:
 
 
 func _on_bat_source_finished() -> void:
+	if not _speaking_line:
+		return
+	if _voice_queue.is_empty():
+		_speaking_line = false
+		return
+	# Still "speaking" through the gap, so callers waiting on is_speaking()
+	# don't jump in between two lines.
+	var serial := _voice_serial
+	await get_tree().create_timer(line_gap_seconds).timeout
+	if serial != _voice_serial:
+		return
 	_speaking_line = false
 	_pump_voice()
 

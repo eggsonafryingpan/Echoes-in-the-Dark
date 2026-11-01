@@ -146,9 +146,11 @@ func _test_event_one() -> void:
 	print("[E1 CALM]")
 	_check(await _until(func(): return EventDirector.event_one_active, 5.0), "Event 1 starts on load")
 	_check(await _until(func(): return GameState.input_locked, 3.0), "input locked during the cold open")
-	_check(await _until(func(): return EventDirector.calm_active, 30.0), "CALM starts after the bat's line")
+	_check(await _until(func(): return EventDirector.calm_active, 60.0), "CALM starts after the bat's lines")
+	_check(not await _until(func(): return not EventDirector.calm_active, 12.0),
+			"CALM does not pass on time alone with no heart-rate drop")
 	EventDirector.start_calm_assist()
-	_check(await _until(func(): return EventDirector.current_event == Event.FOCUS, 40.0),
+	_check(await _until(func(): return EventDirector.current_event == Event.FOCUS, 120.0),
 			"F4 assist brings HR down -> Event 1 completes")
 	_check(not GameState.input_locked, "input unlocked after Event 1")
 

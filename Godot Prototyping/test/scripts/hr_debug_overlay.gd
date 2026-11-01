@@ -122,8 +122,9 @@ func _readout(calm: Dictionary) -> String:
 			"--" if calm.smoothed_bpm <= 0.0 else "%.1f" % calm.smoothed_bpm,
 			drop, calm.required_drop,
 		])
-		lines.append("     dwell pass at %.0fs, fail-forward at %.0fs%s" % [
-			calm.dwell_seconds, calm.fail_forward_seconds,
+		lines.append("     %s, fail-forward at %.0fs%s" % [
+			"measuring start rate" if calm.referencing else "held %.1f / %.0fs" % [calm.hold_t, calm.hold_seconds],
+			calm.fail_forward_seconds,
 			"   F4 ASSIST: CALM reads %.1f" % calm.assist_bpm if calm.assist_bpm >= 0.0 else "",
 		])
 	else:

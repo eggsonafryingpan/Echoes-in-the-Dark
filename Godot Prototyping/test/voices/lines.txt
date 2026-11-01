@@ -14,9 +14,13 @@
 # and are expected to change repeatedly -- that is what this pipeline is for.
 
 # --- Event 1, the CALM cold open (§10) -----------------------------------
-# Names the input, seeds it, never instructs -- "hold still" is exactly what
-# this line must not say.
-event1_bat_startle | Woah. Your heart's pounding, I can feel it. Slow it down with me.
+# In order: after the rockfall; over the hyperventilating; before the deep
+# breathing; only if they haven't calmed by the end of the window; once
+# calm (or at the fail-forward timeout).
+event1_bat_greet | Hey! Are you okay? That was one rough fall.
+event1_bat_breathe | Okay, okay, calm down. Just breathe in, do it with me: deep breath in, hold it, and deep breath out.
+event1_bat_keep_breathing | Hey, you got this, keep breathing in and out, in and out.
+event1_bat_escape | Now that you've calmed down you look a lot better. Listen, we need to escape this cave together. I'm a robobat, and I've been stuck down in this cave for forever. Thankfully none of the other bats can tell I'm any different, but I'm getting sick of this cave and I need to leave to recharge my battery soon. With the remaining energy I have, I can activate echolocation and help us find the exit together. It's been a while since I've tried this... press the button E, that should activate it.
 
 # --- CALM coaching (§8) --------------------------------------------------
 # calm_guide is the one line EventDirector actually fires today (the second

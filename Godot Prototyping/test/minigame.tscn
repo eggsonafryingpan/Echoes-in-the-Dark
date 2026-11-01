@@ -7,6 +7,7 @@
 [ext_resource type="AudioStream" uid="uid://rmbhecrp0xbe" path="res://sounds/DM.mp3" id="5_hd7sm"]
 [ext_resource type="AudioStream" uid="uid://4dmqpf32kfip" path="res://sounds/GM.mp3" id="6_7yo4d"]
 [ext_resource type="AudioStream" uid="uid://ks1xv3ij2hls" path="res://sounds/AM.mp3" id="7_bwg5g"]
+[ext_resource type="Script" uid="uid://dkb8ltjc6067n" path="res://addons/raytraced_audio/raytraced_audio_player_3d.gd" id="8_rtap"]
 
 [sub_resource type="Environment" id="Environment_4bqly"]
 background_mode = 2
@@ -36,9 +37,6 @@ point_count = 8
 [sub_resource type="BoxShape3D" id="BoxShape3D_jv6wj"]
 
 [node name="Node3D" type="Node3D" unique_id=254767924]
-
-[node name="SteamAudioConfig" type="SteamAudioConfig" parent="." unique_id=2089247027]
-transform = Transform3D(1, 7.4505797e-09, -1.6543608e-24, -7.4505797e-09, 1, 0, 0, 0, 1, -1.4305115e-06, 2.9802322e-08, 7.1525574e-07)
 
 [node name="player" parent="." unique_id=1773885676 instance=ExtResource("1_4bqly")]
 
@@ -79,35 +77,30 @@ mesh = SubResource("BoxMesh_sbew2")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Path3D/PathFollow3D/Node3D/Area3D" unique_id=22380766]
 shape = SubResource("BoxShape3D_jv6wj")
 
-[node name="DM" type="SteamAudioPlayer" parent="Path3D/PathFollow3D/Node3D" unique_id=708245662]
-distance_attenuation = true
-air_absorption = true
-reflection = true
+[node name="DM" type="AudioStreamPlayer3D" parent="Path3D/PathFollow3D/Node3D" unique_id=708245662]
 transform = Transform3D(-0.84704727, -3.878492e-09, -0.5315223, 0.031596046, 0.9982399, -0.05035226, 0.53058136, -0.059444133, -0.8455476, 4.7683716e-07, 0.99823976, -0.059446096)
 stream = ExtResource("5_hd7sm")
 attenuation_model = 3
 volume_db = 1.909
 panning_strength = 0.0
 bus = &"RaytracedReverb"
-emission_angle_enabled = true
+script = ExtResource("8_rtap")
 
-[node name="GM" type="SteamAudioPlayer" parent="Path3D/PathFollow3D/Node3D" unique_id=242954351]
-distance_attenuation = true
-air_absorption = true
+[node name="GM" type="AudioStreamPlayer3D" parent="Path3D/PathFollow3D/Node3D" unique_id=242954351]
 transform = Transform3D(-0.84704727, -7.0339885e-09, -0.5315223, 0.031596042, 0.9982399, -0.05035226, 0.53058136, -0.059444133, -0.8455476, 0, 0.99823964, -0.059446335)
 stream = ExtResource("6_7yo4d")
 attenuation_model = 3
 volume_db = 0.064
 panning_strength = 0.0
+script = ExtResource("8_rtap")
 
-[node name="AM" type="SteamAudioPlayer" parent="Path3D/PathFollow3D/Node3D" unique_id=1600868199]
-distance_attenuation = true
-air_absorption = true
+[node name="AM" type="AudioStreamPlayer3D" parent="Path3D/PathFollow3D/Node3D" unique_id=1600868199]
 transform = Transform3D(-0.84704727, -7.0339885e-09, -0.5315223, 0.031596042, 0.9982399, -0.05035226, 0.53058136, -0.059444133, -0.8455476, 0, 0.99823964, -0.059446335)
 stream = ExtResource("7_bwg5g")
 attenuation_model = 3
 unit_size = 6.83
 panning_strength = 0.0
 bus = &"RaytracedAmbient"
+script = ExtResource("8_rtap")
 
 [connection signal="timeout" from="Path3D/PathFollow3D/Node3D/Area3D/Timer" to="Path3D/PathFollow3D/Node3D/Area3D" method="_on_timer_timeout"]

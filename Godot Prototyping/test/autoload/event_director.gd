@@ -142,18 +142,18 @@ func _skip_current() -> void:
 # Runs top to bottom. Each step is its own small function so the sequence
 # reads as a list rather than one long coroutine:
 #
-#   lock      movement, scan and FOCUS off -- the player is on the ground
-#   startle   falling whoosh, then the rock tumble landing on top of it
-#   elevated  panicked breathing + fast audible heartbeat + bilateral pulse
-#   prompt    the bat names the input (seeds it; never says "hold still")
-#   calm      the Phase 5 CALM gate exactly as-is, not reimplemented here
-#   resolve   bat confirms, environmental layer returns, controls unlock
+#   lock            movement, scan and FOCUS off -- the player is on the ground
+#   rockfall        a cascade of loud, overlapping crashes, not one thud
+#   greet           the bat finds you ("Are you okay?")
+#   hyperventilate  panicked breathing + fast audible heartbeat + bilateral pulse
+#   breathe_prompt  the bat talks you through one breath
+#   calm            deep breathing to follow; the CALM gate below decides
+#   resolve         the bat's story and the E prompt; controls unlock
 #
-# One sound at a time, as far as the story allows: each step hands over
-# from the last one (the whoosh fades as the tumble lands, the tumble fades
-# as the breathing takes over), spoken lines are waited out rather than
-# timed, and nothing is ever cut -- the end of the sequence fades whatever
-# is still playing.
+# Spoken lines are waited out rather than timed, with event_one_line_gap
+# of silence after each so the bat sounds like it is talking to you rather
+# than reading a script. Nothing is ever cut -- the end of the sequence
+# fades whatever is still playing.
 #
 # Skippable at any point (debug_skip_event). Whatever it is skipped from,
 # _finish_event_one always unlocks and restores -- a demo must never be
@@ -162,21 +162,32 @@ func _skip_current() -> void:
 signal event_one_step(step: StringName)
 
 const EVENT_ONE_STEPS: Array[StringName] = [
-	&"lock", &"startle", &"elevated", &"prompt", &"calm", &"resolve",
+	&"lock", &"rockfall", &"greet", &"hyperventilate", &"breathe_prompt", &"calm", &"resolve",
 ]
 
-## Beat lengths for the cold open. Short: this is the first 15 seconds a
-## demoer ever hears, and §10 budgets Event 1 at ~2.5 min total with the
-## CALM loop taking most of it.
-@export var event_one_whoosh_seconds: float = 1.6
-@export var event_one_tumble_seconds: float = 2.4
-## How long the whoosh takes to give way to the tumble, and the tumble to
-## the panicked breathing. Both recordings run far longer than their beat.
-@export var event_one_handover_seconds: float = 1.2
-## Longest a spoken line is waited out before the sequence moves on anyway.
-@export var event_one_line_timeout: float = 8.0
-## Silence after the startle line, before CALM starts listening.
-@export var event_one_prompt_gap: float = 0.6
+## The rockfall: crashes that start at these offsets (seconds), alternating
+## between the two recordings, each at its own pitch and level so the
+## repeats don't read as one sample looping. Front-loaded, then thinning
+## out as the rubble settles.
+@export var event_one_crash_offsets: Array[float] = [0.0, 0.25, 0.6, 1.0, 1.5, 2.1, 2.8, 3.6, 4.5]
+@export var event_one_crash_volume_db: Vector2 = Vector2(3.0, 8.0)
+@export var event_one_crash_pitch: Vector2 = Vector2(0.75, 1.2)
+## How long the rockfall holds after the last crash starts, then how long
+## it takes to die away under the bat's first line.
+@export var event_one_rockfall_tail_seconds: float = 1.5
+@export var event_one_handover_seconds: float = 2.0
+## How long the player hyperventilates on their own before the bat steps in.
+@export var event_one_hyperventilate_seconds: float = 5.0
+## Silence after each spoken line before the next thing happens.
+@export var event_one_line_gap: float = 1.5
+## Longest a spoken line is waited out before the sequence moves on anyway:
+## the clip's own length plus this margin, or event_one_line_timeout for a
+## line with no rendered clip.
+@export var event_one_line_margin: float = 3.0
+@export var event_one_line_timeout: float = 15.0
+## The calm-down window: how long the player breathes with the deep
+## breathing before the bat checks in again, if they haven't calmed by then.
+@export var event_one_calm_window_seconds: float = 20.0
 ## Fade on whatever is still playing when Event 1 ends (0.3 s when skipped).
 @export var event_one_end_fade_seconds: float = 1.5
 
@@ -256,28 +267,53 @@ func _run_event_one_step(step: StringName) -> void:
 	match step:
 		&"lock":
 			GameState.input_locked = true
-		&"startle":
-			_play_event_sfx(&"whoosh", &"event1_falling_whoosh")
-			await _event_wait(event_one_whoosh_seconds)
-			_play_event_sfx(&"tumble", &"event1_rock_tumble")
-			_fade_out_event_sfx(&"whoosh", event_one_handover_seconds)
-			await _event_wait(event_one_tumble_seconds)
-		&"elevated":
-			_fade_out_event_sfx(&"tumble", event_one_handover_seconds)
+		&"rockfall":
+			await _rockfall()
+		&"greet":
+			for i in event_one_crash_offsets.size():
+				_fade_out_event_sfx(StringName("crash_%d" % i), event_one_handover_seconds)
+			await _event_wait(event_one_handover_seconds * 0.5)
+			await _bat_line(&"event1_bat_greet")
+		&"hyperventilate":
 			_play_event_sfx(&"breathing", &"breathing_panicked", true)
 			_play_event_sfx(&"heartbeat", &"heartbeat_elevated", true)
 			await _scripted_pulse()
-		&"prompt":
-			BatCompanion.say(&"event1_bat_startle")
-			await _await_bat_quiet(event_one_line_timeout)
-			await _event_wait(event_one_prompt_gap)
+			await _event_wait(event_one_hyperventilate_seconds - 8 * 0.32)
+		&"breathe_prompt":
+			await _bat_line(&"event1_bat_breathe")
 		&"calm":
-			start_calm_event()
+			start_calm_event(true, &"event1_bat_keep_breathing", 0.0, event_one_calm_window_seconds)
 			while calm_active and not _event_one_skip:
 				await get_tree().process_frame
+			await _event_wait(event_one_line_gap)
 		&"resolve":
-			BatCompanion.say(&"calm_recovered")
-			await _await_bat_quiet(event_one_line_timeout)
+			await _bat_line(&"event1_bat_escape")
+
+
+## Many crashes layered on top of each other, each a beat after the last,
+## with a controller jolt on each so the fall lands in the hands too.
+func _rockfall() -> void:
+	var streams: Array[StringName] = [&"event1_rock_tumble", &"event1_falling_whoosh"]
+	var started := 0.0
+	for i in event_one_crash_offsets.size():
+		await _event_wait(event_one_crash_offsets[i] - started)
+		started = event_one_crash_offsets[i]
+		if _event_one_skip:
+			return
+		_play_event_sfx(StringName("crash_%d" % i), streams[i % streams.size()], false,
+				randf_range(event_one_crash_volume_db.x, event_one_crash_volume_db.y),
+				randf_range(event_one_crash_pitch.x, event_one_crash_pitch.y))
+		Haptics.pulse_both(1.0, 0.15)
+	await _event_wait(event_one_rockfall_tail_seconds)
+
+
+## Says a line, waits it out, then leaves a real pause before moving on.
+func _bat_line(line_id: StringName) -> void:
+	BatCompanion.say(line_id)
+	var length := BatCompanion.line_length(line_id)
+	await _await_bat_quiet(length + event_one_line_margin if length > 0.0 else event_one_line_timeout)
+	if not _event_one_skip:
+		await _event_wait(event_one_line_gap)
 
 
 ## Always runs, skipped or not. Anything the sequence turned on gets faded
@@ -340,7 +376,7 @@ func _await_bat_quiet(timeout: float) -> void:
 ## A name with no delivered asset is skipped entirely (missing = silent).
 ## Warned once per name so the gap stays visible in the log.
 func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = false,
-		volume_db: float = 0.0) -> void:
+		volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
 	if not SfxLibrary.has_stream(sfx_name):
 		if not _missing_sfx_warned.has(sfx_name):
 			_missing_sfx_warned[sfx_name] = true
@@ -360,6 +396,7 @@ func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = fals
 		stream.loop = true
 	_event_players[key].stream = stream
 	_event_players[key].volume_db = volume_db
+	_event_players[key].pitch_scale = pitch_scale
 	_event_players[key].play()
 
 
@@ -400,23 +437,23 @@ func _event_wait(seconds: float) -> void:
 
 # --- CALM (§8, §13 Phase 5) ----------------------------------------------
 #
-# Escalation ladder, all present, not just one:
-#   1. Start-of-event reference; downward trend from it (motion-gated,
-#      heavily smoothed -- see calm_smoothing).
-#   2. Generous threshold at t=0 (calm_generous_drop_bpm).
-#   3. Auto-relax: the required drop shrinks toward calm_relaxed_drop_bpm
-#      over calm_relax_seconds.
-#   4. OR conditions: HR-drop OR dwell time alone (calm_dwell_seconds).
-#      Breathing-slowing is NOT implemented as a separate OR-branch --
-#      no sensor in this pipeline reports respiration (brief §3.1: EDA and
-#      temperature are unused, and respiration is explicitly "not
-#      required" -- SensorBridge only ever forwards orientation + HR).
-#      Flagged here rather than faked with an invented signal.
-#   5. Escalating in-fiction assistance: bat's own breathing grows audible
-#      (calm_hint_1_seconds), then a spoken guided count
-#      (calm_hint_2_seconds) -- never "hold still"; the guide produces the
-#      calming, it doesn't request it.
-#   6. Fail-forward timeout (calm_fail_forward_seconds): completes
+# Success has to be a real calm-down, not a momentary dip:
+#   1. Reference: the mean rate over the first calm_reference_seconds of
+#      valid samples, not a single reading that might be a spike.
+#      Motion-gated: only valid samples count.
+#   2. Required drop from that reference: calm_strict_drop_bpm at first,
+#      easing to calm_relaxed_drop_bpm over calm_relax_seconds.
+#   3. Held: the smoothed rate must stay at least that far down for
+#      calm_hold_seconds in a row. Bouncing back above the line resets it.
+#      There is no "passes on time alone" branch any more -- that is what
+#      made it say "better" when nothing had changed.
+#      Breathing-slowing is not an OR-branch either: no sensor in this
+#      pipeline reports respiration (brief §3.1).
+#   4. Escalating in-fiction assistance: deep breathing to follow
+#      (calm_hint_1_seconds), then a spoken line (calm_hint_2_seconds) --
+#      never "hold still"; the guide produces the calming, it doesn't
+#      request it. Event 1 starts both sooner (see start_calm_event).
+#   5. Fail-forward timeout (calm_fail_forward_seconds): completes
 #      regardless. No lockout is structurally possible.
 #
 # The same machinery runs during E3's stealth encounter, started with
@@ -430,13 +467,14 @@ func _event_wait(seconds: float) -> void:
 # feels genuinely the player's own.
 
 signal calm_progress(fraction: float)
-signal calm_completed(reason: StringName)  # &"hr_drop" | &"dwell" | &"fail_forward" | &"skipped" | ...
+signal calm_completed(reason: StringName)  # &"hr_drop" | &"fail_forward" | &"skipped" | ...
 
-@export var calm_generous_drop_bpm: float = 5.0
-@export var calm_relaxed_drop_bpm: float = 1.5
-@export var calm_relax_seconds: float = 15.0
-@export var calm_dwell_seconds: float = 18.0
-@export var calm_fail_forward_seconds: float = 28.0
+@export var calm_reference_seconds: float = 4.0
+@export var calm_strict_drop_bpm: float = 10.0
+@export var calm_relaxed_drop_bpm: float = 6.0
+@export var calm_relax_seconds: float = 40.0
+@export var calm_hold_seconds: float = 5.0
+@export var calm_fail_forward_seconds: float = 75.0
 ## Exponential-smoothing coefficient applied once per physics tick to a
 ## fresh valid HR sample -- "heavily smoothed" per §8, not a raw reading.
 @export var calm_smoothing: float = 0.03
@@ -458,6 +496,12 @@ signal calm_completed(reason: StringName)  # &"hr_drop" | &"dwell" | &"fail_forw
 var calm_active: bool = false
 
 var _calm_t: float = 0.0
+var _calm_hold_t: float = 0.0
+var _calm_ref_sum: float = 0.0
+var _calm_ref_count: int = 0
+var _calm_hint_line: StringName = &"calm_guide"
+var _calm_hint_1_at: float = 0.0
+var _calm_hint_2_at: float = 0.0
 var _calm_start_bpm: float = -1.0
 var _calm_smoothed_bpm: float = -1.0
 var _calm_hint1_fired: bool = false
@@ -469,10 +513,19 @@ var _next_pulse_t: float = 0.0
 
 ## Call once when a CALM sequence begins. self_completing = false hands the
 ## pass/fail decision to the caller (E3), which ends it with stop_calm_event().
-func start_calm_event(self_completing: bool = true) -> void:
+## hint_line and the two hint times override the defaults (calm_guide at
+## calm_hint_1/2_seconds); negative times mean "use the default".
+func start_calm_event(self_completing: bool = true, hint_line: StringName = &"calm_guide",
+		hint_1_at: float = -1.0, hint_2_at: float = -1.0) -> void:
 	calm_active = true
 	_calm_self_completing = self_completing
+	_calm_hint_line = hint_line
+	_calm_hint_1_at = hint_1_at if hint_1_at >= 0.0 else calm_hint_1_seconds
+	_calm_hint_2_at = hint_2_at if hint_2_at >= 0.0 else calm_hint_2_seconds
 	_calm_t = 0.0
+	_calm_hold_t = 0.0
+	_calm_ref_sum = 0.0
+	_calm_ref_count = 0
 	_calm_start_bpm = -1.0
 	_calm_smoothed_bpm = -1.0
 	_calm_hint1_fired = false
@@ -509,12 +562,16 @@ func _physics_process(delta: float) -> void:
 	# Motion-gated: only a trustworthy, valid HR sample updates the
 	# reference/smoothed trend (§3.2, §8 "motion-gated windows only").
 	var bpm := _current_bpm(delta)
+	var referencing := _calm_t <= calm_reference_seconds
 	if bpm > 0.0:
-		if _calm_start_bpm < 0.0:
-			_calm_start_bpm = bpm
+		if _calm_smoothed_bpm < 0.0:
 			_calm_smoothed_bpm = bpm
 		else:
 			_calm_smoothed_bpm = lerpf(_calm_smoothed_bpm, bpm, calm_smoothing)
+		if referencing or _calm_ref_count == 0:
+			_calm_ref_sum += bpm
+			_calm_ref_count += 1
+			_calm_start_bpm = _calm_ref_sum / _calm_ref_count
 
 	_update_bilateral_heartbeat()
 	_update_escalation()
@@ -523,27 +580,31 @@ func _physics_process(delta: float) -> void:
 	if not _calm_self_completing:
 		return
 
-	var relax_t: float = clampf(_calm_t / calm_relax_seconds, 0.0, 1.0)
-	var required_drop: float = lerpf(calm_generous_drop_bpm, calm_relaxed_drop_bpm, relax_t)
+	# Only a valid sample moves the hold either way; a motion-gated gap
+	# neither counts toward it nor throws it away.
+	if bpm > 0.0 and not referencing:
+		if calm_drop() >= _calm_required_drop():
+			_calm_hold_t += delta
+		else:
+			_calm_hold_t = 0.0
 
-	var hr_drop_ok: bool = _calm_start_bpm > 0.0 and (_calm_start_bpm - _calm_smoothed_bpm) >= required_drop
-	var dwell_ok: bool = _calm_t >= calm_dwell_seconds
+	var hr_drop_ok: bool = _calm_hold_t >= calm_hold_seconds
 	var fail_forward: bool = _calm_t >= calm_fail_forward_seconds
 
 	calm_progress.emit(clampf(_calm_t / calm_fail_forward_seconds, 0.0, 1.0))
 
-	if hr_drop_ok or dwell_ok or fail_forward:
+	if hr_drop_ok or fail_forward:
 		# Never resolve over the top of the guided count: the "recovered"
 		# line would queue straight behind it and the two would run together.
 		# Waited out up to a hard cap, so this can delay but never block.
 		if BatCompanion.is_speaking() and _calm_t < calm_fail_forward_seconds + event_one_line_timeout:
 			return
-		var reason: StringName = &"fail_forward"
-		if hr_drop_ok:
-			reason = &"hr_drop"
-		elif dwell_ok:
-			reason = &"dwell"
-		_complete_calm(reason)
+		_complete_calm(&"hr_drop" if hr_drop_ok else &"fail_forward")
+
+
+func _calm_required_drop() -> float:
+	var relax_t: float = clampf(_calm_t / calm_relax_seconds, 0.0, 1.0)
+	return lerpf(calm_strict_drop_bpm, calm_relaxed_drop_bpm, relax_t)
 
 
 ## Filming / no-hardware path: hands CALM a scripted descent starting from
@@ -571,14 +632,15 @@ func _current_bpm(delta: float) -> float:
 ## Snapshot for the playtest HR readout (hr_debug_overlay.gd). Read-only;
 ## nothing on the audio path consults it.
 func calm_readout() -> Dictionary:
-	var relax_t: float = clampf(_calm_t / calm_relax_seconds, 0.0, 1.0)
 	return {
 		"active": calm_active,
 		"t": _calm_t,
 		"start_bpm": _calm_start_bpm,
 		"smoothed_bpm": _calm_smoothed_bpm,
-		"required_drop": lerpf(calm_generous_drop_bpm, calm_relaxed_drop_bpm, relax_t),
-		"dwell_seconds": calm_dwell_seconds,
+		"required_drop": _calm_required_drop(),
+		"referencing": _calm_t <= calm_reference_seconds,
+		"hold_t": _calm_hold_t,
+		"hold_seconds": calm_hold_seconds,
 		"fail_forward_seconds": calm_fail_forward_seconds,
 		"assist_bpm": _debug_hr,
 	}
@@ -597,19 +659,19 @@ func _complete_calm(reason: StringName) -> void:
 ## Bat's own breathing grows audible, then a guided count -- escalating
 ## in-fiction help, never an instruction to hold still (§8).
 func _update_escalation() -> void:
-	if not _calm_hint1_fired and _calm_t >= calm_hint_1_seconds:
+	if not _calm_hint1_fired and _calm_t >= _calm_hint_1_at:
 		_calm_hint1_fired = true
 		# Hand over, not layer: the panicked loop goes as the slow one
 		# arrives, so there is exactly one breath to follow.
 		_fade_out_event_sfx(&"breathing", calm_breathing_crossfade_seconds)
 		_play_event_sfx(&"calm_breathing", &"breathing_calm", true, -40.0)
 		_fade_event_sfx_to(&"calm_breathing", calm_breathing_volume_db, calm_breathing_crossfade_seconds)
-	if not _calm_hint2_fired and _calm_t >= calm_hint_2_seconds:
+	if not _calm_hint2_fired and _calm_t >= _calm_hint_2_at:
 		_calm_hint2_fired = true
 		# Pre-rendered clip by id, spatialized on the bat's shoulder, rather
-		# than runtime TTS. The wording lives in voices/lines.txt under
-		# calm_guide and can change there without touching this file.
-		BatCompanion.say(&"calm_guide")
+		# than runtime TTS. The wording lives in voices/lines.txt and can
+		# change there without touching this file.
+		BatCompanion.say(_calm_hint_line)
 
 
 ## The breathing steps back while the bat speaks and returns after, so the
