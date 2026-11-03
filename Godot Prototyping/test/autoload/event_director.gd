@@ -500,8 +500,8 @@ func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = fals
 		_event_players[key] = player
 
 	var stream: AudioStream = SfxLibrary.get_stream(sfx_name)
-	if looping and (stream is AudioStreamMP3 or stream is AudioStreamOggVorbis):
-		stream.loop = true
+	if looping:
+		stream = SfxLibrary.looping(stream)
 	_event_players[key].stream = stream
 	_event_players[key].volume_db = volume_db
 	_event_players[key].pitch_scale = pitch_scale

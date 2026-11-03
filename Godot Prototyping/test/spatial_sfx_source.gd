@@ -156,8 +156,8 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	var stream: AudioStream = SfxLibrary.get_stream(sfx_name)
-	if loop and (stream is AudioStreamMP3 or stream is AudioStreamOggVorbis):
-		stream.loop = true
+	if loop:
+		stream = SfxLibrary.looping(stream)
 	player.stream = stream
 	player.bus = bus
 	player.volume_db = volume_db

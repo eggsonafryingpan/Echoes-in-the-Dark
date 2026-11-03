@@ -66,6 +66,25 @@ const TRIGGER_PORT := 12347
 static var _trigger_udp: PacketPeerUDP = null
 ## Last strength sent per side, for the climb's wall view and tests.
 static var trigger_strength := {LEFT: 0.0, RIGHT: 0.0}
+static var _helper_started := false
+
+
+## Resistance needs sensor_bridge/trigger_out.py running. ./launch.sh (live)
+## runs it inside the bridge; anywhere else (the Godot editor, launch.sh mouse)
+## this starts it on its own with the bridge's venv. It quits by itself if the
+## bridge already has the port, and when the game exits. Headless: skipped.
+static func ensure_trigger_helper() -> void:
+	if _helper_started or DisplayServer.get_name() == "headless":
+		return
+	_helper_started = true
+	var root := ProjectSettings.globalize_path("res://").trim_suffix("/").get_base_dir().get_base_dir()
+	var python := root.path_join("sensor_bridge/.venv/bin/python")
+	var script := root.path_join("sensor_bridge/trigger_out.py")
+	if not FileAccess.file_exists(python) or not FileAccess.file_exists(script):
+		print("Haptics: no %s; no trigger resistance." % python)
+		return
+	var pid := OS.create_process(python, [script, "--port", str(TRIGGER_PORT), "--parent-pid", str(OS.get_process_id())])
+	print("Haptics: trigger helper started (pid %d)" % pid)
 
 
 ## side LEFT (-1, L2) or RIGHT (+1, R2); strength 0 (off) to 1 (stiffest).

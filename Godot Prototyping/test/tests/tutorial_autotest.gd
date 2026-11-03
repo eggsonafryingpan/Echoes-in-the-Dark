@@ -29,25 +29,27 @@ func _run() -> void:
 	_check(BatCompanion._line_text.has(&"tut_nod") and BatCompanion._line_text.has(&"note_added"), "tutorial lines are in lines.txt")
 	_tut.run()
 	await _until_step(&"calibrate_nod")
-	await _wait(0.5)
+	await _listening()
 	await _gesture([-15.0])  # far too small: under the detection speed
 	await _wait(1.6)
 	_check(_tut.step == &"calibrate_nod", "a tiny movement doesn't count")
 	await _gesture([-40.0, -70.0, -40.0, 0.001, 40.0, 70.0, 40.0])
 	_check(await _until_step(&"calibrate_up"), "a real nod is captured and the bat moves on")
-	await _wait(0.5)
+	await _listening()
 	await _gesture([70.0, 70.0])  # fast but tiny: travel too short
 	await _wait(1.0)
 	_check(_tut.step == &"calibrate_up", "a twitch is 'a bit bigger', not a jolt")
+	await _listening()
 	await _gesture([120.0, 260.0, 300.0, 260.0, 120.0])
 	_check(await _until_step(&"calibrate_down"), "a jolt up is captured")
-	await _wait(0.5)
+	await _listening()
 	await _gesture([-150.0, -320.0, -360.0, -300.0, -150.0])
 	_check(await _until_step(&"calibrate_shake"), "a headbutt is captured")
-	await _wait(0.5)
+	await _listening()
 	await _turn(40.0, 0.4)  # one ordinary head turn is not a shake
 	await _wait(2.8)
 	_check(_tut.step == &"calibrate_shake", "a single head turn doesn't count as a shake")
+	await _listening()
 	for i in 4:
 		await _turn(25.0 * (1 if i % 2 == 0 else -1), 0.18)
 	_check(await _until_step(&"scan"), "a real shake is captured, calibration done")
@@ -75,7 +77,11 @@ func _run() -> void:
 	_check(to_target.x < -2.0 and to_target.z < -5.0, "the target is ahead and to the left of the start")
 	_tut.get_node("Target/Source/Body/AudioStreamPlayer3D")
 	var src: AudioStreamPlayer3D = _tut.get_node("Target/Source/Body/AudioStreamPlayer3D")
-	_check(src.max_distance < to_target.length(), "it can't be heard from the start (%.0f m away, audible within %.0f)" % [to_target.length(), src.max_distance])
+	_check(src.max_distance > to_target.length(), "it's faint but audible from the start (%.0f m away, carries %.0f)" % [to_target.length(), src.max_distance])
+	_check(src.playing and (src.stream is not AudioStreamWAV or src.stream.loop_mode != AudioStreamWAV.LOOP_DISABLED),
+			"and keeps playing: the WAV loops")
+	await get_tree().create_timer(0.5).timeout
+	_check(_tut.has_node("TargetIndicator"), "the demo circle is up")
 	player.global_position = target.global_position + Vector3(4, 0.1, 3)
 	_check(await _until_step(&"focus"), "walking close: 'have you started to hear that', then FOCUS")
 	var focus: Node = _tut.get_node("Target/Focusable")
@@ -115,7 +121,13 @@ func _gesture(rates: Array) -> void:
 	SensorBridge._on_pitch_rate_sample(0.0)
 
 
-func _until_step(step: StringName, timeout: float = 20.0) -> bool:
+## The bat has finished its prompt and the game is capturing a gesture.
+func _listening() -> void:
+	await _until(func(): return not BatCompanion.is_speaking() and _tut._capture != &"" and _tut._result == null, 30.0)
+	await _wait(0.2)
+
+
+func _until_step(step: StringName, timeout: float = 30.0) -> bool:
 	return await _until(func(): return _tut.step == step, timeout)
 
 

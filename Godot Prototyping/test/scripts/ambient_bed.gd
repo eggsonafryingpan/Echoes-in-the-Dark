@@ -35,9 +35,7 @@ var _emitters: Array[AudioStreamPlayer3D] = []
 
 func _ready() -> void:
 	for i in clips.size():
-		var stream: AudioStream = SfxLibrary.get_stream(clips[i]).duplicate()
-		if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
-			stream.loop = true
+		var stream: AudioStream = SfxLibrary.looping(SfxLibrary.get_stream(clips[i]))
 		var emitter := AudioStreamPlayer3D.new()
 		emitter.name = "Bed%d" % i
 		emitter.stream = stream

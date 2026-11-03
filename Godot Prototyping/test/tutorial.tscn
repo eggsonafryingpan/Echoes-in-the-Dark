@@ -53,8 +53,8 @@ label = "something chirping"
 known_line = &"scan_known"
 scan_priority = 30
 scan_radius = 14.0
-max_distance = 10.0
-unit_size = 3.0
+max_distance = 16.0
+unit_size = 2.5
 
 [node name="Focusable" type="Node3D" parent="Target"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)

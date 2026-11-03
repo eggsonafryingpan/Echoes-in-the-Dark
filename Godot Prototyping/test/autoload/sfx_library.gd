@@ -85,6 +85,23 @@ func get_stream(logical_name: String) -> AudioStream:
 	return stream
 
 
+## A copy of stream that loops, whatever its format. MP3 and OGG have a loop
+## flag; a WAV needs a loop range, and without one it plays once and goes
+## silent (the river and the tutorial's bird did exactly that).
+func looping(stream: AudioStream) -> AudioStream:
+	if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
+		var copy = stream.duplicate()
+		copy.loop = true
+		return copy
+	if stream is AudioStreamWAV:
+		var wav: AudioStreamWAV = stream.duplicate()
+		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		wav.loop_begin = 0
+		wav.loop_end = int(wav.get_length() * wav.mix_rate)
+		return wav
+	return stream
+
+
 ## True when a real file backs this name -- i.e. get_stream() would hand
 ## back the asset rather than the silent placeholder. For callers that want
 ## to skip a missing sound entirely rather than play silence in its slot.

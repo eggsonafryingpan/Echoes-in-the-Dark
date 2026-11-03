@@ -163,9 +163,8 @@ func _make_player(node_name: String, sfx: StringName, loop: bool, pitch: float,
 	var p := AudioStreamPlayer3D.new()
 	p.name = node_name
 	var stream: AudioStream = SfxLibrary.get_stream(sfx)
-	if loop and (stream is AudioStreamMP3 or stream is AudioStreamOggVorbis):
-		stream = stream.duplicate()
-		stream.loop = true
+	if loop:
+		stream = SfxLibrary.looping(stream)
 	p.stream = stream
 	p.pitch_scale = pitch
 	p.volume_db = volume_db

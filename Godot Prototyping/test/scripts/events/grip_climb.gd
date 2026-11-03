@@ -38,12 +38,12 @@ enum State { IDLE, CLIMBING, RECOVERING, SWARMED, FALLING, DONE }
 # ------------------------------------------------------------------------
 @export_group("Grips")
 ## Holds to the top.
-@export var holds_to_top: int = 14
+@export var holds_to_top: int = 18
 ## Trigger travel (0-1) that counts as a grip, and below which it lets go.
 @export var grip_press: float = 0.55
 @export var grip_release: float = 0.3
 ## Adaptive resistance while a hand holds on (0-1, sent to the bridge).
-@export var grip_resistance: float = 0.7
+@export var grip_resistance: float = 1.0
 ## Seconds a move takes to pull the player up to the new hold.
 @export var move_seconds: float = 0.35
 
@@ -93,7 +93,7 @@ enum State { IDLE, CLIMBING, RECOVERING, SWARMED, FALLING, DONE }
 
 @export_group("Sounds and lines")
 @export var crumble_sfx: StringName = &"climb_crumble"
-@export var crumble_db: float = 10.0
+@export var crumble_db: float = 17.0
 ## Where in the recording the crumble starts: rocktumbling.mp3 fades in over its
 ## first second, so starting into it makes the crumble crack rather than creep.
 @export var crumble_clip_start: float = 0.7
@@ -145,15 +145,14 @@ var wall_view: CanvasLayer = null
 
 func _ready() -> void:
 	_level = get_node(level_path)
+	Haptics.ensure_trigger_helper()  # early: the controller takes a moment to open
 	if trigger_path != NodePath():
 		get_node(trigger_path).body_entered.connect(_on_trigger)
 	GameState.head_shaken.connect(_on_head_shaken)
 	_swarm_player = AudioStreamPlayer3D.new()
 	_swarm_player.name = "Swarm"
 	var stream: AudioStream = SfxLibrary.get_stream(swarm_sfx)
-	if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
-		stream = stream.duplicate()
-		stream.loop = true
+	stream = SfxLibrary.looping(stream)
 	_swarm_player.stream = stream
 	_swarm_player.bus = AudioDirector.BUS_ESSENTIAL
 	_swarm_player.max_db = 24.0
@@ -314,7 +313,7 @@ func _crumble(side: int) -> void:
 	crumbles += 1
 	held[side] = false
 	Haptics.set_trigger(side, 0.0)  # the grip goes slack in the hand
-	Haptics.pulse_side(side, 0.8, 0.25)
+	Haptics.pulse_side(side, 1.0, 0.35)
 	for i in range(holds.size() - 1, -1, -1):
 		if holds[i].side == side and not holds[i].crumbled:
 			holds[i].crumbled = true

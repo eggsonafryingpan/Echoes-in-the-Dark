@@ -71,6 +71,17 @@ signal step_changed(step: StringName)
 ## Read back on an end screen; the tutorial has none, so no line.
 @export var note_line: StringName = &""
 
+@export_group("Demo indicator")
+## A circle on the practice target for sighted demos: around it when it's in
+## view, at the screen edge on its side (with an arrow) when it isn't. It
+## pulses with the target's actual sound, so it also shows the sound is
+## really playing. Purely visual.
+@export var show_target_indicator: bool = true
+@export var indicator_color: Color = Color(1.0, 0.85, 0.25)
+@export var indicator_radius: float = 36.0
+## How much the circle swells with the sound (0 = steady).
+@export var indicator_pulse: float = 0.6
+
 @export_group("Lines")
 ## Empty: no separate welcome. The first prompt does the job.
 @export var welcome_line: StringName = &""
@@ -124,6 +135,7 @@ func _ready() -> void:
 	_target = get_node(target_path)
 	_focus = get_node(focus_path)
 	_focus.active = false  # FOCUS is taught last
+	_build_indicator()
 	BatCompanion.reset_scan_session()
 	BatCompanion.scan_performed.connect(func(_r): _scanned = true)
 	SensorBridge.pitch_rate_updated.connect(_on_pitch_rate)
@@ -314,6 +326,8 @@ func _close_swing() -> void:
 
 
 func _process(_delta: float) -> void:
+	if _indicator != null:
+		_indicator.queue_redraw()
 	if not _capturing or _result != null:
 		return
 	var now := Time.get_ticks_msec() / 1000.0
@@ -363,6 +377,75 @@ func _bat_quiet() -> void:
 	while BatCompanion.is_speaking() and waited < 30.0:
 		await get_tree().process_frame
 		waited += get_process_delta_time()
+
+
+# --- Demo indicator -------------------------------------------------------------
+
+var _indicator: Control = null
+var _target_audio: AudioStreamPlayer3D = null
+var _level_smoothed: float = 0.0
+
+
+func _build_indicator() -> void:
+	_target_audio = _target.get_node("Source/Body/AudioStreamPlayer3D")
+	print("Tutorial: practice target %s, sound %s" % [
+		"playing" if _target_audio.playing else "NOT playing",
+		_target_audio.stream.resource_path if _target_audio.stream else "missing"])
+	if not show_target_indicator:
+		return
+	var layer := CanvasLayer.new()
+	layer.name = "TargetIndicator"
+	layer.layer = 50
+	add_child(layer)
+	_indicator = Control.new()
+	_indicator.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_indicator.draw.connect(_draw_indicator)
+	layer.add_child(_indicator)
+
+
+## How loud the target is right now at the listener, 0..1, from its distance
+## falloff and the Essential bus meter, so the circle only swells when sound
+## is actually coming out.
+func target_loudness() -> float:
+	if _target_audio == null or not _target_audio.playing:
+		return 0.0
+	var bus := AudioServer.get_bus_index(_target_audio.bus)
+	var peak := maxf(AudioServer.get_bus_peak_volume_left_db(bus, 0), AudioServer.get_bus_peak_volume_right_db(bus, 0))
+	var distance := _player.global_position.distance_to(_target.global_position)
+	if distance > _target_audio.max_distance:
+		return 0.0
+	return clampf((peak + 48.0) / 48.0, 0.0, 1.0)
+
+
+func _draw_indicator() -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null or _target == null:
+		return
+	var view := get_viewport().get_visible_rect().size
+	var k := view.y / 1080.0
+	var level := target_loudness()
+	var r := indicator_radius * k * (1.0 + indicator_pulse * level)
+	var color := indicator_color
+	color.a = 0.5 + 0.5 * level
+	var at := Vector2.ZERO
+	var on_screen := false
+	var aim := _target.global_position + Vector3.UP * 1.2
+	if not camera.is_position_behind(aim):
+		at = camera.unproject_position(aim)
+		on_screen = Rect2(Vector2.ZERO, view).grow(-r).has_point(at)
+	if on_screen:
+		_indicator.draw_arc(at, r, 0.0, TAU, 48, color, 4.0 * k, true)
+		_indicator.draw_circle(at, r * 0.25, color)
+		return
+	# Off screen: a circle at the edge on the target's side, with an arrow.
+	var local := camera.global_basis.inverse() * (aim - camera.global_position)
+	var side := -1.0 if local.x < 0.0 else 1.0
+	at = Vector2(r * 1.6 if side < 0.0 else view.x - r * 1.6, view.y * 0.5)
+	_indicator.draw_arc(at, r, 0.0, TAU, 48, color, 4.0 * k, true)
+	var tip := at + Vector2(side * r * 0.7, 0.0)
+	_indicator.draw_colored_polygon(PackedVector2Array([
+		tip, at + Vector2(-side * r * 0.2, -r * 0.45), at + Vector2(-side * r * 0.2, r * 0.45)]), color)
 
 
 func _set_step(new_step: StringName) -> void:

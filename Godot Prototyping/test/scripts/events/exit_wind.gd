@@ -1,6 +1,7 @@
 extends Node3D
 
-## The outside wind: a navigation cue the player follows from the landing to
+## The way out: birds outside (was a wind; the code still calls it the wind),
+## a navigation cue the player follows from the landing to
 ## the exit, so it sits on Priority, above the ambient layers.
 ##
 ## One continuous source that rides path_points a little ahead of the player
@@ -51,9 +52,9 @@ enum Mode { OFF, HEADING, FULL }
 @export_group("Wind volume")
 ## The clip averages about -32 dB, so these need to be well above 0. Level
 ## grows along the path, from min at the landing to max at the exit.
-@export var heading_min_db: float = 6.0
-@export var heading_max_db: float = 9.0
-@export var full_db: float = 13.0
+@export var heading_min_db: float = -5.0
+@export var heading_max_db: float = 5.0
+@export var full_db: float = 8.0
 ## Output ceiling. Has to sit above the loudest level here.
 @export var max_db: float = 26.0
 ## 3D pan amount: how strongly turning the head moves it between the ears.
@@ -85,9 +86,7 @@ func _ready() -> void:
 	_level = get_node(level_path)
 	_build_path()
 	var stream: AudioStream = SfxLibrary.get_stream(&"outside_wind")
-	if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
-		stream = stream.duplicate()
-		stream.loop = true
+	stream = SfxLibrary.looping(stream)
 	_player.stream = stream
 	_player.bus = AudioDirector.BUS_PRIORITY
 	_player.max_db = max_db
@@ -132,7 +131,7 @@ func _physics_process(delta: float) -> void:
 		_player.volume_db = move_toward(_player.volume_db, target, level_slew_db * delta)
 
 	_sphere.visible = mode != Mode.OFF
-	_label.text = "OUTSIDE WIND  %s  %.0f dB" % [Mode.keys()[mode], _player.volume_db]
+	_label.text = "OUTSIDE BIRDS  %s  %.0f dB" % [Mode.keys()[mode], _player.volume_db]
 
 
 func _duck_db() -> float:

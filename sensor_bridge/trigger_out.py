@@ -69,3 +69,39 @@ def start(port: int) -> TriggerOut:
     threading.Thread(target=server.serve_forever, daemon=True).start()
     print(f"Triggers: listening for the game on :{port}", flush=True)
     return out
+
+
+def _main() -> None:
+    """Standalone, started by the game when it runs without the bridge (from the
+    Godot editor, or ./launch.sh mouse). Exits quietly if the bridge already has
+    the port, and by itself once the game that started it is gone."""
+    import argparse
+    import os
+    import time
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=12347)
+    parser.add_argument("--parent-pid", type=int, default=0)
+    args = parser.parse_args()
+    try:
+        server = ThreadingOSCUDPServer(("127.0.0.1", args.port), Dispatcher())
+    except OSError:
+        print(f"Triggers: :{args.port} already taken (the bridge has it); nothing to do.", flush=True)
+        return
+    server.server_close()
+    out = start(args.port)
+    try:
+        while True:
+            time.sleep(1.0)
+            if args.parent_pid:
+                try:
+                    os.kill(args.parent_pid, 0)
+                except OSError:
+                    break
+    except KeyboardInterrupt:
+        pass
+    out.close()
+
+
+if __name__ == "__main__":
+    _main()

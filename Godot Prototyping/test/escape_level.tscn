@@ -309,7 +309,7 @@ max_db = 12.0
 
 [node name="Describable" type="Node3D" parent="ExitWind"]
 script = ExtResource("s_desc")
-label = "a faint draft"
+label = "birds, far off"
 priority = 50
 scan_radius = 14.0
 

@@ -177,9 +177,10 @@
     "file": "discovery"
   },
   "outside_wind": {
-    "folder": "environmental",
-    "file": "wind_normal",
-    "_note": "PLACEHOLDER: wants a distinct outside-air wind (gustier/whistling) so it never reads as cave ambience. Priority layer (exit_wind.gd)."
+    "folder": "events",
+    "file": "outside_birds",
+    "placeholder": "placeholder_bird_chirp",
+    "_note": "The way-out cue (exit_wind.gd, Priority): birds outside, heard through the tunnels. Drop a real looping birdsong in as assets/sfx/events/outside_birds.(wav|ogg|mp3); the synthesized chirp plays until then. The old wind was environmental/wind_normal."
   },
   "den_nest": {
     "folder": "essential",

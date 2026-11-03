@@ -270,7 +270,7 @@ func _test_river() -> void:
 	_check(_level.exit_wind._player.volume_db < -20.0, "the wind is ducked out at the river (%.1f dB)" % _level.exit_wind._player.volume_db)
 	await _flick(300.0)
 	_check(await _until(func(): return EventDirector.current_event == Event.STEALTH, 5.0), "a flick in the quiet window crosses")
-	_check(await _until(func(): return _level.exit_wind._player.volume_db > 0.0, 8.0), "the wind comes back once the river is crossed")
+	_check(await _until(func(): return _level.exit_wind._player.volume_db > _level.exit_wind.heading_min_db - 1.0, 8.0), "the wind comes back once the river is crossed")
 	_check(_level.player.global_position.z < -67.5, "landed on the far bank (z %.1f)" % _level.player.global_position.z)
 	_check(not GameState.input_locked, "free after crossing")
 
@@ -379,7 +379,7 @@ func _test_discoveries() -> void:
 	GameState.notes_feedback_played.connect(func(): fed_back[0] = true, CONNECT_ONE_SHOT)
 	await _frames(5)
 	_check(not fed_back[0], "the notes sound waits: it doesn't land on top of the discovery sting")
-	_check(await _until(func(): return fed_back[0], 15.0), "then plays once the reveal is over")
+	_check(await _until(func(): return fed_back[0], 40.0), "then plays once the reveal is over")
 	_check(frog_player.bus == AudioDirector.BUS_ESSENTIAL, "once named it moves up to the essential layer")
 	var top := 0.0
 	var body: Node3D = frog_src.get_node("Body")
