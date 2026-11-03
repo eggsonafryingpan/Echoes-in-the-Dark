@@ -28,6 +28,10 @@ const Event := preload("res://autoload/event_director.gd").Event
 const LEFT := -1
 const RIGHT := 1
 
+## Falling-rock levels: the warning in the ear it will land on, then the
+## impact. Godot's default +3 dB ceiling used to cap these.
+@export var warning_db: float = 8.0
+@export var impact_db: float = 7.0
 @export var level_path: NodePath = ^".."
 @export var trigger_path: NodePath
 @export var shaft_start_path: NodePath = ^"ShaftStart"
@@ -54,7 +58,8 @@ const RIGHT := 1
 
 @export var warning_sfx: StringName = &"climb_rock_warning"
 @export var impact_sfx: StringName = &"climb_rock_impact"
-@export var hit_line: StringName = &"e4_hit"
+## Empty: a hit is already told by the thud and the rumble.
+@export var hit_line: StringName = &""
 @export var start_line: StringName = &"e4_start"
 
 var active: bool = false
@@ -178,7 +183,8 @@ func _announce(side: int, warning: float, on_player: bool) -> void:
 	sound.name = "Warning"
 	sound.stream = SfxLibrary.get_stream(warning_sfx)
 	sound.bus = AudioDirector.BUS_PRIORITY
-	sound.volume_db = 4.0
+	sound.max_db = 24.0
+	sound.volume_db = warning_db
 	sound.unit_size = 4.0
 	sound.panning_strength = 1.5
 	add_child(sound)
@@ -215,7 +221,8 @@ func _land() -> void:
 	var sound := AudioStreamPlayer3D.new()
 	sound.stream = SfxLibrary.get_stream(impact_sfx)
 	sound.bus = AudioDirector.BUS_PRIORITY
-	sound.volume_db = 2.0
+	sound.max_db = 24.0
+	sound.volume_db = impact_db
 	sound.unit_size = 4.0
 	add_child(sound)
 	sound.global_position = impact + Vector3.UP * 0.5
@@ -239,7 +246,8 @@ func _land() -> void:
 		Haptics.pulse_both(1.0, 0.45)
 		_level.knock_back_along_route(knockback_distance, _start_s + 1.0)
 		if not BatCompanion.is_speaking():
-			BatCompanion.say(hit_line)
+			if hit_line != &"":
+				BatCompanion.say(hit_line)
 	else:
 		print("Climb: dodged")
 

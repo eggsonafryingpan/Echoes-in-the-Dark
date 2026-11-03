@@ -1,0 +1,75 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/tutorial.gd" id="s_tut"]
+[ext_resource type="PackedScene" path="res://player.tscn" id="player"]
+[ext_resource type="PackedScene" path="res://spatial_sfx_source.tscn" id="sfxsrc"]
+[ext_resource type="Script" path="res://focusable.gd" id="s_focus"]
+[ext_resource type="Script" path="res://scripts/filming_overlay.gd" id="o_film"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.05, 0.05, 0.07, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="StandardMaterial3D" id="rock_mat"]
+albedo_color = Color(0.42, 0.4, 0.38, 1)
+
+[node name="Tutorial" type="Node3D"]
+script = ExtResource("s_tut")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.921061, -0.347052, 0.176639, 0, 0.453596, 0.891207, -0.389418, -0.820857, 0.417786, 0, 30, 0)
+
+[node name="Cave" type="CSGCombiner3D" parent="."]
+use_collision = true
+
+[node name="Block" type="CSGBox3D" parent="Cave"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
+size = Vector3(40, 15, 44)
+material = SubResource("rock_mat")
+
+[node name="CutRoom" type="CSGBox3D" parent="Cave"]
+operation = 2
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 20, 0)
+size = Vector3(24, 40, 30)
+material = SubResource("rock_mat")
+
+[node name="player" parent="." instance=ExtResource("player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 10)
+
+[node name="Target" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -1)
+
+[node name="Source" parent="Target" instance=ExtResource("sfxsrc")]
+sfx_name = &"tutorial_target"
+bus = &"Essential"
+volume_db = 2.0
+label = "something chirping"
+known_line = &"scan_known"
+scan_priority = 30
+scan_radius = 14.0
+max_distance = 10.0
+unit_size = 3.0
+
+[node name="Focusable" type="Node3D" parent="Target"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+script = ExtResource("s_focus")
+audio_player_path = NodePath("../Source/Body/AudioStreamPlayer3D")
+describable_path = NodePath("../Source/Describable")
+activation_radius = 9.0
+focus_seconds_required = 5.0
+focus_seconds_required_min = 3.0
+fail_forward_seconds = 40.0
+min_volume_db = -10.0
+max_volume_db = 8.0
+revealed_volume_db = 2.0
+revealed_label = "a bird"
+reveal_line = &"tut_identified"
+
+[node name="FilmingOverlay" type="CanvasLayer" parent="."]
+script = ExtResource("o_film")

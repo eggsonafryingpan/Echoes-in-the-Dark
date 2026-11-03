@@ -78,6 +78,9 @@ var _baseline_elapsed: float = 0.0
 var _baseline_done: bool = false
 ## True once osc_receiver.gd has delivered a real heart rate.
 var _osc_heart_rate: bool = false
+## LIVE only: last reported state, so each change is printed once.
+var _live_head_reported: bool = false
+var _live_hr_reported: bool = false
 
 
 func _ready() -> void:
@@ -124,12 +127,29 @@ func _mode_override(current: SourceMode) -> SourceMode:
 
 
 func _process(delta: float) -> void:
+	_report_live_changes()
 	# The window only runs once real samples are arriving (see baseline_seconds).
 	if _baseline_done or _baseline_samples.is_empty():
 		return
 	_baseline_elapsed += delta
 	if _baseline_elapsed >= baseline_seconds:
 		_finish_baseline()
+
+
+## One console line each time live data starts or stops, so a launch from the
+## terminal shows whether the headband is really driving the game.
+func _report_live_changes() -> void:
+	if source_mode != SourceMode.LIVE:
+		return
+	var head := live_orientation_active()
+	if head != _live_head_reported:
+		_live_head_reported = head
+		print("SensorBridge: %s" % ("LIVE head data arriving from the bridge" if head
+				else "no live head data for %.0f s, the mouse is steering" % live_stale_seconds))
+	var hr := live_heart_rate_active()
+	if hr != _live_hr_reported:
+		_live_hr_reported = hr
+		print("SensorBridge: %s" % ("live heart rate arriving" if hr else "live heart rate stopped"))
 
 
 ## True while the bridge's orientation stream is flowing (LIVE only).

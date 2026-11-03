@@ -20,6 +20,7 @@ extends Node
 ##
 ## Playtest keys (all events):
 ##   F6           skip: finish the current event now (or start the armed one)
+##   Options      demo: skip Event 1 only (controller)
 ##   Ctrl+1..5    jump straight to Event 1..5 (teleports to its checkpoint)
 ##   F11          force a failure (river: swept; stealth: caught now; climb: hit now)
 ##   F4           CALM assist: a scripted heart-rate descent (E1 and E3)
@@ -78,6 +79,9 @@ func complete(event: Event) -> void:
 ## launch-time --event jump, past Event 1 (skip_intro), or Event 1 itself.
 func register_level(new_level: Node) -> void:
 	level = new_level
+	BatCompanion.reset_scan_session()
+	GameState.clear_observations()
+	AudioDirector.reset_layer_volumes()
 	current_event = Event.CALM
 	event_running = false
 	var target := start_at_event
@@ -106,7 +110,10 @@ func jump_to(event: Event) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"debug_calm_assist"):
+	if event.is_action_pressed(&"demo_skip_event_one"):
+		skip_event_one()  # No-op outside Event 1, so a demo can't skip anything else.
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"debug_calm_assist"):
 		start_calm_assist()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"debug_skip_event"):
@@ -144,12 +151,17 @@ func _skip_current() -> void:
 # reads as a list rather than one long coroutine:
 #
 #   lock            movement, scan and FOCUS off -- the player is on the ground
-#   rockfall        a cascade of loud, overlapping crashes, not one thud
-#   greet           the bat finds you ("Are you okay?")
-#   hyperventilate  panicked breathing + fast audible heartbeat + bilateral pulse
+#   rockfall        heavy booms, then a few stones settling into quiet
+#   hyperventilate  panicked breathing; the heartbeat is felt in the controller
+#   greet           the breathing stops as the bat finds you ("Are you okay?")
 #   breathe_prompt  the bat talks you through one breath
 #   calm            deep breathing to follow; the CALM gate below decides
 #   resolve         the bat's story and the E prompt; controls unlock
+#
+# The rockfall, the panicked breathing, the bat and the deep breathing follow
+# one another with no dead air: the breathing rises under the settling
+# stones, stops as the bat starts, and the deep breathing comes in as soon
+# as the bat finishes.
 #
 # Spoken lines are waited out rather than timed, with event_one_line_gap
 # of silence after each so the bat sounds like it is talking to you rather
@@ -163,24 +175,75 @@ func _skip_current() -> void:
 signal event_one_step(step: StringName)
 
 const EVENT_ONE_STEPS: Array[StringName] = [
-	&"lock", &"rockfall", &"greet", &"hyperventilate", &"breathe_prompt", &"calm", &"resolve",
+	&"lock", &"rockfall", &"hyperventilate", &"greet", &"breathe_prompt", &"calm", &"resolve",
 ]
 
-## The rockfall: crashes that start at these offsets (seconds), alternating
-## between the two recordings, each at its own pitch and level so the
-## repeats don't read as one sample looping. Front-loaded, then thinning
-## out as the rubble settles.
-@export var event_one_crash_offsets: Array[float] = [0.0, 0.25, 0.6, 1.0, 1.5, 2.1, 2.8, 3.6, 4.5]
+# ------------------------------------------------------------------------
+# OPENING CONFIG: rockfall and breathing tuning
+# ------------------------------------------------------------------------
+@export_group("Opening rockfall: booms")
+## The heavy impacts, loud and abrupt on purpose: they spike the heart rate.
+## Each is a whole crash recording at its own pitch and level, alternating
+## between the two recordings.
+@export var event_one_boom_count: int = 6
+## Gap between the first two booms, and how much each later gap adds.
+@export var event_one_boom_first_gap: float = 0.3
+@export var event_one_boom_gap_step: float = 0.1
 @export var event_one_crash_volume_db: Vector2 = Vector2(3.0, 8.0)
 @export var event_one_crash_pitch: Vector2 = Vector2(0.75, 1.2)
-## How long the rockfall holds after the last crash starts, then how long
-## it takes to die away under the bat's first line.
-@export var event_one_rockfall_tail_seconds: float = 1.5
-@export var event_one_handover_seconds: float = 2.0
-## How long the player hyperventilates on their own before the bat steps in.
+## Skips the near-silence at the start of the recordings, so each boom lands
+## on its trigger instead of a third of a second after it.
+@export var event_one_boom_clip_start: float = 0.3
+## The booms ring at full level this long after the last one starts...
+@export var event_one_impact_hold_seconds: float = 1.2
+## ...then die away over this long, under the stragglers.
+@export var event_one_impact_fade_seconds: float = 3.0
+
+@export_group("Opening rockfall: stragglers")
+## Last stones settling after the impact: short pieces of the recordings,
+## each quieter and further from the last.
+@export var event_one_straggler_count: int = 5
+## Gap before the first straggler, after the impact starts fading.
+@export var event_one_straggler_first_gap: float = 0.5
+## Each gap is the last one times this, so they thin out.
+@export var event_one_straggler_gap_growth: float = 1.4
+## Random +/- fraction on each gap, so they don't tick like a clock.
+@export var event_one_straggler_gap_jitter: float = 0.25
+## Level of the first straggler, and the drop per straggler after it.
+@export var event_one_straggler_volume_db: float = -5.0
+@export var event_one_straggler_falloff_db: float = 4.5
+## Higher pitch reads as smaller stones.
+@export var event_one_straggler_pitch: Vector2 = Vector2(1.1, 1.5)
+## How long each one sounds, and where in the recording it may start from.
+@export var event_one_straggler_seconds: float = 0.8
+@export var event_one_straggler_clip_range: Vector2 = Vector2(0.6, 2.0)
+
+@export_group("Opening breathing")
+## panicked_breathing.mp3 is a very quiet recording (about -44 dB average),
+## so it needs a large lift to be heard. Peaks near 0 dB at about +20.
+@export var event_one_breathing_volume_db: float = 18.0
+
+@export_group("Opening stage gaps")
+## 1 to 2: silence between the rockfall ending and the panicked breathing.
+## The panicked breathing comes in under the settling stones rather than
+## after them: it starts as the booms begin to fade, rising from
+## event_one_breathing_start_db to its full level over this many seconds.
+## 0 instead waits for the rockfall to end, then event_one_gap_rockfall_to_breathing.
+@export var event_one_breathing_fade_in_seconds: float = 3.0
+@export var event_one_breathing_start_db: float = -24.0
+@export var event_one_gap_rockfall_to_breathing: float = 0.0
+## 2: how long the player hyperventilates on their own before the bat steps in.
 @export var event_one_hyperventilate_seconds: float = 5.0
+## 2 to 3: the breathing's fade as the bat begins, then any silence before the
+## first word. Keep the fade short: the breathing has to be gone by then.
+@export var event_one_breathing_stop_seconds: float = 0.5
+@export var event_one_gap_breathing_to_bat: float = 0.0
+## 3 to 4: silence between the bat's last word and the deep breathing.
+@export var event_one_gap_bat_to_deep_breathing: float = 0.2
+@export_group("")
+
 ## Silence after each spoken line before the next thing happens.
-@export var event_one_line_gap: float = 1.5
+@export var event_one_line_gap: float = 0.6
 ## Longest a spoken line is waited out before the sequence moves on anyway:
 ## the clip's own length plus this margin, or event_one_line_timeout for a
 ## line with no rendered clip.
@@ -270,18 +333,24 @@ func _run_event_one_step(step: StringName) -> void:
 			GameState.input_locked = true
 		&"rockfall":
 			await _rockfall()
-		&"greet":
-			for i in event_one_crash_offsets.size():
-				_fade_out_event_sfx(StringName("crash_%d" % i), event_one_handover_seconds)
-			await _event_wait(event_one_handover_seconds * 0.5)
-			await _bat_line(&"event1_bat_greet")
 		&"hyperventilate":
-			_play_event_sfx(&"breathing", &"breathing_panicked", true)
-			_play_event_sfx(&"heartbeat", &"heartbeat_elevated", true)
-			await _scripted_pulse()
-			await _event_wait(event_one_hyperventilate_seconds - 8 * 0.32)
+			await _event_wait(event_one_gap_rockfall_to_breathing)
+			if _event_one_skip:
+				return
+			if not (_event_players.has(&"breathing") and _event_players[&"breathing"].playing):
+				_play_event_sfx(&"breathing", &"breathing_panicked", true, event_one_breathing_volume_db)
+			# The hands feel the player's own heartbeat throughout (player_haptics.gd).
+			await _event_wait(event_one_hyperventilate_seconds)
+		&"greet":
+			# The breathing fades out under the bat's first word, so there is
+			# no silent beat between them.
+			_fade_out_event_sfx(&"breathing", event_one_breathing_stop_seconds)
+			await _event_wait(event_one_gap_breathing_to_bat)
+			if _event_one_skip:
+				return
+			await _bat_line(&"event1_bat_greet")
 		&"breathe_prompt":
-			await _bat_line(&"event1_bat_breathe")
+			await _bat_line(&"event1_bat_breathe", event_one_gap_bat_to_deep_breathing)
 		&"calm":
 			start_calm_event(true, &"event1_bat_keep_breathing", 0.0, event_one_calm_window_seconds)
 			while calm_active and not _event_one_skip:
@@ -291,30 +360,68 @@ func _run_event_one_step(step: StringName) -> void:
 			await _bat_line(&"event1_bat_escape")
 
 
-## Many crashes layered on top of each other, each a beat after the last,
-## with a controller jolt on each so the fall lands in the hands too.
+## The arc: heavy booms, then the stones that follow, ending in quiet. A
+## controller jolt on each boom, so the fall lands in the hands too.
 func _rockfall() -> void:
 	var streams: Array[StringName] = [&"event1_rock_tumble", &"event1_falling_whoosh"]
-	var started := 0.0
-	for i in event_one_crash_offsets.size():
-		await _event_wait(event_one_crash_offsets[i] - started)
-		started = event_one_crash_offsets[i]
+	for i in event_one_boom_count:
+		if i > 0:
+			await _event_wait(event_one_boom_first_gap + event_one_boom_gap_step * (i - 1))
 		if _event_one_skip:
 			return
 		_play_event_sfx(StringName("crash_%d" % i), streams[i % streams.size()], false,
 				randf_range(event_one_crash_volume_db.x, event_one_crash_volume_db.y),
-				randf_range(event_one_crash_pitch.x, event_one_crash_pitch.y))
-		Haptics.pulse_both(1.0, 0.15)
-	await _event_wait(event_one_rockfall_tail_seconds)
+				randf_range(event_one_crash_pitch.x, event_one_crash_pitch.y),
+				event_one_boom_clip_start)
+
+	await _event_wait(event_one_impact_hold_seconds)
+	if _event_one_skip:
+		return
+	for i in event_one_boom_count:
+		_fade_out_event_sfx(StringName("crash_%d" % i), event_one_impact_fade_seconds)
+	if event_one_breathing_fade_in_seconds > 0.0:
+		# The breathing rises under the stones as they settle: no dead air between.
+		_play_event_sfx(&"breathing", &"breathing_panicked", true, event_one_breathing_start_db)
+		_fade_event_sfx_to(&"breathing", event_one_breathing_volume_db, event_one_breathing_fade_in_seconds)
+	var fade_ends := Time.get_ticks_msec() / 1000.0 + event_one_impact_fade_seconds / Engine.time_scale
+	await _rockfall_stragglers(streams)
+	# Quiet before the next stage: the fade, and the last straggler's end.
+	await _event_wait(event_one_straggler_seconds + 0.25)
+	while Time.get_ticks_msec() / 1000.0 < fade_ends and not _event_one_skip:
+		await get_tree().process_frame
+
+
+## The trail-off: gaps grow, levels drop, and each is a short piece of a
+## recording rather than a whole six-second crash.
+func _rockfall_stragglers(streams: Array[StringName]) -> void:
+	var gap := event_one_straggler_first_gap
+	for i in event_one_straggler_count:
+		var jitter := randf_range(-event_one_straggler_gap_jitter, event_one_straggler_gap_jitter)
+		await _event_wait(gap * (1.0 + jitter))
+		gap *= event_one_straggler_gap_growth
+		if _event_one_skip:
+			return
+		var key := StringName("straggler_%d" % i)
+		_play_event_sfx(key, streams[i % streams.size()], false,
+				event_one_straggler_volume_db - event_one_straggler_falloff_db * i,
+				randf_range(event_one_straggler_pitch.x, event_one_straggler_pitch.y),
+				randf_range(event_one_straggler_clip_range.x, event_one_straggler_clip_range.y))
+		_end_straggler(key)
+
+
+func _end_straggler(key: StringName) -> void:
+	await _event_wait(event_one_straggler_seconds)
+	_fade_out_event_sfx(key, 0.25)
 
 
 ## Says a line, waits it out, then leaves a real pause before moving on.
-func _bat_line(line_id: StringName) -> void:
+## gap_after defaults to event_one_line_gap.
+func _bat_line(line_id: StringName, gap_after: float = -1.0) -> void:
 	BatCompanion.say(line_id)
 	var length := BatCompanion.line_length(line_id)
 	await _await_bat_quiet(length + event_one_line_margin if length > 0.0 else event_one_line_timeout)
 	if not _event_one_skip:
-		await _event_wait(event_one_line_gap)
+		await _event_wait(gap_after if gap_after >= 0.0 else event_one_line_gap)
 
 
 ## Always runs, skipped or not. Anything the sequence turned on gets faded
@@ -377,7 +484,7 @@ func _await_bat_quiet(timeout: float) -> void:
 ## A name with no delivered asset is skipped entirely (missing = silent).
 ## Warned once per name so the gap stays visible in the log.
 func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = false,
-		volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
+		volume_db: float = 0.0, pitch_scale: float = 1.0, from_seconds: float = 0.0) -> void:
 	if not SfxLibrary.has_stream(sfx_name):
 		if not _missing_sfx_warned.has(sfx_name):
 			_missing_sfx_warned[sfx_name] = true
@@ -398,7 +505,7 @@ func _play_event_sfx(key: StringName, sfx_name: StringName, looping: bool = fals
 	_event_players[key].stream = stream
 	_event_players[key].volume_db = volume_db
 	_event_players[key].pitch_scale = pitch_scale
-	_event_players[key].play()
+	_event_players[key].play(from_seconds)
 
 
 ## Fade, then stop -- never a cut (§4). No-op for a key that isn't playing.
@@ -474,8 +581,13 @@ signal calm_completed(reason: StringName)  # &"hr_drop" | &"fail_forward" | &"sk
 @export var calm_strict_drop_bpm: float = 10.0
 @export var calm_relaxed_drop_bpm: float = 6.0
 @export var calm_relax_seconds: float = 40.0
-@export var calm_hold_seconds: float = 5.0
-@export var calm_fail_forward_seconds: float = 75.0
+## Seconds the smoothed rate must spend below the pass line. They add up across
+## dips: time back above the line drains the count at calm_hold_drain per
+## second rather than wiping it, so a rate wobbling around the line still
+## passes. (It used to need 5 unbroken seconds, which live data rarely gives.)
+@export var calm_hold_seconds: float = 3.0
+@export var calm_hold_drain: float = 0.5
+@export var calm_fail_forward_seconds: float = 45.0
 ## Exponential-smoothing coefficient applied once per physics tick to a
 ## fresh valid HR sample -- "heavily smoothed" per §8, not a raw reading.
 @export var calm_smoothing: float = 0.03
@@ -489,7 +601,10 @@ signal calm_completed(reason: StringName)  # &"hr_drop" | &"fail_forward" | &"sk
 ## The player's own panicked breathing fades out over this long as the
 ## breathing to follow comes in. Two breathing rhythms at once gave no
 ## clear one to match.
-@export var calm_breathing_crossfade_seconds: float = 1.5
+@export var calm_breathing_crossfade_seconds: float = 1.0
+## Where the breathing to follow starts its fade-in. It used to rise from
+## -40 dB, which left seconds of near-silence after the bat stopped talking.
+@export var calm_breathing_start_db: float = 6.0
 ## How far the breathing dips while the bat is talking over it, so the
 ## guided count is heard rather than fought.
 @export var calm_breathing_duck_db: float = 9.0
@@ -574,7 +689,6 @@ func _physics_process(delta: float) -> void:
 			_calm_ref_count += 1
 			_calm_start_bpm = _calm_ref_sum / _calm_ref_count
 
-	_update_bilateral_heartbeat()
 	_update_escalation()
 	_update_breathing_duck()
 
@@ -587,7 +701,7 @@ func _physics_process(delta: float) -> void:
 		if calm_drop() >= _calm_required_drop():
 			_calm_hold_t += delta
 		else:
-			_calm_hold_t = 0.0
+			_calm_hold_t = maxf(_calm_hold_t - calm_hold_drain * delta, 0.0)
 
 	var hr_drop_ok: bool = _calm_hold_t >= calm_hold_seconds
 	var fail_forward: bool = _calm_t >= calm_fail_forward_seconds
@@ -665,7 +779,7 @@ func _update_escalation() -> void:
 		# Hand over, not layer: the panicked loop goes as the slow one
 		# arrives, so there is exactly one breath to follow.
 		_fade_out_event_sfx(&"breathing", calm_breathing_crossfade_seconds)
-		_play_event_sfx(&"calm_breathing", &"breathing_calm", true, -40.0)
+		_play_event_sfx(&"calm_breathing", &"breathing_calm", true, calm_breathing_start_db)
 		_fade_event_sfx_to(&"calm_breathing", calm_breathing_volume_db, calm_breathing_crossfade_seconds)
 	if not _calm_hint2_fired and _calm_t >= _calm_hint_2_at:
 		_calm_hint2_fired = true
@@ -686,12 +800,8 @@ func _update_breathing_duck() -> void:
 	_fade_event_sfx_to(&"calm_breathing", target, 0.4)
 
 
-## Bilateral (§6.2): identical magnitude in both grips, pulsed at the
-## smoothed live rate. No device connected -> harmless no-op.
-func _update_bilateral_heartbeat() -> void:
-	if _calm_smoothed_bpm <= 0.0 or _calm_t < _next_pulse_t:
-		return
-	var interval: float = 60.0 / _calm_smoothed_bpm
-	_next_pulse_t = _calm_t + interval
-	var intensity: float = clampf((_calm_smoothed_bpm - 40.0) / 100.0, 0.1, 1.0)
-	Haptics.pulse_both(intensity, 0.12)
+## The heartbeat rumble used to pulse here, during CALM only. It now runs the
+## whole game from player_haptics.gd, which follows the live heart rate (and
+## the F4 assist's scripted one, debug_hr()).
+func debug_hr() -> float:
+	return _debug_hr

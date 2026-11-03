@@ -65,6 +65,7 @@ All calm/non-threatening variants — nothing aggressive or jump-scare-y.
 |---|---|
 | ui_confirm | ui_confirm.wav / .ogg |
 | ui_back | ui_back.wav / .ogg |
+| ui_success | success.mp3 |
 
 ---
 

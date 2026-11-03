@@ -63,6 +63,7 @@ func _on_return_pinged(entry: Dictionary) -> void:
 	add_child(marker)
 	marker.global_position = at
 	var label := Label3D.new()
+	label.layers = DebugDraw.LAYER
 	label.text = "%s%s  %.1fm" % [String(entry.get("band", "?")).to_upper(),
 			" · behind" if entry.get("behind", false) else "", entry.get("distance", 0.0)]
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -75,6 +76,7 @@ func _on_return_pinged(entry: Dictionary) -> void:
 	marker.add_child(label)
 	for mesh in [sphere, beam]:
 		var mi := MeshInstance3D.new()
+		mi.layers = DebugDraw.LAYER
 		mi.mesh = mesh
 		mi.material_override = material
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

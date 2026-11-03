@@ -46,7 +46,8 @@
   },
   "heartbeat_elevated": {
     "folder": "essential",
-    "file": "heartbeat_elevated"
+    "file": "heartbeat_elevated",
+    "_note": "NOT USED: the heartbeat is felt in the controller, not heard."
   },
   "breathing_calm": {
     "folder": "essential",
@@ -70,7 +71,8 @@
   },
   "bat_wingbeat": {
     "folder": "animals",
-    "file": "bat_wingbeat"
+    "file": "bat_wingbeat",
+    "_note": "Occasional distant wing flutters (Environmental). Silent until the file is added."
   },
   "small_prey_rustle": {
     "folder": "animals",
@@ -94,11 +96,13 @@
   },
   "river_flow_large": {
     "folder": "environmental",
-    "file": "river_big"
+    "file": "river_big_clean",
+    "_note": "river_big.mp3 had birds in it; this is its 32 s bird-free stretch, looped seamlessly. The original is untouched."
   },
   "river_flow_small": {
     "folder": "environmental",
-    "file": "river_small"
+    "file": "river_big_clean",
+    "_note": "river_small.mp3 had birds throughout, so the cave bed and trickle use the bird-free river loop too."
   },
   "waterfall": {
     "folder": "environmental",
@@ -118,7 +122,8 @@
   },
   "reverb_bed_low": {
     "folder": "environmental",
-    "file": "reverb_bed_low"
+    "file": "reverb_bed_low",
+    "_note": "Low cave room tone, two of the four ambient-bed emitters. Silent until the file is added."
   },
   "rockslide_opening": {
     "folder": "environmental",
@@ -126,15 +131,22 @@
   },
   "ambience_flavor_01": {
     "folder": "environmental",
-    "file": "ambience_flavor_01"
+    "file": "ambience_flavor_01",
+    "_note": "Occasional far-off echo (Environmental). Silent until the file is added."
   },
   "ambience_flavor_02": {
     "folder": "environmental",
-    "file": "ambience_flavor_02"
+    "file": "ambience_flavor_02",
+    "_note": "Occasional far-off echo (Environmental). Silent until the file is added."
   },
   "ui_confirm": {
     "folder": "ui",
     "file": "ui_confirm"
+  },
+  "ui_success": {
+    "folder": "ui",
+    "file": "success",
+    "_note": "Level complete in the Spatial Simon minigame."
   },
   "ui_back": {
     "folder": "ui",
@@ -175,14 +187,14 @@
     "_note": "PLACEHOLDER: dry nest rustle in the den (E3 reward focus target)."
   },
   "animal_footsteps": {
-    "folder": "essential",
-    "file": "sand_gravel_walking",
-    "_note": "PLACEHOLDER: heavy animal footsteps; played pitched down 0.65 (stealth_encounter.gd)."
+    "folder": "events",
+    "file": "creaturefootsteps",
+    "_note": "The stealth animal's footsteps (stealth_encounter.gd)."
   },
   "animal_growl": {
-    "folder": "essential",
-    "file": "breathing",
-    "_note": "PLACEHOLDER: low growl/breath; played pitched down 0.5."
+    "folder": "events",
+    "file": "growl",
+    "_note": "The stealth animal's growl: on approach, and louder when it spots the player (stealth_encounter.gd)."
   },
   "climb_rock_warning": {
     "folder": "events",
@@ -193,5 +205,45 @@
     "folder": "events",
     "file": "rockfalling2",
     "_note": "Rock landing."
+  },
+  "frog_croak": {
+    "folder": "events",
+    "file": "frogcroak",
+    "placeholder": "placeholder_frog_croak",
+    "_note": "Frog discovery and pre-discovery croaking. The synthesized placeholder in animals/ is only used if this file goes missing.",
+    "placeholder_folder": "animals"
+  },
+  "bat_screech": {
+    "folder": "animals",
+    "file": "bats_chriping",
+    "_note": "The upright-bats discovery: the bat chirping recording."
+  },
+  "ambient_pebbles": {
+    "folder": "events",
+    "file": "rocktumbling",
+    "_note": "Short slices, quiet: distant rock settling and pebble falls (Environmental)."
+  },
+  "ambient_insect_hum": {
+    "folder": "animals",
+    "file": "insect_hum",
+    "placeholder": "insects_swarm_flying",
+    "_note": "Faint insect hum (Environmental). Drop a distinct hum in as assets/sfx/animals/insect_hum; the swarm clip stands in until then."
+  },
+  "notes_added": {
+    "folder": "ui",
+    "file": "notes_added",
+    "placeholder": "placeholder_notes_added",
+    "_note": "MISSING: the 'added to notes' sound, played whenever an observation is recorded. Drop it in as assets/sfx/ui/notes_added.(wav|ogg|mp3). Never the discovery sting."
+  },
+  "tutorial_target": {
+    "folder": "events",
+    "file": "tutorial_target",
+    "placeholder": "placeholder_bird_chirp",
+    "_note": "The tutorial's practice target, a bird. Drop a real bird chirp in as assets/sfx/events/tutorial_target.(wav|ogg|mp3); a synthesized chirp plays until then."
+  },
+  "climb_crumble": {
+    "folder": "events",
+    "file": "rocktumbling",
+    "_note": "A hold giving way on the final climb (grip_climb.gd)."
   }
 }

@@ -122,7 +122,29 @@ var _listener: AudioListener3D = null
 var _position_anchor: Node3D = null
 
 
+# ------------------------------------------------------------------------
+# LAYER MIX CONFIG
+# ------------------------------------------------------------------------
+@export_group("Layer volumes")
+## Each layer's level when nothing is stripped, in dB (0 is the bus at full).
+## Environmental sits under the other two so it fills without masking them.
+@export var priority_volume_db: float = 0.0
+@export var essential_volume_db: float = 0.0
+@export var environmental_volume_db: float = -5.2
+@export_group("Layer bands")
+## The ambience is low-passed so it lies underneath, low and broad, leaving
+## the upper band clear for priority and essential cues. 0 turns it off.
+@export var environmental_lowpass_hz: float = 2200.0
+@export_group("")
+
+
 func _ready() -> void:
+	_base_volume_linear[BUS_PRIORITY] = db_to_linear(minf(priority_volume_db, 0.0))
+	_base_volume_linear[BUS_ESSENTIAL] = db_to_linear(minf(essential_volume_db, 0.0))
+	_base_volume_linear[BUS_ENVIRONMENTAL] = db_to_linear(minf(environmental_volume_db, 0.0))
+	for layer in _base_volume_linear:
+		_apply_bus_volume(layer)
+	_apply_environmental_band()
 	bat_source = AudioStreamPlayer3D.new()
 	bat_source.name = "BatSource"
 	bat_source.bus = BUS_UI
@@ -153,6 +175,22 @@ func _process(_delta: float) -> void:
 		var basis := Basis.from_euler(orientation)
 		bat_source.global_position = _position_anchor.global_position + basis * BatCompanion.shoulder_offset
 		bat_source.global_basis = basis
+
+
+## Adds (or retunes) a low-pass on the Environmental bus.
+func _apply_environmental_band() -> void:
+	var bus := AudioServer.get_bus_index(BUS_ENVIRONMENTAL)
+	if bus < 0:
+		return
+	for i in AudioServer.get_bus_effect_count(bus):
+		if AudioServer.get_bus_effect(bus, i) is AudioEffectLowPassFilter:
+			AudioServer.remove_bus_effect(bus, i)
+			break
+	if environmental_lowpass_hz <= 0.0:
+		return
+	var low_pass := AudioEffectLowPassFilter.new()
+	low_pass.cutoff_hz = environmental_lowpass_hz
+	AudioServer.add_bus_effect(bus, low_pass)
 
 
 func strip_environmental() -> void:
@@ -194,6 +232,14 @@ func strip_fraction(layer: StringName) -> float:
 ## ever touch a bus's base volume -- strip/restore fade a separate
 ## multiplier on top (_strip_fraction), composed together in
 ## _apply_bus_volume() rather than the two fighting over the same value.
+## Back to the exported layer levels (a new run after the climb's open-air
+## ending turned the cave ambience off).
+func reset_layer_volumes() -> void:
+	set_layer_volume(BUS_PRIORITY, db_to_linear(minf(priority_volume_db, 0.0)))
+	set_layer_volume(BUS_ESSENTIAL, db_to_linear(minf(essential_volume_db, 0.0)))
+	set_layer_volume(BUS_ENVIRONMENTAL, db_to_linear(minf(environmental_volume_db, 0.0)))
+
+
 func set_layer_volume(layer: StringName, linear: float) -> void:
 	if not _base_volume_linear.has(layer):
 		push_warning("AudioDirector.set_layer_volume: unknown bus %s" % layer)

@@ -15,9 +15,8 @@ filled in. Why yaw alone, and why not straight Euler angles:
   matter -- Godot's recenter (C / DualSense touchpad) removes it.
 - Which sensor axis is vertical is detected from gravity over the first
   samples (override with up_axis), so no mounting calibration is needed.
-- Pitch and roll are sent as 0: looking up/down must not change translation
-  (§6.1) or skew FOCUS alignment, and the mounting's forward axis is not
-  calibrated.
+- Pitch and roll are returned as 0: the mounting's forward axis isn't known
+  here. bridge.py fills pitch in from the calibrated nod (nod_calibration.py).
 
 Conventions verified with synthetic, physically consistent IMU data for an
 upright and a sideways mount (the q is initialised from an NED e-compass,

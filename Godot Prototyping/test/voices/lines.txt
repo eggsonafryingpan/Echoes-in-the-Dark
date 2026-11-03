@@ -33,23 +33,51 @@ calm_settling | That's it. Keep going.
 calm_recovered | Better. You've got it back.
 
 # --- Scan and FOCUS prompts (§9.2) ---------------------------------------
-# The scan itself says nothing -- direction and distance come from the
-# chirps. The bat only speaks when nothing came back, so silence after a
-# sweep is never mistaken for the scan not working.
+# Direction and distance come from the returns. These lines only say how
+# many things came back, in the vaguest terms, never what or where.
 scan_nothing_close | Nothing close enough to pick up.
+# Frog and bat discoveries, and the end-screen notes. Placeholders, not recorded yet.
+focus_reveal_frog | A frog. This deep? And it's jumping.
+focus_reveal_frog_again | Another frog.
+focus_reveal_bats | Bats. Sitting upright. Bats don't perch like that.
+end_notes_intro | Here's what we noticed.
+end_note_frog | A frog, deep in the cave, jumping in the dark.
+end_note_frogs_2 | Two frogs, deep in the cave, jumping in the dark.
+end_note_frogs_3 | Three frogs, deep in the cave, jumping in the dark.
+end_note_frogs_4 | Four frogs, a whole family, jumping in the dark.
+end_note_bats | Bats perched right side up, not hanging.
+end_notes_none | We didn't stop to look at much.
+# Tutorial (tutorial.tscn). Placeholders, not recorded yet.
+tut_nod | Let's get used to each other. First, nod your head, like you're saying yes.
+tut_jolt_up | Now jolt your head up, quick and sharp.
+tut_jolt_down | Now jolt it down, hard. A headbutt.
+tut_shake | Now shake your head, side to side, like you're saying no.
+tut_good | Good.
+tut_scan | Press the joystick, and listen to the pings.
+tut_walk | There's something up ahead, to the left. Walk toward it, and listen as you get closer.
+tut_focus | To figure out what it is, face the direction the sound is coming from, and hold, as it gets louder.
+tut_identified | A bird? Down here.
+tut_done | That's it. You're ready.
+# Shared lines: one per job, used everywhere it applies.
+note_added | That's going in our notes.
+scan_found | Something's out there.
+scan_known | Nothing new there.
+try_again | Almost. Try that again.
+# Scanning something already known. Placeholders, not recorded yet.
 scan_try_again | Try that again from somewhere else.
 focus_hold_to_identify | Hold still and face it. Give me a moment.
 # FOCUS reveals say what the thing is. One line per focus target, set as
 # that Focusable's reveal_line; focus_reveal_ready is only the fallback for
 # a target with no line of its own yet.
 focus_reveal_ready | There. Got it.
-focus_reveal_swarm | There. It's a swarm of insects. Calm ones. They're not a threat.
+focus_reveal_swarm | Flies. Harmless. But there's no way out down here.
 
 # --- Attribution beat (§10, Event 3) -------------------------------------
 attribution | You found it. That's what's keeping them all calm.
 
 # --- The escape (E2-E4, story as of 2026-10) ------------------------------
 e2_follow_wind | Wait, do you feel that? There's a breeze in here. That's wind from outside. Let's follow the wind, it'll lead us out.
+den_two_things | I'm picking up two things up ahead, but one of them is blocked. Get closer, and focus that way to find out what it is.
 den_reveal | A nest. Bones, fur. Something big sleeps here.
 den_reward | It walks the same way every time. I'll hear it coming early now.
 # The river (E3 in the run; the stealth and climb lines keep their old ids).
@@ -59,10 +87,31 @@ river_swept | Too strong! The current threw us back. Wait until the water goes q
 river_assist | The water's dying down. It's calm now. Jump whenever you're ready.
 river_crossed | We made it! Nice jump. Hear that? That's the wind. Keep following it.
 
+# Flies on the den: shake them off. Placeholders, not recorded yet.
+swarm_shake_prompt | Flies, all over us! Shake your head, side to side.
+swarm_shake_cleared | They're gone. Now I can hear it.
+
 e3_warning | Something's coming. Something big.
 e3_warning_den | That's it. The one from the nest. It's still far off. We have time.
 e3_pass | It's gone. It never knew we were here.
 e3_caught | It heard us! Back, back. Breathe. Let it pass this time.
-e4_start | The rock up here is loose. Listen for it falling.
-e4_hit | Ow. Okay. We're okay. Keep climbing.
+# Spotted: headbutt and flee instead of a restart. Placeholders, not recorded yet.
+e3_spotted | It's seen us! Headbutt it, then run!
+e3_headbutt_hit | Go, go!
+e4_start | Loose rock up here. Listen for it falling.
+# The final climb (grip_climb.gd). Placeholders, not recorded yet.
+climb_intro | Climb. Squeeze the left and right triggers to grab with each hand.
+climb_crumble | It's giving way! Grab another hold, quick!
+climb_flies | Flies! Grab with the hand away from them.
+climb_swarmed | They're on us! Shake your head!
+climb_fell | We fell. Okay. From the bottom.
 e4_exit | Air. Real air. We made it out.
+
+# --- Spatial Simon minigame: one line per rounds passed, picked by number ------
+simon_rounds_0 | Not quite. You didn't pass any rounds this time.
+simon_rounds_1 | Nice try. You passed one round.
+simon_rounds_2 | Good ears. You passed two rounds.
+simon_rounds_3 | Well done. You passed three rounds.
+simon_rounds_4 | Great memory. You passed four rounds.
+simon_rounds_5 | So close. You passed five rounds.
+simon_rounds_6 | You did it! You passed all six rounds.

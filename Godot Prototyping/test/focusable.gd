@@ -36,6 +36,10 @@ signal revealed()
 ## For a target that only means something once its event has started (the
 ## exit wind before Event 2).
 @export var active: bool = true
+## Only start building once a scan has returned this target, so the discovery
+## follows the loop: scan pings it, the bat flags it, FOCUS names it. Without
+## this, simply facing it in passing could name it.
+@export var requires_scan: bool = false
 
 ## Half-angle (degrees) of the "looking at it" cone at t=0, before relax.
 @export var focus_cone_start_deg: float = 15.0
@@ -91,7 +95,9 @@ signal revealed()
 @export var discovery_sfx: StringName = &"focus_discovery"
 ## The sting peaks around -17 dBFS and is spatialized at the target, so at
 ## 0 dB it could pass unnoticed under the bed from across the chamber.
-@export var discovery_volume_db: float = 6.0
+@export var discovery_volume_db: float = 9.0
+## How fast the source's level follows the focus, in dB per second.
+@export var volume_glide_db_per_second: float = 18.0
 
 ## --- After the reveal ------------------------------------------------------
 ##
@@ -121,6 +127,9 @@ signal revealed()
 @export var reveal_line_delay: float = 1.2
 
 var revealed_state: bool = false
+## True if the player built the focus all the way, false if it was given by the
+## fail-forward timer or a skip. Only an earned reveal goes in the notes.
+var earned: bool = false
 var focus_progress: float = 0.0  # 0..1
 
 var _t_active: float = -1.0  # seconds since first in range; -1 = never yet
@@ -153,6 +162,9 @@ func _physics_process(delta: float) -> void:
 		_in_range = false  # Frozen, not building: the readout should say so.
 		return
 
+	if requires_scan and _describable != null and not _describable.scanned:
+		_in_range = false
+		return
 	var dist: float = global_position.distance_to(GameState.head_position)
 	_in_range = dist <= activation_radius
 	if not _in_range:
@@ -182,16 +194,23 @@ func _physics_process(delta: float) -> void:
 	else:
 		focus_progress = clampf(focus_progress - decay_per_second * delta, 0.0, 1.0)
 
-	_apply_volume()
+	_apply_volume(delta)
 
 	if focus_progress >= 1.0 or _t_active >= fail_forward_seconds:
+		earned = focus_progress >= 1.0
 		_reveal()
 
 
-func _apply_volume() -> void:
+## delta 0 sets the level at once (resets); otherwise it glides there, so
+## stepping into range or a focus that wavers never jumps the level.
+func _apply_volume(delta: float = 0.0) -> void:
 	if _audio_player == null:
 		return
-	_audio_player.volume_db = lerpf(min_volume_db, max_volume_db, focus_progress)
+	var target := lerpf(min_volume_db, max_volume_db, focus_progress)
+	if delta <= 0.0:
+		_audio_player.volume_db = target
+	else:
+		_audio_player.volume_db = move_toward(_audio_player.volume_db, target, volume_glide_db_per_second * delta)
 
 
 ## Skip/jump keys: reveal now. silent = no sting and no bat line, for
@@ -207,6 +226,7 @@ func reset() -> void:
 	if _settle_tween != null and _settle_tween.is_valid():
 		_settle_tween.kill()
 	revealed_state = false
+	earned = false
 	focus_progress = 0.0
 	_t_active = -1.0
 	if _audio_player != null and _original_bus != &"":
@@ -274,11 +294,9 @@ func _acknowledge() -> void:
 ## The payoff: sustained attention turned an indistinct sound into
 ## something recognised, and this is the moment that lands (§6.3).
 ##
-## Priority bus, because the instant the mechanic rewards the player is
-## the worst possible instant for the overload detector to be fading
-## things out — and a plain AudioStreamPlayer3D rather than a raytraced
-## one, which would reassign its own bus on proximity and quietly escape
-## Priority (see spatial_sfx_source.gd).
+## Essential bus: discoveries are the story layer, stripped second, after the
+## ambience. A plain AudioStreamPlayer3D rather than a raytraced one, which
+## would reassign its own bus on proximity (see spatial_sfx_source.gd).
 ##
 ## Spatialized at this node rather than flat, so the sting comes from the
 ## thing that was just identified. The player is already facing it — that
@@ -288,7 +306,7 @@ func _play_discovery() -> void:
 		return
 	var player := AudioStreamPlayer3D.new()
 	player.name = "DiscoverySting"
-	player.bus = AudioDirector.BUS_PRIORITY
+	player.bus = AudioDirector.BUS_ESSENTIAL
 	player.stream = SfxLibrary.get_stream(discovery_sfx)
 	player.volume_db = discovery_volume_db
 	player.max_db = 12.0

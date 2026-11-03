@@ -113,6 +113,7 @@ func _make_marker(parent: Node3D, color: Color, continuous: bool) -> MeshInstanc
 
 	var mesh := MeshInstance3D.new()
 	mesh.name = "DebugMarker"
+	mesh.layers = DebugDraw.LAYER
 	mesh.mesh = box
 	mesh.material_override = material
 	mesh.visible = false

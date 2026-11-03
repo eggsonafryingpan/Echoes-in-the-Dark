@@ -1,6 +1,19 @@
 [gd_scene format=3 uid="uid://bdxqnstomnqfw"]
 
 [ext_resource type="Script" uid="uid://b5bgoygi2ka23" path="res://main_menu.gd" id="1_06t4h"]
+[ext_resource type="Theme" path="res://assets/main_menu_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/mainmenubg_converted.jpg" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/mainmenulogo.PNG" id="4_logo"]
+
+[sub_resource type="Gradient" id="glow_gradient"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(0.9, 0.93, 1, 0.82, 0.75, 0.82, 1, 0.45, 0.6, 0.7, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="glow_texture"]
+gradient = SubResource("glow_gradient")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
 
 [node name="Control" type="Control" unique_id=1076374650]
 layout_mode = 3
@@ -10,6 +23,29 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_06t4h")
+theme = ExtResource("2_theme")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.02, 0.06, 0.3)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1251160955]
 layout_mode = 1
@@ -18,26 +54,65 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -72.0
-offset_top = -64.0
-offset_right = 72.0
-offset_bottom = 64.0
+offset_left = -300.0
+offset_top = -350.0
+offset_right = 300.0
+offset_bottom = 340.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
+theme_override_constants/separation = 10
 
-[node name="Label" type="Label" parent="VBoxContainer" unique_id=1624661522]
+[node name="Logo" type="TextureRect" parent="VBoxContainer"]
+custom_minimum_size = Vector2(520, 270)
 layout_mode = 2
-text = "Echoes in the Dark"
+mouse_filter = 2
+texture = ExtResource("4_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Glow" type="TextureRect" parent="VBoxContainer/Logo"]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -20.0
+offset_right = 40.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("glow_texture")
+expand_mode = 1
 
 [node name="Button2" type="Button" parent="VBoxContainer" unique_id=1067574970]
 layout_mode = 2
+custom_minimum_size = Vector2(340, 58)
+size_flags_horizontal = 4
 text = "Start Game"
+
+[node name="ButtonTutorial" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(340, 58)
+size_flags_horizontal = 4
+text = "Tutorial"
+
+[node name="ButtonCalibrate" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(340, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Calibrate"
 
 [node name="Button3" type="Button" parent="VBoxContainer" unique_id=2131290336]
 layout_mode = 2
+custom_minimum_size = Vector2(340, 58)
+size_flags_horizontal = 4
 text = "Minigame"
 
 [node name="Button4" type="Button" parent="VBoxContainer" unique_id=1798866310]
 layout_mode = 2
+custom_minimum_size = Vector2(340, 58)
+size_flags_horizontal = 4
 text = "Quit"

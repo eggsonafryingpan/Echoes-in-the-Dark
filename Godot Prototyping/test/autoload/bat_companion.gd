@@ -22,7 +22,7 @@ extends Node
 ## rendering, but the fallback is flat rather than spatialized and every
 ## id that uses it is named in a warning.
 ##
-## What a return is, and is not: one short chirp per object, rendered from
+## What a return is, and is not: one detected sound per object, rendered from
 ## the object's direction. The scan answers *where* -- never *what* -- so
 ## every return uses the same sound and nothing here reads a Describable's
 ## label. Identity is earned by holding FOCUS on a source (focusable.gd,
@@ -33,14 +33,21 @@ extends Node
 ##   direction  the chirp plays 2 m from the head along the object's
 ##              horizontal bearing, so panning alone places it.
 ##   behind     stereo panning cannot tell front from back, so returns from
-##              behind use a muffled, lower chirp -- the way a head shadows
-##              sound arriving from behind it. Front returns are bright.
+##              behind play lower and quieter (detected_behind_pitch).
 ##   distance   encoded twice, and the two agree: a near return comes back
 ##              sooner AND louder (echo delay grows with distance, like real
 ##              echolocation), a far one later and quieter.
 ##   how many   at most max_returns, nearby objects merged into one return,
 ##              and no two returns within min_separation_deg of each other,
 ##              so each chirp is a direction you can point at.
+##
+## A scan says something afterwards: how many things in the vaguest terms,
+## never what or where (see _say_scan_line). Something already identified
+## returns differently and gets its own line, so it never reads as new.
+##
+## Returns and speech never overlap. Returns go first and the bat waits for
+## them: a press during speech holds the returns until the bat finishes, and
+## any line asked for while returns sound is held until they clear (see say()).
 ##
 ## Dialogue is data-driven (§9.3): lines as resources/JSON with id, audio
 ## file, trigger, mandatory/cutscene flag. EventDirector fires by id.
@@ -116,10 +123,68 @@ signal return_pinged(entry: Dictionary)
 @export var render_distance: float = 2.0
 
 ## The bat says "nothing close" after a scan that found nothing, so silence
-## after a sweep is never mistaken for the scan not working. A scan that
-## did find things says nothing: the chirps are the answer.
+## after a sweep is never mistaken for the scan not working.
 @export var speak_when_empty: bool = true
 @export var empty_line_delay: float = 0.5
+
+@export_group("Scan sounds")
+## Plays in place of the outgoing sweep on the first scan of a run.
+@export var scan_startup_sfx: String = "ui_startup"
+@export var scan_startup_volume_db: float = -5.0
+## The return sound. Distance still comes only from near/far_volume_db and
+## the echo delay above.
+@export var detected_sfx: String = "ui_scan_detected"
+## Flat lift so a return matches the old chirp's level: detected.mp3 peaks
+## about 13 dB lower. Applied equally to every return.
+@export var detected_gain_db: float = 8.0
+## detected.mp3 runs 2 s, longer than the gap between returns, and full-length
+## pings smeared into one buzz before. 0 plays the whole clip.
+@export var detected_max_seconds: float = 0.8
+@export var detected_fade_seconds: float = 0.12
+## Returns from behind play lower, keeping the front/back cue.
+@export var detected_behind_pitch: float = 0.8
+
+## Already-identified things return higher and quieter than anything unknown.
+## Both sit on top of the usual distance loudness.
+@export var known_return_pitch: float = 1.3
+@export var known_return_volume_db: float = -4.0
+
+@export_group("Narration layer")
+## Lines starting with these go out on the Essential layer, so overload can
+## strip them: discoveries and scan chatter. Everything else (events, CALM,
+## the escape) stays on UI and is never stripped.
+@export var essential_line_prefixes: PackedStringArray = ["scan_", "focus_", "den_"]
+## Said after a scan that returned something FOCUS can identify -- but only
+## the first few times in a run. The player has had the tutorial; working out
+## what to do is the point.
+@export var focus_prompt_line: StringName = &"focus_hold_to_identify"
+@export var focus_prompt_max_per_run: int = 2
+## The "something's out there" lines at most this often, so scans aren't
+## followed by chatter every time.
+@export var scan_line_cooldown_seconds: float = 45.0
+## How quickly an interrupted line fades instead of cutting.
+@export var voice_cut_fade_seconds: float = 0.15
+
+@export_group("Scan and speech spacing")
+## Silence between the last scan sound ending and any speech.
+@export var scan_speech_gap_seconds: float = 0.3
+## A press during speech holds the returns this long at most, then drops them.
+@export var scan_hold_max_seconds: float = 20.0
+## The same known line is not repeated within this many seconds.
+@export var known_line_repeat_seconds: float = 30.0
+
+@export_group("Post-scan narration")
+## The bat comments after a scan that found something, through say().
+@export var speak_after_scan: bool = true
+## Gap between the last return starting and the line.
+@export var scan_line_delay: float = 0.6
+
+@export_group("Recenter tick")
+@export var recenter_tick_volume_db: float = -8.0
+## Off: only the player's own recenter ticks. Automatic ones fire on level
+## load and on every live-sensor reconnect, which read as random beeps.
+@export var tick_on_automatic_recenter: bool = false
+@export_group("")
 
 ## Distance bands, for the debug markers and the observer HUD only. The
 ## player hears distance continuously (delay + loudness), not in bands.
@@ -127,6 +192,8 @@ const NEAR_BAND_MAX := 4.5
 const MID_BAND_MAX := 9.0
 
 const SCAN_LINE_EMPTY := &"scan_nothing_close"
+## The one line for "the scan found something new" (how many doesn't matter).
+const SCAN_LINE_FOUND := &"scan_found"
 
 ## Where voices/generate_voices.sh writes. Clips are addressed by id alone,
 ## so re-wording a line and re-running the generator changes nothing here —
@@ -143,6 +210,15 @@ var head: Node3D = null
 var enabled: bool = true
 
 var _last_scan: float = -999.0
+var _startup_played: bool = false
+var _last_scan_line: StringName = &""
+var _known_line_times: Dictionary = {}
+var _focus_prompts_said: int = 0
+var _t_last_scan_line: float = -INF
+## True from a scan's first sound until its last return has cleared.
+var _scan_sounding: bool = false
+## Lines asked for while a scan was sounding, spoken once it clears.
+var _held_lines: Array[StringName] = []
 ## The player's own instrument: outgoing chirp, not-ready tick, recenter
 ## confirmation. Flat (both ears) and on the UI bus, so it is never stripped.
 var _ui_player: AudioStreamPlayer = null
@@ -164,8 +240,6 @@ var _scan_serial: int = 0
 ## shape is the design -- short, sharp attack, nothing to smear -- and a
 ## missing file must never be able to make the scan silent.
 var _sound_out: AudioStreamWAV = null
-var _sound_front: AudioStreamWAV = null
-var _sound_behind: AudioStreamWAV = null
 var _sound_not_ready: AudioStreamWAV = null
 var _sound_recenter: AudioStreamWAV = null
 
@@ -177,8 +251,6 @@ func _ready() -> void:
 	add_child(_ui_player)
 
 	_sound_out = _chirp(1400.0, 4200.0, 0.22, 0.0, 0.45)
-	_sound_front = _chirp(3100.0, 2300.0, 0.09, 38.0, 0.6)
-	_sound_behind = _chirp(1150.0, 800.0, 0.13, 24.0, 0.6, 0.85)
 	_sound_not_ready = _chirp(320.0, 260.0, 0.06, 45.0, 0.35, 0.9)
 	_sound_recenter = _chirp(1900.0, 1900.0, 0.05, 50.0, 0.4)
 
@@ -209,15 +281,78 @@ func scan() -> void:
 		return
 	_last_scan = now
 
-	_play_ui(_sound_out, -4.0)
 	_scan_serial += 1
 	var serial := _scan_serial
+	var outgoing: AudioStream = _sound_out
+	var outgoing_db := -8.0
+	if not _startup_played:
+		_startup_played = true
+		outgoing = SfxLibrary.get_stream(scan_startup_sfx)
+		outgoing_db = scan_startup_volume_db
+
+	_play_ui(outgoing, outgoing_db)
+	if is_speaking():
+		if await _bat_went_quiet(serial):
+			_run_scan(serial, 0.0)
+	else:
+		_run_scan(serial, outgoing.get_length())
+
+
+## False if the wait ran out, or something superseded this scan.
+func _bat_went_quiet(serial: int) -> bool:
+	var waited := 0.0
+	while is_speaking() and waited < scan_hold_max_seconds:
+		await get_tree().create_timer(0.1).timeout
+		waited += 0.1
+		if serial != _scan_serial:
+			return false
+	return not is_speaking() and not GameState.input_locked
+
+
+## Everything after the outgoing sound. outgoing_seconds is how much of that
+## sound is still to come, so speech waits for it as well as the returns.
+func _run_scan(serial: int, outgoing_seconds: float) -> void:
+	_scan_sounding = true
 	var found := _gather_returns()
+	for entry in found:
+		for node in entry.nodes:
+			node.scanned = true
 	scan_performed.emit(found)
+	var clear_after := outgoing_seconds
 	for entry in found:
 		_emit_return(entry, serial)
-	if found.is_empty() and speak_when_empty:
-		_say_empty(serial)
+		clear_after = maxf(clear_after, entry.delay + _return_seconds())
+	await get_tree().create_timer(clear_after + scan_speech_gap_seconds).timeout
+	if serial != _scan_serial:
+		return
+	_scan_sounding = false
+	if found.is_empty():
+		if speak_when_empty:
+			_say_empty(serial)
+	elif speak_after_scan:
+		_say_after_scan(found)
+	_release_held_lines()
+
+
+## How long one return sounds, for working out when a scan has cleared.
+func _return_seconds() -> float:
+	if detected_max_seconds > 0.0:
+		return detected_max_seconds + detected_fade_seconds
+	return SfxLibrary.get_stream(detected_sfx).get_length() / minf(detected_behind_pitch, 1.0)
+
+
+func _release_held_lines() -> void:
+	var lines := _held_lines
+	_held_lines = []
+	for line_id in lines:
+		say(line_id)
+
+
+## A new run gets the startup sound again. Called when a level registers.
+func reset_scan_session() -> void:
+	_startup_played = false
+	_focus_prompts_said = 0
+	_t_last_scan_line = -INF
 
 
 func _play_ui(stream: AudioStream, volume_db: float) -> void:
@@ -228,11 +363,11 @@ func _play_ui(stream: AudioStream, volume_db: float) -> void:
 
 ## Two quick ticks: the player cannot see a recenter happen.
 func _on_recentered() -> void:
-	if _ui_player == null:
+	if _ui_player == null or not (GameState.recenter_was_manual or tick_on_automatic_recenter):
 		return
-	_play_ui(_sound_recenter, -8.0)
+	_play_ui(_sound_recenter, recenter_tick_volume_db)
 	await get_tree().create_timer(0.09).timeout
-	_play_ui(_sound_recenter, -8.0)
+	_play_ui(_sound_recenter, recenter_tick_volume_db)
 
 
 func _say_empty(serial: int) -> void:
@@ -240,6 +375,62 @@ func _say_empty(serial: int) -> void:
 	if serial != _scan_serial or is_speaking() or EventDirector.calm_active:
 		return
 	say(SCAN_LINE_EMPTY)
+
+
+## The line after a scan. Skipped if the bat is already talking or CALM is
+## running: bat_source carries CALM's coaching, and a scan quip must never
+## interrupt it. Skipped too if a scan identified something just now, because
+## that discovery has its own lines coming.
+func _say_after_scan(returns: Array) -> void:
+	if is_speaking() or not _held_lines.is_empty() or EventDirector.calm_active:
+		return
+	var unknown := 0
+	var known_node: Describable = null
+	for entry in returns:
+		if not entry.known and entry.node.identified:
+			return
+		if not entry.known:
+			unknown += 1
+		elif known_node == null or entry.node.priority > known_node.priority:
+			known_node = entry.node
+	if unknown > 0 and _focus_target_in(returns) and _focus_prompts_said < focus_prompt_max_per_run:
+		_focus_prompts_said += 1
+		_known_line_times[focus_prompt_line] = Time.get_ticks_msec() / 1000.0
+		say(focus_prompt_line)
+	elif unknown > 0:
+		_say_scan_line(unknown)
+	elif known_node != null:
+		_say_known_line(known_node.known_line)
+
+
+## True if a return is something FOCUS can still identify: the bat flags it
+## and says to face it, rather than the vaguer "something's out there".
+func _focus_target_in(returns: Array) -> bool:
+	for entry in returns:
+		if entry.known:
+			continue
+		for focus in get_tree().get_nodes_in_group(&"focusable"):
+			if not focus.revealed_state and focus.active and focus._describable in entry.nodes:
+				return true
+	return false
+
+
+func _say_known_line(line_id: StringName) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if line_id.is_empty() or now - _known_line_times.get(line_id, -INF) < known_line_repeat_seconds:
+		return
+	_known_line_times[line_id] = now
+	say(line_id)
+
+
+## Flavor only: "something's out there", never what or where.
+func _say_scan_line(_count: int) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _t_last_scan_line < scan_line_cooldown_seconds:
+		return
+	_t_last_scan_line = now
+	_last_scan_line = SCAN_LINE_FOUND
+	say(_last_scan_line)
 
 
 ## The few most relevant returns, nearest first, each with its timing and
@@ -309,6 +500,7 @@ func _gather_returns() -> Array:
 			"band": _band(distance),
 			"node": cl.nodes[0],
 			"nodes": cl.nodes,
+			"known": cl.nodes.all(func(d): return d.identified),
 		})
 
 	chosen.sort_custom(func(a, b): return a.distance < b.distance)
@@ -344,10 +536,24 @@ func _emit_return(entry: Dictionary, serial: int) -> void:
 
 	var ping := _free_ping()
 	ping.global_position = head.global_position + bearing * render_distance
-	ping.stream = _sound_behind if entry.behind else _sound_front
-	ping.volume_db = entry.volume_db + (-2.0 if entry.behind else 0.0)
+	ping.stream = SfxLibrary.get_stream(detected_sfx)
+	ping.pitch_scale = (detected_behind_pitch if entry.behind else 1.0) \
+			* (known_return_pitch if entry.known else 1.0)
+	ping.volume_db = entry.volume_db + detected_gain_db + (-2.0 if entry.behind else 0.0) \
+			+ (known_return_volume_db if entry.known else 0.0)
 	ping.play()
 	return_pinged.emit(entry)
+	_end_ping(ping)
+
+
+## Cuts a return short with a quick fade, unless detected_max_seconds is 0.
+func _end_ping(ping: AudioStreamPlayer3D) -> void:
+	if detected_max_seconds <= 0.0:
+		return
+	var fade := create_tween()
+	fade.tween_interval(detected_max_seconds)
+	fade.tween_property(ping, "volume_db", -60.0, detected_fade_seconds)
+	fade.tween_callback(ping.stop)
 
 
 func _free_ping() -> AudioStreamPlayer3D:
@@ -356,7 +562,7 @@ func _free_ping() -> AudioStreamPlayer3D:
 			return p
 
 	var ping := AudioStreamPlayer3D.new()
-	ping.bus = AudioDirector.BUS_UI
+	ping.bus = AudioDirector.BUS_ESSENTIAL
 	# Loudness is set per return from distance; 3D falloff stays out of it.
 	ping.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 	ping.max_db = 12.0
@@ -424,6 +630,9 @@ func _chirp(f_start: float, f_end: float, seconds: float, decay_rate: float,
 ## reads as a bug, and CALM coaching is several short lines in sequence.
 func say(line_id: StringName) -> void:
 	if not enabled:
+		return
+	if _scan_sounding:
+		_held_lines.append(line_id)
 		return
 
 	var stream := _voice_clip(line_id)
@@ -501,8 +710,26 @@ func _setup_tts_fallback() -> void:
 func shut_up() -> void:
 	_voice_serial += 1
 	_voice_queue.clear()
+	_held_lines.clear()
+	_scan_serial += 1
+	_scan_sounding = false
+	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		DisplayServer.tts_stop()
 	_speaking_line = false
-	AudioDirector.bat_source.stop()
+	_fade_out_voice()
+
+
+## A short fade rather than a hard stop: cutting the bat off mid-word clicks.
+func _fade_out_voice() -> void:
+	var source := AudioDirector.bat_source
+	if not source.playing:
+		return
+	var serial := _voice_serial
+	var fade := create_tween()
+	fade.tween_property(source, "volume_db", -60.0, voice_cut_fade_seconds)
+	fade.tween_callback(func():
+		if serial == _voice_serial:
+			source.stop())
 
 
 ## Seconds the rendered clip for line_id runs, or -1 if it has none.
@@ -511,8 +738,12 @@ func line_length(line_id: StringName) -> float:
 	return stream.get_length() if stream != null else -1.0
 
 
+## Includes lines held behind a scan, and placeholder lines on runtime TTS.
 func is_speaking() -> bool:
-	return _speaking_line or not _voice_queue.is_empty()
+	if _speaking_line or not _voice_queue.is_empty() or not _held_lines.is_empty():
+		return true
+	return DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH) \
+			and DisplayServer.tts_is_speaking()
 
 
 func _pump_voice() -> void:
@@ -530,6 +761,11 @@ func _pump_voice() -> void:
 	source.stream = item.stream
 	# Reset gain: whatever else last used this player set its own level.
 	source.volume_db = voice_volume_db
+	source.bus = AudioDirector.BUS_UI
+	for prefix in essential_line_prefixes:
+		if String(item.id).begins_with(prefix):
+			source.bus = AudioDirector.BUS_ESSENTIAL
+			break
 	source.play()
 	spoke.emit(item.id)
 

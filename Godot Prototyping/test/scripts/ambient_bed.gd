@@ -21,8 +21,9 @@ extends Node3D
 ## returns it.
 
 @export var bus: StringName = &"Environmental"
-## Never wind: wind means the exit (exit_wind.gd).
-@export var clips: Array[StringName] = [&"water_drip", &"river_flow_small", &"water_drip", &"river_flow_small"]
+## Never wind: wind means the exit (exit_wind.gd). Never water_drip either:
+## looped on a ring its plinks read as random beeping.
+@export var clips: Array[StringName] = [&"river_flow_small", &"river_flow_small", &"river_flow_small", &"river_flow_small"]
 @export var volume_db: float = -8.0
 @export var ring_radius: float = 6.0
 ## Above ear height, so the bed reads as the space itself rather than as

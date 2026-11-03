@@ -3,6 +3,7 @@ extends CharacterBody3D
 const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 const WallContactSound := preload("res://scripts/wall_contact_sound.gd")
+const PlayerHaptics := preload("res://scripts/player_haptics.gd")
 
 var isLocked: bool = false
 var isColliding: bool = false
@@ -11,9 +12,17 @@ var isColliding: bool = false
 ## (this CharacterBody3D) never rotates on its own; joystick input moves it
 ## relative to pivot's facing instead.
 @onready var pivot: Node3D = $CamOrigin
-@onready var wall_audio: RaytracedAudioPlayer3D = $WallAudio
+@onready var wall_audio: AudioStreamPlayer3D = $WallAudio
 @onready var footsteps: AudioStreamPlayer3D = $FootSteps
 @onready var listener: AudioListener3D = $CamOrigin/Camera3D/RaytracedAudioListener
+## Footsteps level. Was -6 in the scene, too quiet under the cave.
+@export var footstep_volume_db: float = 2.0
+## Footsteps fade in and out (dB per second) instead of pausing, and a brief
+## loss of floor contact (a seam in the rock) doesn't count as stopping.
+@export var footstep_fade_db_per_second: float = 120.0
+@export var footstep_floor_grace_seconds: float = 0.15
+var _off_floor_for: float = 0.0
+
 @export var collision_ray_num: int = 10
 @export var collision_dist: int = 4
 
@@ -29,7 +38,9 @@ var isColliding: bool = false
 ## Contact has to be absent this long before it ends. move_and_slide can
 ## miss a frame of contact against the cave's trimesh; without this the
 ## sound would stop and restart, which is its own stutter.
-@export var wall_release_seconds: float = 0.12
+@export var wall_release_seconds: float = 0.3
+## Contact holds while the body is within this distance of the wall it touched.
+@export var wall_stay_distance: float = 0.08
 
 ## Playtest aid (F8): draw the wall-detection ray ring and the live contact
 ## in the 3D view. See _draw_wall_debug.
@@ -52,6 +63,7 @@ var _wall_release_left: float = 0.0
 var _wall_contact_point: Vector3 = Vector3.ZERO
 var _wall_contact_normal: Vector3 = Vector3.ZERO
 var _wall_contact_sound: Node3D = null
+var haptics: Node = null
 var _wall_debug_mesh: ImmediateMesh = null
 var _wall_debug_instance: MeshInstance3D = null
 
@@ -78,6 +90,12 @@ func _ready():
 	_wall_contact_sound = WallContactSound.new()
 	_wall_contact_sound.name = "WallContactSound"
 	add_child(_wall_contact_sound)
+	haptics = PlayerHaptics.new()
+	haptics.name = "PlayerHaptics"
+	add_child(haptics)
+	footsteps.volume_db = footstep_volume_db
+	# The near-a-wall drone is route information: Essential, stripped second.
+	wall_audio.bus = AudioDirector.BUS_ESSENTIAL
 	_setup_wall_debug()
 
 	# Capturing the OS cursor is this scene's call, not DevMouseSource's --
@@ -147,10 +165,7 @@ func _physics_process(delta: float) -> void:
 	
 	move_and_slide()
 	
-	if velocity.length() == 0 or not is_on_floor():
-		footsteps.set_stream_paused(true)
-	else:
-		footsteps.set_stream_paused(false)
+	_update_footsteps(delta)
 	
 	_update_wall_contact(direction, delta)
 
@@ -225,7 +240,7 @@ func _physics_process(delta: float) -> void:
 func _hold_still() -> void:
 	_end_wall_contact()
 	velocity = Vector3.ZERO
-	footsteps.set_stream_paused(true)
+	_update_footsteps(get_physics_process_delta_time())
 	pivot.rotation = GameState.effective_orientation()
 	GameState.report_head_position(pivot.global_position)
 
@@ -259,9 +274,16 @@ func _update_wall_contact(direction: Vector3, delta: float) -> void:
 			_wall_contact_normal = normal
 			break
 
+	# Still against the wall without pushing (standing at it, or the stick let
+	# go): stays in contact until the player actually moves away from it.
+	if not touching and _wall_contact and test_move(global_transform, -_wall_contact_normal * wall_stay_distance):
+		touching = true
+
 	if touching:
 		_wall_release_left = wall_release_seconds
 		_wall_contact_sound.global_position = _wall_contact_point
+		haptics.set_wall(haptics.side_of(_wall_contact_point, pivot.global_position,
+				GameState.effective_orientation().y))
 		if not _wall_contact:
 			_wall_contact = true
 			_wall_contact_sound.start()
@@ -277,6 +299,16 @@ func _end_wall_contact() -> void:
 		return
 	_wall_contact = false
 	_wall_contact_sound.stop()
+	haptics.set_wall(0)
+
+
+func _update_footsteps(delta: float) -> void:
+	_off_floor_for = 0.0 if is_on_floor() else _off_floor_for + delta
+	var walking := Vector2(velocity.x, velocity.z).length() > 0.2 and _off_floor_for < footstep_floor_grace_seconds \
+			and not (isLocked or GameState.input_locked)
+	var target := footstep_volume_db if walking else -60.0
+	footsteps.volume_db = move_toward(footsteps.volume_db, target, footstep_fade_db_per_second * delta)
+	footsteps.stream_paused = footsteps.volume_db <= -59.0
 
 
 func is_touching_wall() -> bool:
@@ -293,6 +325,7 @@ func _setup_wall_debug() -> void:
 	material.vertex_color_use_as_albedo = true
 	material.no_depth_test = true
 	_wall_debug_instance = MeshInstance3D.new()
+	_wall_debug_instance.layers = DebugDraw.LAYER
 	_wall_debug_instance.name = "WallRayDebug"
 	_wall_debug_instance.mesh = _wall_debug_mesh
 	_wall_debug_instance.material_override = material

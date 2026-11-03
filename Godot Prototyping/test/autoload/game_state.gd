@@ -63,6 +63,24 @@ var reference_yaw: float = 0.0
 ## (§6.3, Phase 4) needs a fresh alignment check every frame.
 var head_position: Vector3 = Vector3.ZERO
 
+## Whether the latest recenter came from the player's key or button.
+var recenter_was_manual: bool = false
+
+## The player's notes: discoveries they actually made this run, in order, each
+## {id, text, line}. The end screen shows the text and the bat reads each line.
+signal observation_recorded(id: StringName)
+var observations: Array[Dictionary] = []
+## SfxLibrary name and level of the "added to notes" cue.
+@export var notes_sound: String = "notes_added"
+@export var notes_volume_db: float = 2.0
+## Seconds after a discovery before the notes sound, so the discovery sting
+## and the bat's reveal line come first.
+@export var notes_feedback_delay: float = 3.0
+## The bat's short line after the notes sound. Empty for none.
+@export var note_added_line: StringName = &"note_added"
+signal notes_feedback_played()
+var _notes_player: AudioStreamPlayer = null
+
 ## Set by EventDirector for the duration of a scripted beat (Event 1's cold
 ## open, §10). Movement, the scan and FOCUS all check this rather than each
 ## being reached into and disabled individually, so there is one flag to
@@ -73,23 +91,86 @@ var input_locked: bool = false
 ## as a multiple of flick_min_rate_deg, so it starts at 1.0.
 signal head_flicked(direction: int, strength: float)
 
-## A flick has to be fast AND big: this pitch rate (deg/s) starts one, and it
-## only counts once the head has travelled flick_min_travel_deg in that
-## direction within flick_capture_seconds. Speed alone would pass a tiny twitch
-## or a noisy sample; travel alone would pass a slow look up. Placeholders like
-## the other thresholds: the real values need a headband on a real head.
+## A side-to-side head turn, part of a shake. swings counts the turns in this
+## shake so far, each the opposite way to the last.
+signal head_shaken(swings: int)
+
+# ------------------------------------------------------------------------
+# HEAD GESTURES CONFIG
+# ------------------------------------------------------------------------
+## A flick has to be fast AND big: the pitch rate (deg/s) has to pass the
+## rate threshold, and the head has to have travelled the travel threshold
+## that way within flick_capture_seconds. Travel counts the whole movement,
+## including its start before it was fast.
+##
+## Live and mouse get separate thresholds. The EmotiBit's gyro is sampled at
+## 25 Hz, which clips the peaks of a fast movement, so a real head reads slower
+## than the same movement on the mouse.
+@export_group("Head flick (river jump, stealth headbutt)")
 @export var flick_min_rate_deg: float = 200.0
 @export var flick_min_travel_deg: float = 25.0
-@export var flick_capture_seconds: float = 0.3
+@export var flick_min_rate_deg_live: float = 110.0
+@export var flick_min_travel_deg_live: float = 18.0
+@export var flick_capture_seconds: float = 0.35
 ## Dead time after a flick, so the head coming back doesn't read as another.
 @export var flick_cooldown_seconds: float = 0.5
+## The bridge's IMU rate. Live samples arrive in bunches, so each is timed as
+## one sample period rather than by when it happened to arrive.
+@export var live_sample_hz: float = 25.0
+## Print each fast movement that fell short, with its peak and travel, so the
+## thresholds can be tuned on a real head.
+@export var log_near_miss_flicks: bool = true
 
+@export_group("Head nod (minigame repeats)")
+## Pitch speed (deg/s) a gentle nod must pass, down and then back up.
+@export var nod_rate_deg: float = 60.0
+@export var nod_rate_deg_live: float = 45.0
+
+@export_group("Gesture calibration")
+## Written by the tutorial's calibration, read here at launch. Calibrated
+## values replace the defaults above for that input (live or mouse); up and
+## down flicks are calibrated separately (jolt up, headbutt).
+@export var calibration_path: String = "user://gesture_calibration.cfg"
+@export var use_calibration: bool = true
+
+@export_group("Head shake (swarm)")
+## A swing counts once the yaw rate passes this (deg/s) and the head has
+## turned shake_min_swing_deg that way.
+@export var shake_min_rate_deg: float = 90.0
+@export var shake_min_swing_deg: float = 12.0
+## A single turn bigger than this is looking around, not shaking: it resets the
+## count instead of adding to it. This is what keeps an ordinary head turn
+## from reading as a shake (a shake also needs alternating swings).
+@export var shake_max_swing_deg: float = 70.0
+## A shake ends if the next swing takes longer than this.
+@export var shake_gap_seconds: float = 0.8
+@export_group("")
+
+## Calibrated values, by input ("live"/"mouse") then key: up_rate, up_travel,
+## down_rate, down_travel, nod_rate. Empty until calibrated.
+var calibration: Dictionary = {}
+
+## [time, rate_deg, dt] per pitch sample, newest last, on the sample clock.
+var _pitch_samples: Array = []
 var _flick_direction: int = 0
-var _flick_peak: float = 0.0
-var _flick_travel: float = 0.0
-var _t_flick_start: float = 0.0
-var _t_pitch_sample: float = 0.0
+var _t_flick_armed: float = 0.0
 var _t_next_flick: float = 0.0
+var _t_pitch_arrival: float = 0.0
+## Advances by one sample's length per sample, so a bunched packet still
+## spans the time it covered. Never behind real time, so it keeps moving
+## across gaps with no samples (the mouse sends none while still).
+var _sample_clock: float = 0.0
+
+var _t_yaw_arrival: float = 0.0
+var _last_yaw: float = 0.0
+var _have_yaw: bool = false
+var _swing_dir: int = 0
+var _swing_travel: float = 0.0
+var _swing_peak: float = 0.0
+var _swing_counted: bool = false
+var _shake_swings: int = 0
+var _t_last_swing: float = -INF
+var _yaw_clock: float = 0.0
 
 ## Multiplies walking speed. 1 everywhere except E4's climb, which is
 ## slower going (rockfall_climb.gd sets and resets it), so the shaft takes
@@ -136,6 +217,7 @@ var _elevated_from_osc: bool = false
 
 
 func _ready() -> void:
+	load_calibration()
 	SensorBridge.orientation_updated.connect(_on_orientation_updated)
 	SensorBridge.heart_rate_updated.connect(_on_heart_rate_updated)
 	SensorBridge.pitch_rate_updated.connect(_on_pitch_rate_updated)
@@ -168,6 +250,7 @@ func _set_elevated(elevated: bool) -> void:
 func _on_orientation_updated(euler: Vector3) -> void:
 	_source_orientation = euler
 	orientation = euler + Vector3(0.0, _osc_yaw, 0.0)
+	_detect_shake(orientation.y)
 	# The first live sample replaces the mouse's yaw with the headband's
 	# absolute one, which would swing the world by however far apart they
 	# happen to be. Recentering on that handover keeps the player facing
@@ -178,6 +261,17 @@ func _on_orientation_updated(euler: Vector3) -> void:
 	_was_live_orientation = live
 
 
+## Seconds this sample covers. Live: one sample period, whatever the arrival
+## time. Mouse: the time since the last sample, as the mouse reports once per
+## frame -- except the first after a pause, which gets one frame's worth
+## rather than the whole pause.
+func _sample_dt(t_last_arrival: float, now: float) -> float:
+	if SensorBridge.live_orientation_active():
+		return 1.0 / maxf(live_sample_hz, 1.0)
+	var gap := now - t_last_arrival
+	return gap if gap <= 0.1 else 1.0 / 60.0
+
+
 ## Detects flicks from the rate of the head's pitch, not its angle: how far the
 ## head is tilted says nothing about how sharply it moved, and on the headband
 ## the rate is the one pitch measure that doesn't depend on the mounting.
@@ -186,39 +280,232 @@ func _on_pitch_rate_updated(rate: float) -> void:
 	# receiver is streaming; those would cut the time between real samples.
 	if rate == 0.0:
 		return
-	var rate_deg := rad_to_deg(rate)
 	var now := Time.get_ticks_msec() / 1000.0
-	# Capped so a gap in the stream can't count as travel.
-	var dt := minf(now - _t_pitch_sample, 0.1)
-	_t_pitch_sample = now
-	if _flick_direction == 0:
-		if absf(rate_deg) >= flick_min_rate_deg and now >= _t_next_flick:
-			_flick_direction = 1 if rate_deg > 0.0 else -1
-			_flick_peak = absf(rate_deg)
-			_flick_travel = 0.0
-			_t_flick_start = now
+	var dt := _sample_dt(_t_pitch_arrival, now)
+	_t_pitch_arrival = now
+	_sample_clock = maxf(_sample_clock + dt, now)
+	var rate_deg := rad_to_deg(rate)
+	_pitch_samples.append([_sample_clock, rate_deg, dt])
+	while _pitch_samples.size() > 0 and _sample_clock - _pitch_samples[0][0] > flick_capture_seconds:
+		_pitch_samples.pop_front()
+	if _sample_clock < _t_next_flick:
 		return
 
-	_flick_peak = maxf(_flick_peak, rate_deg * _flick_direction)
-	_flick_travel += rate_deg * _flick_direction * dt
-	if _flick_travel >= flick_min_travel_deg:
-		head_flicked.emit(_flick_direction, _flick_peak / flick_min_rate_deg)
+	var live := SensorBridge.live_orientation_active()
+	if _flick_direction == 0:
+		var dir := 1 if rate_deg > 0.0 else -1
+		if absf(rate_deg) < flick_threshold(dir, "rate"):
+			return
+		_flick_direction = dir
+		_t_flick_armed = _sample_clock
+	var min_rate := flick_threshold(_flick_direction, "rate")
+	var min_travel := flick_threshold(_flick_direction, "travel")
+
+	var travel := 0.0
+	var peak := 0.0
+	for sample in _pitch_samples:
+		var along: float = sample[1] * _flick_direction
+		if along > 0.0:
+			travel += along * sample[2]
+			peak = maxf(peak, along)
+	if travel >= min_travel:
+		head_flicked.emit(_flick_direction, peak / min_rate)
 		_flick_direction = 0
-		_t_next_flick = now + flick_cooldown_seconds
-	elif now - _t_flick_start >= flick_capture_seconds:
+		_pitch_samples.clear()
+		_t_next_flick = _sample_clock + flick_cooldown_seconds
+	elif _sample_clock - _t_flick_armed >= flick_capture_seconds:
+		if log_near_miss_flicks and peak > 0.0:
+			print("GameState: flick %s fell short: peak %.0f deg/s, travel %.0f of %.0f deg (%s)" % [
+				"up" if _flick_direction > 0 else "down", peak, travel, min_travel, "live" if live else "mouse"])
 		_flick_direction = 0
+
+
+## Swings for a head shake, from how fast the yaw changes. Timed like the
+## flicks, so bunched live samples read at their real speed.
+func _detect_shake(yaw: float) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var dt := _sample_dt(_t_yaw_arrival, now)
+	_t_yaw_arrival = now
+	if not _have_yaw or dt <= 0.0:
+		_have_yaw = true
+		_last_yaw = yaw
+		return
+	_yaw_clock = maxf(_yaw_clock + dt, now)
+	var rate_deg := rad_to_deg(wrapf(yaw - _last_yaw, -PI, PI)) / dt
+	_last_yaw = yaw
+	var dir := signi(int(signf(rate_deg)))
+	if dir == 0:
+		return
+	if dir != _swing_dir:
+		_swing_dir = dir
+		_swing_travel = 0.0
+		_swing_peak = 0.0
+		_swing_counted = false
+	_swing_travel += absf(rate_deg) * dt
+	_swing_peak = maxf(_swing_peak, absf(rate_deg))
+	if _swing_travel > shake_threshold("max_swing"):
+		if _shake_swings > 0:
+			_shake_swings = 0  # a big look-around, not a shake
+		_swing_counted = true
+		return
+	if _swing_counted or _swing_peak < shake_threshold("rate") or _swing_travel < shake_threshold("swing"):
+		return
+	_swing_counted = true
+	if _yaw_clock - _t_last_swing > shake_gap_seconds:
+		_shake_swings = 0
+	_shake_swings += 1
+	_t_last_swing = _yaw_clock
+	head_shaken.emit(_shake_swings)
+
+
+## Adds a note, once per id. False if it was already there. The "added to
+## notes" sound (and, with announce, the bat's short line) comes once the
+## discovery has landed: after feedback_delay seconds and once the bat is
+## quiet, so it never sits on top of the discovery sting or the reveal line.
+## feedback_delay < 0 uses notes_feedback_delay.
+func record_observation(id: StringName, text: String, line: StringName,
+		announce: bool = true, feedback_delay: float = -1.0) -> bool:
+	for note in observations:
+		if note.id == id:
+			return false
+	observations.append({"id": id, "text": text, "line": line})
+	print("GameState: observation recorded: %s" % text)
+	observation_recorded.emit(id)
+	_notes_feedback(announce, notes_feedback_delay if feedback_delay < 0.0 else feedback_delay)
+	return true
+
+
+func _notes_feedback(announce: bool, delay: float) -> void:
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+	var waited := 0.0
+	while BatCompanion.is_speaking() and waited < 20.0:
+		await get_tree().create_timer(0.1).timeout
+		waited += 0.1
+	_play_notes_sound()
+	notes_feedback_played.emit()
+	if announce and note_added_line != &"":
+		await get_tree().create_timer(0.5).timeout
+		BatCompanion.say(note_added_line)
+
+
+## The "added to notes" cue: its own sound, never the discovery sting. UI bus,
+## like the rest of the player's own feedback, so overload never removes it.
+func _play_notes_sound() -> void:
+	if _notes_player == null:
+		_notes_player = AudioStreamPlayer.new()
+		_notes_player.name = "NotesSound"
+		_notes_player.bus = AudioDirector.BUS_UI
+		add_child(_notes_player)
+	_notes_player.stream = SfxLibrary.get_stream(notes_sound)
+	_notes_player.volume_db = notes_volume_db
+	_notes_player.play()
+
+
+## Changes an existing note (the frog count going up). Plays the notes sound,
+## without the bat's "noted" line. False if there is no such note.
+func update_observation(id: StringName, text: String, line: StringName) -> bool:
+	for note in observations:
+		if note.id == id:
+			note.text = text
+			note.line = line
+			print("GameState: observation updated: %s" % text)
+			_notes_feedback(false, notes_feedback_delay)
+			return true
+	return false
+
+
+func clear_observations() -> void:
+	observations.clear()
+
+
+# --- Gesture thresholds and calibration --------------------------------------
+
+func _input_key() -> String:
+	return "live" if SensorBridge.live_orientation_active() else "mouse"
+
+
+## The flick threshold in use: direction +1 up, -1 down; what is "rate"
+## (deg/s) or "travel" (deg). Calibrated if there is a value, else the exports.
+func flick_threshold(direction: int, what: String) -> float:
+	var key := ("up_" if direction > 0 else "down_") + what
+	var cal: Dictionary = calibration.get(_input_key(), {})
+	if use_calibration and cal.has(key):
+		return cal[key]
+	var live := _input_key() == "live"
+	if what == "rate":
+		return flick_min_rate_deg_live if live else flick_min_rate_deg
+	return flick_min_travel_deg_live if live else flick_min_travel_deg
+
+
+## Shake thresholds in use: what is "rate" (deg/s a swing must reach),
+## "swing" (deg it must turn) or "max_swing" (deg past which it's a look-around).
+func shake_threshold(what: String) -> float:
+	var cal: Dictionary = calibration.get(_input_key(), {})
+	if use_calibration and cal.has("shake_" + what):
+		return cal["shake_" + what]
+	match what:
+		"rate":
+			return shake_min_rate_deg
+		"swing":
+			return shake_min_swing_deg
+	return shake_max_swing_deg
+
+
+## The nod threshold in use (deg/s), shared with the minigame.
+func nod_threshold() -> float:
+	var cal: Dictionary = calibration.get(_input_key(), {})
+	if use_calibration and cal.has("nod_rate"):
+		return cal.nod_rate
+	return nod_rate_deg_live if _input_key() == "live" else nod_rate_deg
+
+
+## Stores calibrated values for the current input and saves them to disk, so
+## the game, the minigame and the next launch all use them.
+func save_calibration(values: Dictionary) -> String:
+	var key := _input_key()
+	var merged: Dictionary = calibration.get(key, {})
+	merged.merge(values, true)
+	calibration[key] = merged
+	var file := ConfigFile.new()
+	for input in calibration:
+		for k in calibration[input]:
+			file.set_value(input, k, calibration[input][k])
+	var err := file.save(calibration_path)
+	print("GameState: calibration saved for %s input: %s (%s)" % [key, merged, error_string(err)])
+	return key
+
+
+func load_calibration() -> void:
+	calibration.clear()
+	var file := ConfigFile.new()
+	if file.load(calibration_path) != OK:
+		return
+	for input in file.get_sections():
+		calibration[input] = {}
+		for k in file.get_section_keys(input):
+			calibration[input][k] = float(file.get_value(input, k))
+	print("GameState: loaded gesture calibration: %s" % calibration)
+
+
+## Starts the next shake count from zero.
+func reset_shake() -> void:
+	_shake_swings = 0
+	_t_last_swing = -INF
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(RECENTER_ACTION):
-		recenter()
+		recenter(true)
 		get_viewport().set_input_as_handled()
 
 
 ## "Wherever I'm facing now is straight ahead": maps the current head yaw
 ## onto reference_yaw. Pitch is left alone -- only yaw drifts and only yaw
-## steers.
-func recenter() -> void:
+## steers. manual is true when the player asked for it; the bat only ticks
+## for those (a scene load or a sensor reconnect is not the player's doing).
+func recenter(manual: bool = false) -> void:
+	recenter_was_manual = manual
 	yaw_offset = reference_yaw - orientation.y
 	recentered.emit()
 

@@ -11,6 +11,11 @@ android.x86_64.debug ="res://addons/godot-steam-audio/bin/libgodot-steam-audio.a
 android.x86_64.release = "res://addons/godot-steam-audio/bin/libgodot-steam-audio.android.template_release.x86_64.so"
 android.arm64.debug ="res://addons/godot-steam-audio/bin/libgodot-steam-audio.android.template_debug.arm64.so"
 android.arm64.release = "res://addons/godot-steam-audio/bin/libgodot-steam-audio.android.template_release.arm64.so"
+; macOS has no Steam Audio build. This stub loads cleanly and registers
+; nothing, so Mac launches stop printing "No GDExtension library found".
+; Source and build command: bin/macos/steam_audio_mac_stub.c
+macos.debug = "res://addons/godot-steam-audio/bin/macos/libsteam_audio_mac_stub.dylib"
+macos.release = "res://addons/godot-steam-audio/bin/macos/libsteam_audio_mac_stub.dylib"
 windows.x86_64.debug = "res://addons/godot-steam-audio/bin/libgodot-steam-audio.windows.template_debug.x86_64.dll"
 windows.x86_64.release = "res://addons/godot-steam-audio/bin/libgodot-steam-audio.windows.template_release.x86_64.dll"
 

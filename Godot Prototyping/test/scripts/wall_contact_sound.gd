@@ -29,7 +29,7 @@ extends Node3D
 ## voices overlap and there is never a gap.
 @export var retrigger_seconds: float = 0.7
 @export var pitch_jitter: float = 0.06
-@export var fade_out_seconds: float = 0.08
+@export var fade_out_seconds: float = 0.2
 
 var _voices: Array[AudioStreamPlayer3D] = []
 var _next_voice: int = 0

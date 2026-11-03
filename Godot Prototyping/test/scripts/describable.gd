@@ -43,14 +43,30 @@ extends Node3D
 
 var announced: bool = false
 
+## Starts identified, for things that are never a discovery (water drips):
+## a scan treats them as known from the first time.
+@export var known_from_start: bool = false
+
+## What the bat says when a scan returns this once it is identified, in place
+## of the "something's out there" lines. An id in voices/lines.txt.
+@export var known_line: StringName = &""
+
 ## Set by a sibling Focusable on reveal. Identity is earned through sustained
 ## FOCUS, never handed over by the scan (§9.2) — nothing should speak this
 ## object as a recognised thing while this is false.
 var identified: bool = false
 
+## Set once a scan has returned this. FOCUS targets that require a scan first
+## (Focusable.requires_scan) wait for it.
+var scanned: bool = false
+
+## Hidden from scans for now: something is in the way (the den behind the flies).
+var blocked: bool = false
+
 
 func _ready() -> void:
 	add_to_group(&"describable")
+	identified = known_from_start
 	if label.is_empty():
 		push_warning("Describable on %s has no label." % get_parent().name)
 
@@ -63,4 +79,4 @@ func available() -> bool:
 ## this one's — BatCompanion range-limits against its own max as well as
 ## this node's scan_radius.
 func scannable() -> bool:
-	return available() and not continuous
+	return available() and not continuous and not blocked

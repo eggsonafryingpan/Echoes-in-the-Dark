@@ -51,3 +51,54 @@ static func pulse_side(side: int, intensity: float, seconds: float) -> void:
 static func stop() -> void:
 	for device in Input.get_connected_joypads():
 		Input.stop_joy_vibration(device)
+
+
+# --- Adaptive triggers (L2 / R2 resistance) ----------------------------------
+#
+# Godot has no API for DualSense trigger resistance, so the game asks the
+# Python bridge to do it: one OSC message, /echoes/trigger [side, strength],
+# to TRIGGER_PORT. The bridge applies it over HID with pydualsense (see
+# sensor_bridge/trigger_out.py). With no bridge, or no pydualsense, nothing
+# happens and the game plays the same.
+
+const TRIGGER_HOST := "127.0.0.1"
+const TRIGGER_PORT := 12347
+static var _trigger_udp: PacketPeerUDP = null
+## Last strength sent per side, for the climb's wall view and tests.
+static var trigger_strength := {LEFT: 0.0, RIGHT: 0.0}
+
+
+## side LEFT (-1, L2) or RIGHT (+1, R2); strength 0 (off) to 1 (stiffest).
+static func set_trigger(side: int, strength: float) -> void:
+	var s := clampf(strength, 0.0, 1.0)
+	trigger_strength[side] = s
+	if _trigger_udp == null:
+		_trigger_udp = PacketPeerUDP.new()
+		_trigger_udp.set_dest_address(TRIGGER_HOST, TRIGGER_PORT)
+	_trigger_udp.put_packet(_osc_message("/echoes/trigger", side, s))
+
+
+static func release_triggers() -> void:
+	set_trigger(LEFT, 0.0)
+	set_trigger(RIGHT, 0.0)
+
+
+## A minimal OSC message: address, ",if", one int32, one float32 (big-endian).
+static func _osc_message(address: String, i: int, f: float) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.append_array(_osc_string(address))
+	out.append_array(_osc_string(",if"))
+	var num := StreamPeerBuffer.new()
+	num.big_endian = true
+	num.put_32(i)
+	num.put_float(f)
+	out.append_array(num.data_array)
+	return out
+
+
+static func _osc_string(text: String) -> PackedByteArray:
+	var b := text.to_ascii_buffer()
+	b.append(0)
+	while b.size() % 4 != 0:
+		b.append(0)
+	return b

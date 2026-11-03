@@ -8,7 +8,7 @@ player is deliberately holding still anyway.
 
 
 class MotionGate:
-    def __init__(self, still_threshold: float = 0.05, smoothing: float = 0.2):
+    def __init__(self, still_threshold: float = 0.3, smoothing: float = 0.2):
         # still_threshold is in rad/s. smoothing is an EMA factor (0-1); a
         # single fast spin shouldn't instantly flip the gate back to "still"
         # the moment it stops, so we smooth the magnitude before comparing.

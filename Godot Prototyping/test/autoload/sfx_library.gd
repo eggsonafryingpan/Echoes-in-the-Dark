@@ -92,14 +92,26 @@ func has_stream(logical_name: String) -> bool:
 	return get_stream(logical_name) != _get_placeholder()
 
 
+## An entry may name a "placeholder" file (in the same folder, or in
+## "placeholder_folder"): used, with a warning, until the real "file" is
+## dropped in. Then the real one wins with
+## no manifest or code change.
 func _resolve(logical_name: String) -> AudioStream:
 	if not _manifest.has(logical_name):
 		return null
 	var entry: Dictionary = _manifest[logical_name]
 	var folder: String = entry.get("folder", "")
-	var file_base: String = entry.get("file", logical_name)
-	var base_path := "%s%s/%s" % [SFX_ROOT, folder, file_base]
+	var stream := _load_first("%s%s/%s" % [SFX_ROOT, folder, entry.get("file", logical_name)])
+	if stream == null and entry.has("placeholder"):
+		var placeholder_folder: String = entry.get("placeholder_folder", folder)
+		stream = _load_first("%s%s/%s" % [SFX_ROOT, placeholder_folder, entry.placeholder])
+		if stream != null:
+			push_warning("SfxLibrary: '%s' is using its placeholder until assets/sfx/%s/%s.(wav|ogg|mp3) is added."
+					% [logical_name, folder, entry.get("file", logical_name)])
+	return stream
 
+
+func _load_first(base_path: String) -> AudioStream:
 	for ext in _EXTENSIONS:
 		var path := "%s.%s" % [base_path, ext]
 		if ResourceLoader.exists(path):

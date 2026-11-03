@@ -18,15 +18,11 @@ func _custom_control(address : String, vals : Array, time):
 				interval = 60.0 / vals[0]
 	pass
 
-#in seconds
-var elapsed = 0
-func _process(delta):
-	elapsed += delta
-	if elapsed >= interval:
-		print("buzz buzz")
-		print(interval)
-		Input.start_joy_vibration(0,1,0.8,0.2)
-		elapsed = 0
+# The controller heartbeat used to buzz here every `interval` seconds, all
+# game, whatever the input -- a fixed 100 bpm unless this receiver happened to
+# get a bpm, which it never does in live mode. It now lives in
+# scripts/player_haptics.gd and follows GameState.hr_bpm, which the bpm above
+# still feeds through SensorBridge.set_osc_heart_rate().
 	
 	
 	

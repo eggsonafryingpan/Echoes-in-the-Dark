@@ -39,14 +39,26 @@ enum Current { STRONG, EASING, WEAK, RISING }
 @export var near_bank_path: NodePath = ^"NearBank"
 @export var far_bank_path: NodePath = ^"FarBank"
 
+# ------------------------------------------------------------------------
+# RIVER TIMING CONFIG (the head flick itself is tuned in GameState's
+# HEAD GESTURES CONFIG: rate, travel and capture time, live and mouse)
+# ------------------------------------------------------------------------
+@export_group("Current cycle")
 @export var strong_seconds: float = 7.0
 @export var easing_seconds: float = 2.0
 @export var weak_seconds: float = 5.0
 @export var rising_seconds: float = 2.0
-@export var strong_db: float = 6.0
-@export var weak_db: float = -12.0
+@export_group("Safe window")
+## The water already sounds quiet near the end of EASING, and a flick is only
+## recognised partway through the movement. These widen the safe window: the
+## last part of EASING, and the first part of RISING.
+@export var window_early_seconds: float = 0.8
+@export var window_late_seconds: float = 0.5
+@export_group("")
+@export var strong_db: float = 4.0
+@export var weak_db: float = -11.0
 ## Pulled down under the bat's explanation, so it can be heard.
-@export var intro_db: float = -6.0
+@export var intro_db: float = -12.0
 
 @export var assist_after_swept: int = 2
 @export var assist_after_missed: int = 3
@@ -57,7 +69,7 @@ enum Current { STRONG, EASING, WEAK, RISING }
 @export var swept_seconds: float = 1.6
 ## Longest the player waits on a spoken line before getting control back.
 @export var line_timeout: float = 8.0
-## The player stays this far from the side walls when jumping.
+## The player lands no further than this from the middle of the bank.
 @export var bank_half_width: float = 7.5
 
 @export var intro_line: StringName = &"river_intro"
@@ -81,6 +93,7 @@ var _water: AudioStreamPlayer3D = null
 var _label: Label3D = null
 var _t_current: float = 0.0
 var _jumped_this_window: bool = false
+var _window_counted: bool = true
 var _tween: Tween = null
 ## Bumped when the crossing is reset, so a sequence still waiting on a spoken
 ## line wakes up, sees it is stale and leaves the player alone.
@@ -109,7 +122,14 @@ func _physics_process(delta: float) -> void:
 
 ## True while a flick lands on the far bank.
 func window_open() -> bool:
-	return current == Current.WEAK
+	match current:
+		Current.WEAK:
+			return true
+		Current.EASING:
+			return _t_current >= easing_seconds - window_early_seconds
+		Current.RISING:
+			return _t_current <= window_late_seconds
+	return false
 
 
 func begin_crossing() -> void:
@@ -164,7 +184,10 @@ func force_fail() -> void:
 
 
 func _on_head_flicked(direction: int, strength: float) -> void:
-	last_flick = "last flick: %s  strength %.2f" % ["UP" if direction > 0 else "DOWN", strength]
+	last_flick = "last flick: %s  strength %.2f  during %s %.1fs" % [
+		"UP" if direction > 0 else "DOWN", strength, Current.keys()[current], _t_current]
+	if direction > 0 and state == State.LISTENING:
+		print("River: " + last_flick)
 	if direction <= 0 or state != State.LISTENING:
 		return
 	if not _trigger.overlaps_body(_level.player):
@@ -263,24 +286,28 @@ func _update_current(delta: float) -> void:
 		Current.STRONG:
 			_water.volume_db = move_toward(_water.volume_db, strong_db, 12.0 * delta)
 			if _t_current >= strong_seconds:
+				_jumped_this_window = false
+				_window_counted = false
 				_set_current(Current.EASING)
 		Current.EASING:
 			_water.volume_db = lerpf(strong_db, weak_db, minf(_t_current / easing_seconds, 1.0))
 			if _t_current >= easing_seconds:
-				_jumped_this_window = false
 				_set_current(Current.WEAK)
 		Current.WEAK:
 			_water.volume_db = weak_db
 			if not assisted and _t_current >= weak_seconds:
-				_end_window()
+				_set_current(Current.RISING)
 		Current.RISING:
 			_water.volume_db = lerpf(weak_db, strong_db, minf(_t_current / rising_seconds, 1.0))
+			# The window's late grace is over: only now is it a miss.
+			if not _window_counted and _t_current > window_late_seconds:
+				_window_counted = true
+				_end_window()
 			if _t_current >= rising_seconds:
 				_set_current(Current.STRONG)
 
 
 func _end_window() -> void:
-	_set_current(Current.RISING)
 	if _jumped_this_window or state != State.LISTENING:
 		return
 	missed += 1
@@ -295,7 +322,7 @@ func _end_window() -> void:
 func _bank_point(path: NodePath) -> Vector3:
 	var bank := (get_node(path) as Node3D).global_position
 	var player: Vector3 = _level.player.global_position
-	return Vector3(clampf(player.x, -bank_half_width, bank_half_width), player.y, bank.z)
+	return Vector3(clampf(player.x, bank.x - bank_half_width, bank.x + bank_half_width), player.y, bank.z)
 
 
 ## Priority, like the water: this is the result of the player's own action.

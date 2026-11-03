@@ -60,6 +60,10 @@ extends Node3D
 ## scan returns per §9.2, since they are already heard directly.
 @export var continuous: bool = false
 
+## See Describable.
+@export var known_from_start: bool = false
+@export var known_line: StringName = &""
+
 @export var scan_priority: int = 0
 @export var scan_radius: float = 12.0
 
@@ -71,6 +75,9 @@ extends Node3D
 ## room. Sharing one setting for both is what made the cave sound like one
 ## continuous river from any position.
 @export var volume_db: float = 0.0
+## Output ceiling. Godot's default is +3 dB, which silently capped every
+## louder source (and the river's strong current) at +3.
+@export var max_db: float = 24.0
 @export var max_distance: float = 25.0
 
 ## With ATTENUATION_INVERSE_DISTANCE, gain is unit_size / distance -- so
@@ -78,12 +85,27 @@ extends Node3D
 ## which a source is still at full level.
 @export var unit_size: float = 4.0
 
+## --- Occasional sounds ----------------------------------------------------
+##
+## For a clip with a sound every few seconds (water_drops.mp3 has a drip about
+## every 2.4 s), looped drips stack into constant random-sounding plinks.
+## A non-zero range plays one short slice at a random time inside it instead.
+## autoplay is ignored; volume_db above sets the level.
+
+## Seconds between sounds, min to max. Zero: loop normally.
+@export var occasional_interval: Vector2 = Vector2.ZERO
+## Length of each slice. Just under the clip's drip spacing gives exactly one.
+@export var occasional_slice_seconds: float = 2.4
+
 ## --- Physical body --------------------------------------------------------
 
-enum BodyKind { AUTO, NONE, BAT, SWARM, WATER, WATERFALL, DRIP, WIND }
+enum BodyKind { AUTO, NONE, BAT, SWARM, WATER, WATERFALL, DRIP, WIND, FROG }
 
 ## AUTO picks from sfx_name (see BODY_FOR_SFX); set explicitly to override.
 @export var body_kind: BodyKind = BodyKind.AUTO
+
+## Bats standing up on a ledge instead of hanging from the ceiling.
+@export var bat_upright: bool = false
 
 ## Footprint of stretched bodies (water along a river or stream). Zero
 ## means the kind's default. X/Z are the stretch; Y is ignored for water.
@@ -91,6 +113,8 @@ enum BodyKind { AUTO, NONE, BAT, SWARM, WATER, WATERFALL, DRIP, WIND }
 
 const BODY_FOR_SFX := {
 	&"bat_chitter": BodyKind.BAT,
+	&"bat_screech": BodyKind.BAT,
+	&"frog_croak": BodyKind.FROG,
 	&"swarm_cue": BodyKind.SWARM,
 	&"river_flow_large": BodyKind.WATER,
 	&"river_flow_small": BodyKind.WATER,
@@ -106,6 +130,7 @@ const COLOR_DRIP := Color(0.15, 0.35, 1.0)        # BLUE, as F7's drip
 const COLOR_WATER := Color(0.1, 0.55, 0.9, 0.7)
 const COLOR_WIND := Color(0.85, 0.9, 1.0, 0.3)
 const COLOR_ROCK := Color(0.45, 0.42, 0.4)
+const COLOR_FROG := Color(0.35, 0.75, 0.25)
 
 ## How far up/down to look for the cave's floor and ceiling.
 const SURFACE_PROBE := 30.0
@@ -123,6 +148,8 @@ func _enter_tree() -> void:
 	if detail != "":
 		describable.detail = detail
 	describable.continuous = continuous
+	describable.known_from_start = known_from_start
+	describable.known_line = known_line
 	describable.priority = scan_priority
 	describable.scan_radius = scan_radius
 
@@ -134,11 +161,28 @@ func _ready() -> void:
 	player.stream = stream
 	player.bus = bus
 	player.volume_db = volume_db
+	player.max_db = max_db
 	player.max_distance = max_distance
 	player.unit_size = unit_size
-	if autoplay:
+	if occasional_interval != Vector2.ZERO:
+		_play_occasionally()
+	elif autoplay:
 		player.play()
 	_build_body()
+
+
+func _play_occasionally() -> void:
+	while is_inside_tree():
+		await get_tree().create_timer(randf_range(occasional_interval.x, occasional_interval.y)).timeout
+		var room := maxf(player.stream.get_length() - occasional_slice_seconds, 0.0)
+		player.volume_db = volume_db
+		player.play(randf_range(0.0, room))
+		await get_tree().create_timer(maxf(occasional_slice_seconds - 0.25, 0.05)).timeout
+		# Fade the end of the slice rather than cutting it mid-sound.
+		var fade := create_tween()
+		fade.tween_property(player, "volume_db", -60.0, 0.25)
+		await fade.finished
+		player.stop()
 
 
 func _resolved_kind() -> BodyKind:
@@ -165,9 +209,20 @@ func _build_body() -> void:
 
 	match kind:
 		BodyKind.BAT:
-			if ceiling_y != null:
-				global_position.y = ceiling_y
-			_build_bat()
+			if bat_upright:
+				# The hanging model, turned over, standing on a ledge.
+				if floor_y != null:
+					global_position.y = floor_y + 1.4
+				_build_bat()
+				body.rotation_degrees.z = 180.0
+			else:
+				if ceiling_y != null:
+					global_position.y = ceiling_y
+				_build_bat()
+		BodyKind.FROG:
+			if floor_y != null:
+				global_position.y = floor_y
+			_build_frog()
 		BodyKind.SWARM:
 			_build_swarm()
 		BodyKind.WATER:
@@ -186,6 +241,39 @@ func _build_body() -> void:
 			if floor_y != null:
 				global_position.y = floor_y
 			_build_wind(cave_height)
+
+
+## A frog jumping on the spot, forever: the body (and the croak with it)
+## rises height metres and drops back with a splash, then rests. Godot's
+## panning has no elevation, so a rise alone is nearly inaudible. Each jump
+## also lifts the croak's level and pitch on the way up, and lands on a
+## splash, so "up ... down, plop" is unmistakable.
+func start_hopping(height: float, rise_seconds: float, rest_seconds: float, swell_db: float,
+		pitch_lift: float = 1.0, land_sfx: StringName = &"", land_db: float = 0.0) -> void:
+	var base_y := body.position.y
+	var base_db := player.volume_db
+	var land: AudioStreamPlayer3D = null
+	if land_sfx != &"":
+		land = AudioStreamPlayer3D.new()
+		land.name = "Landing"
+		land.stream = SfxLibrary.get_stream(land_sfx)
+		land.bus = player.bus
+		land.volume_db = land_db
+		land.max_distance = player.max_distance
+		land.unit_size = player.unit_size
+		add_child(land)
+	var hop := create_tween().set_loops()
+	hop.tween_property(body, "position:y", base_y + height, rise_seconds) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	hop.parallel().tween_property(player, "volume_db", base_db + swell_db, rise_seconds)
+	hop.parallel().tween_property(player, "pitch_scale", pitch_lift, rise_seconds)
+	hop.tween_property(body, "position:y", base_y, rise_seconds) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	hop.parallel().tween_property(player, "volume_db", base_db, rise_seconds)
+	hop.parallel().tween_property(player, "pitch_scale", 1.0, rise_seconds)
+	if land != null:
+		hop.tween_callback(land.play)
+	hop.tween_interval(rest_seconds)
 
 
 ## World-space Y of the cave surface above or below, or null if none.
@@ -306,6 +394,13 @@ func _build_waterfall(cave_height: float) -> void:
 
 ## A stalactite overhead and the small puddle it drips into. The root (and
 ## the sound) sits on the puddle, where the drops land.
+func _build_frog() -> void:
+	var frog := SphereMesh.new()
+	frog.radius = 0.12
+	frog.height = 0.16
+	_add_mesh("Frog", frog, COLOR_FROG, Vector3(0, 0.08, 0))
+
+
 func _build_drip(cave_height: float) -> void:
 	var puddle := CylinderMesh.new()
 	puddle.top_radius = 0.45
@@ -318,6 +413,7 @@ func _build_drip(cave_height: float) -> void:
 	stalactite.bottom_radius = 0.0
 	stalactite.height = 0.7
 	_add_mesh("Stalactite", stalactite, COLOR_ROCK, Vector3(0, cave_height - 0.35, 0))
+	DebugDraw.label(self, "water drip", Vector3.UP * 0.5, Color(0.5, 0.7, 1.0))
 
 	var drop := SphereMesh.new()
 	drop.radius = 0.04

@@ -7,8 +7,12 @@ EmotiBit hardware is in the loop — day-to-day development uses Godot's
 ```
 python3.12 -m venv .venv            # Python 3.10+; macOS's bundled 3.9 won't import ahrs
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python bridge.py --listen-port 12346 --godot-port 8687
+.venv/bin/python bridge.py --listen-port 12345 --calibrate   # once per mounting
+.venv/bin/python bridge.py --listen-port 12345 --godot-port 8687
 ```
+
+`--calibrate` has you look ahead and then up, and saves how a nod looks to the
+sensor in `nod_calibration.json`. Head pitch and the river flick both use it.
 
 Godot's `SensorBridge` defaults to DEV_MOUSE, so launch the game with
 `-- --sensor=live` (or set `ECHOES_SENSOR=live`) for real heart rate and head
