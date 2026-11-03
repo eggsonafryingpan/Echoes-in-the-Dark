@@ -7,8 +7,11 @@ Godot can't set trigger resistance itself, so the game sends
 Optional: if pydualsense (and the hidapi library it needs) isn't installed, or
 no controller is found, it says so once and the game plays without
 resistance. Install:
-    brew install hidapi
-    .venv/bin/pip install pydualsense
+    Mac:      brew install hidapi
+              .venv/bin/pip install pydualsense
+    Windows:  .venv\Scripts\pip install pydualsense
+              plus hidapi.dll (x64, from github.com/libusb/hidapi releases)
+              copied into sensor_bridge\
 
 Untested on this Mac: whether pydualsense can talk to the controller while
 Godot also has it open. If resistance never appears, that's the first thing
@@ -28,6 +31,16 @@ class TriggerOut:
     def __init__(self) -> None:
         self.ds = None
         self.modes = None
+        import os
+        import sys
+
+        if sys.platform == "win32":
+            # hidapi.dll sits next to this file; let Windows find it from
+            # whatever folder the game started us in.
+            here = os.path.dirname(os.path.abspath(__file__))
+            os.environ["PATH"] = here + os.pathsep + os.environ.get("PATH", "")
+            if hasattr(os, "add_dll_directory"):
+                os.add_dll_directory(here)
         try:
             from pydualsense import pydualsense, TriggerModes
         except Exception as error:  # missing module or hidapi
@@ -71,6 +84,30 @@ def start(port: int) -> TriggerOut:
     return out
 
 
+def _alive(pid: int) -> bool:
+    """Whether the game that started this is still running. (On Windows,
+    os.kill(pid, 0) would send it Ctrl+C, so ask the OS properly there.)"""
+    import os
+    import sys
+
+    if sys.platform == "win32":
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        code = ctypes.c_ulong()
+        kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+        kernel32.CloseHandle(handle)
+        return code.value == 259  # STILL_ACTIVE
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
 def _main() -> None:
     """Standalone, started by the game when it runs without the bridge (from the
     Godot editor, or ./launch.sh mouse). Exits quietly if the bridge already has
@@ -93,11 +130,8 @@ def _main() -> None:
     try:
         while True:
             time.sleep(1.0)
-            if args.parent_pid:
-                try:
-                    os.kill(args.parent_pid, 0)
-                except OSError:
-                    break
+            if args.parent_pid and not _alive(args.parent_pid):
+                break
     except KeyboardInterrupt:
         pass
     out.close()

@@ -78,7 +78,7 @@ static func ensure_trigger_helper() -> void:
 		return
 	_helper_started = true
 	var root := ProjectSettings.globalize_path("res://").trim_suffix("/").get_base_dir().get_base_dir()
-	var python := root.path_join("sensor_bridge/.venv/bin/python")
+	var python := root.path_join("sensor_bridge/.venv/Scripts/python.exe" if OS.get_name() == "Windows" else "sensor_bridge/.venv/bin/python")
 	var script := root.path_join("sensor_bridge/trigger_out.py")
 	if not FileAccess.file_exists(python) or not FileAccess.file_exists(script):
 		print("Haptics: no %s; no trigger resistance." % python)
