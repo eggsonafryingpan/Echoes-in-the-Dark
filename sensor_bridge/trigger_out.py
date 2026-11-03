@@ -9,9 +9,9 @@ no controller is found, it says so once and the game plays without
 resistance. Install:
     Mac:      brew install hidapi
               .venv/bin/pip install pydualsense
-    Windows:  .venv\Scripts\pip install pydualsense
+    Windows:  .venv/Scripts/pip install pydualsense
               plus hidapi.dll (x64, from github.com/libusb/hidapi releases)
-              copied into sensor_bridge\
+              copied into sensor_bridge/
 
 Untested on this Mac: whether pydualsense can talk to the controller while
 Godot also has it open. If resistance never appears, that's the first thing
